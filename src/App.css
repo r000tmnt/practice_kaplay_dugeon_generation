@@ -1,0 +1,158 @@
+@font-face { 
+  font-family: 'BebasNeue-Regular';
+  src: url('font/BebasNeue-Regular.ttf');
+}
+
+:root{
+  --width: 1280;
+  --height: 720;
+}
+
+body {
+  position: relative;
+  margin: 0;
+  font-family: BebasNeue-Regular;
+  /* Prevent scroll bar causing element shift */
+  overflow: hidden;
+}
+
+ul{
+  padding: 0;
+}
+
+li {
+  list-style: none;
+}
+
+.p-center{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.flex{
+  display: flex;
+  align-items: center;
+}
+
+.flex-col{
+  flex-direction: column;
+}
+
+.w-full{
+  width: 100%;
+}
+
+.relative{
+  position: relative;
+}
+
+.bg-black{
+  background-color: black;
+}
+
+.bottom{
+  position: absolute;
+  bottom: 0;
+  width: 95%;
+  margin: 0 auto;
+}
+
+.ui {
+  position: absolute;
+  top: 0;
+  /*left: 50%; */
+  width: calc(var(--width) * 1px);
+  /* height: calc(var(--height) * 1px); */
+  /* transform: translate(-50%, -50%) scale(var(--scale, 0)); */
+  transform: scale(var(--scale, 0));
+  transform-origin: top;
+  box-sizing: border-box;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.disable-scrollbars {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.menu{
+  position: relative;
+  top: 0;
+  margin: 0;
+  padding: 0;
+  /* border: 1px solid black; */
+  background-color: white;
+  list-style: none;
+  color: black;
+  transform-origin: top;
+  transition: all .2s ease-in-out;
+}
+
+.sub_menu{
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  background-color: white;
+}
+
+.filter{
+  justify-content: space-around;
+}
+
+.items{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  /* calc(var(--width) * 1px) */
+  padding: calc(var(--scale) * 10px);
+  box-sizing: 'border-box';
+  row-gap: calc(var(--scale) * 10px);
+  column-gap: calc(var(--scale) * 20px);
+  padding-top: calc(var(--scale) * 10px);  
+}
+
+.dialogue_wrapper{
+  position: fixed;
+  /* bottom: 0; */
+  width: 100%;
+  height: 25%;
+  font-weight: 500;
+  /* transform: translateY(-20%); */
+  background-color: rgba(0, 0, 0, 0.75);
+  transition: all .3s ease-in-out;
+}
+
+.name_tag{
+  position: relative;
+  width: fit-content;
+  padding: 1%;
+}
+
+.dialogue{
+  width: 95%;
+  height: 100%;
+  margin: 0 auto;
+  padding: 1%;
+  overflow: hidden;
+  overflow-y: scroll;
+  transform: translateY(-5%);
+}
+
+/* .menu > li{
+  justify-content: space-around;
+} */
+
+.menu > li{
+  align-items: flex-end;
+}
+
+.hide{
+  margin-left: 100%;
+}
+
+.show{
+  margin-left: 0;
+}
