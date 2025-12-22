@@ -11,7 +11,9 @@ const k = kaplay({
     width: width,
     height: height,
     letterbox: true,
-    background: '#000000'
+    background: '#000000',
+    broadPhaseCollisionAlgorithm: 'quadtree',
+    narrowPhaseCollisionAlgorithm: 'box'
   })
 
 export default k
