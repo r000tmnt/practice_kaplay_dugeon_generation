@@ -23,12 +23,12 @@ The algorithm works like this:
 
 import type { room, corridor } from "../model/map";
 
-const MAP_WIDTH = 60;
-const MAP_HEIGHT = 40;
-const MIN_LEAF_SIZE = 10;
-const MAX_LEAF_SIZE = 20;
+const MAP_WIDTH = 35;
+const MAP_HEIGHT = 25;
+const MIN_LEAF_SIZE = 12;
+const MAX_LEAF_SIZE = 24;
 const MIN_ROOM_SIZE = 6;
-const MAX_ROOM_SIZE = 15;
+const MAX_ROOM_SIZE = 20;
 
 //#region Utils
 const randBetween = (a: number, b: number) => {
