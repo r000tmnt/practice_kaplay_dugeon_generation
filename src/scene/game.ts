@@ -190,8 +190,8 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
     const h = grid.length
     const w = grid[0].length
 
-    for (let y = 0; y < h - 1; y++) {
-        for (let x = 0; x < w - 1; x++) {
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
             // If the tile is a floor
             if (grid[y][x] === 0) {
                 // Check the 4 neighboring tiles
@@ -209,14 +209,12 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
 
   // Remove the same tile if any
   const allEdges = [ topEdges, bottomEdges, rightEdges, leftEdges ]
-  const overlaps: {x: number, y: number}[] = []
   allEdges.forEach((edgeList, index) => {
     const directions = ['top', 'bottom', 'right', 'left']
     for(let j=allEdges.length -1; j > index ; j--){
         // console.log('Before removing duplicates', allEdges[j])
         const { listToCheck, overlappingEdges } = removeDuplicateEdges(edgeList, allEdges[j], directions[index], directions[j])
         allEdges[j] = listToCheck
-        overlaps.concat(overlappingEdges)
         // console.log('After removing duplicates', allEdges[j])
         console.log(`Overlapping edges between ${directions[index]} and ${directions[j]}:`, overlappingEdges)
 
@@ -486,28 +484,26 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
         }
     }
   })
-//   console.log(allEdges[0])
-//   console.log(allEdges[1])
-//   console.log(allEdges[2])
-//   console.log(allEdges[3])
 
   // merge edges
   for(let i=0; i < allEdges.length; i++){
     const edgeList = allEdges[i]
+    let anchor = 0
+
     switch(i){
         case 0:{
             // Top edges
-            let anchor = 0
-
             for(let j=0; j < edgeList.length; j++){
                 const { x, y } = edgeList[j]
-                if(edgeList[j + 1] === undefined) break;
                 // If next edge is not in the same row or col
-                if((edgeList[j + 1].x - edgeList[j].x) !== 1 || edgeList[j + 1].y !== y){
+                if(edgeList[j + 1] === undefined ||
+                  (edgeList[j + 1].x - edgeList[j].x) !== 1 || 
+                   edgeList[j + 1].y !== y){
                     // Get the starting x
                     const startX = x - (j - anchor)
                     // Update anchor
                     anchor = j + 1
+
                     // Create rect
                     map.add([
                         pos(startX * tileWidth, (y * tileWidth) + (tileWidth - 8)),
@@ -519,24 +515,24 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
                         // opacity(0.5), // debug
                         // color(0, 0, 255),
                         "wall",                        
-                    ])
+                    ])                       
                 }
             }            
         }
         break;
         case 1:{
             // bottom edges
-            let anchor = 0
-
             for(let j=0; j < edgeList.length; j++){
                 const { x, y } = edgeList[j]
-                if(edgeList[j + 1] === undefined) break;
                 // If next edge is not in the same row or col
-                if((edgeList[j + 1].x - edgeList[j].x) !== 1 || edgeList[j + 1].y !== y){
+                if(edgeList[j + 1] === undefined ||
+                  (edgeList[j + 1].x - edgeList[j].x) !== 1 || 
+                   edgeList[j + 1].y !== y){
                     // Get the starting x
                     const startX = x - (j - anchor)
                     // Update anchor
-                    anchor = j + 1                    
+                    anchor = j + 1
+
                     // Create rect
                     map.add([
                         pos(startX * tileWidth, y * tileWidth),
@@ -548,20 +544,25 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
                         // opacity(0.5), // debug
                         // color(0, 0, 255),
                         "wall",                        
-                    ])
+                    ])                        
                 }
             }                
         }        
         break;
         case 2:{
             // right edges
-            let anchor = 0
+            // Sort
+            edgeList.sort((a, b) => {
+                if(a.x === b.x && (b.y - a.y) === 1) return 1
+                else return -1                
+            })            
 
             for(let j=0; j < edgeList.length; j++){
                 const { x, y } = edgeList[j]
-                if(edgeList[j + 1] === undefined) break;
                 // If next edge is not in the same col or col
-                if((edgeList[j + 1].y - edgeList[j].y) !== 1 || edgeList[j + 1].x !== x){
+                if(edgeList[j + 1] === undefined ||
+                  (edgeList[j + 1].y - edgeList[j].y) !== 1 || 
+                   edgeList[j + 1].x !== x){
                     // Get the starting x
                     const startY = y - (j - anchor)
                     // Update anchor
@@ -584,13 +585,18 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
         break;
         case 3:{
             // left edges
-            let anchor = 0
+            // Sort
+            edgeList.sort((a, b) => {
+                if(a.x === b.x && (b.y - a.y) === 1) return 1
+                else return -1
+            })
 
             for(let j=0; j < edgeList.length; j++){
                 const { x, y } = edgeList[j]
-                if(edgeList[j + 1] === undefined) break;
                 // If next edge is not in the same col or col
-                if((edgeList[j + 1].y - edgeList[j].y) !== 1 || edgeList[j + 1].x !== x){
+                if(edgeList[j + 1] === undefined ||
+                  (edgeList[j + 1].y - edgeList[j].y) !== 1 || 
+                   edgeList[j + 1].x !== x){
                     // Get the starting x
                     const startY = y - (j - anchor)
                     // Update anchor
@@ -613,6 +619,11 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
         break;                        
     }
   }
+
+  console.log(allEdges[0])
+  console.log(allEdges[1])
+  console.log(allEdges[2])
+  console.log(allEdges[3])
 }
 
 const removeDuplicateEdges = (edgeList: {x: number, y: number}[], listToCheck: {x: number, y: number}[], listDirection: string, checkDirection: string) => {
