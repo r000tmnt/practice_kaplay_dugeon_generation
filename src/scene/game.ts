@@ -209,281 +209,6 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
 
   // Remove the same tile if any
   const allEdges = [ topEdges, bottomEdges, rightEdges, leftEdges ]
-  allEdges.forEach((edgeList, index) => {
-    const directions = ['top', 'bottom', 'right', 'left']
-    for(let j=allEdges.length -1; j > index ; j--){
-        // console.log('Before removing duplicates', allEdges[j])
-        const { listToCheck, overlappingEdges } = removeDuplicateEdges(edgeList, allEdges[j], directions[index], directions[j])
-        allEdges[j] = listToCheck
-        // console.log('After removing duplicates', allEdges[j])
-        console.log(`Overlapping edges between ${directions[index]} and ${directions[j]}:`, overlappingEdges)
-
-        if(directions[index] === 'top' && directions[j] === 'bottom'){
-            // Check if overlapping with left or right
-            overlappingEdges.forEach((edge) => {
-                const left = allEdges[3].find(e => e.x === edge.x && e.y === edge.y)
-                const right = allEdges[2].find(e => e.x === edge.x && e.y === edge.y)
-
-                if(left && right){
-                    // Draw block
-                    /**
-                       ......
-                       ......
-                       ......
-                     */
-                    map.add([
-                        pos(left.x * tileWidth, left.y * tileWidth),
-                        area({ shape: new Rect(
-                            vec2(0), 
-                            tileWidth, tileWidth
-                        ) }),
-                        // color(0, 0, 255),
-                        // opacity(0.5), // debug
-                        body({ isStatic: true }),
-                    ])
-                }else
-                if(left){
-                    // Draw right corner
-                    /**
-                       ....
-                         ..
-                       ....
-                     */
-                    const points = [
-                        vec2(left.x * tileWidth, left.y * tileWidth),// top left
-                        vec2((left.x + 1) * tileWidth, left.y * tileWidth),// top right
-                        vec2((left.x + 1) * tileWidth, (left.y + 1) * tileWidth),// bottom right
-                        vec2(left.x * tileWidth, (left.y + 1) * tileWidth),// bottom left
-                        vec2(left.x * tileWidth, left.y * tileWidth + (tileWidth - 8)),
-                        vec2(left.x * tileWidth + (tileWidth - 8), left.y * tileWidth + (tileWidth - 8)),
-                        vec2(left.x * tileWidth + (tileWidth - 8), (left.y * tileWidth) + 8),
-                        vec2(left.x * tileWidth, (left.y * tileWidth) + 8),
-                        vec2(left.x * tileWidth, left.y * tileWidth),// top left
-                    ]
-
-                    map.add([
-                        pos(0, 0),
-                        area({ shape: new Polygon(points) }),
-                        // color(0, 0, 255),
-                        // opacity(0.5), // debug    
-                        body({ isStatic: true }),                    
-                    ])
-                }else
-                if(!left && right){
-                    // Draw left corner
-                    /**
-                       ....
-                       ..
-                       ....
-                     */
-                    const points = [
-                        vec2(right.x * tileWidth, right.y * tileWidth),// top left
-                        vec2((right.x + 1) * tileWidth, right.y * tileWidth),// top right
-                        vec2((right.x + 1) * tileWidth, (right.y * tileWidth) + 8),
-                        vec2((right.x * tileWidth) + (tileWidth - 8), (right.y * tileWidth) + 8),
-                        vec2((right.x * tileWidth) + (tileWidth - 8), right.y * tileWidth + (tileWidth - 8)),
-                        vec2(right.x * tileWidth + (tileWidth - 8), right.y * tileWidth + (tileWidth - 8)),
-                        vec2((right.x + 1) * tileWidth, (right.y + 1) * tileWidth), // bottom right
-                        vec2(right.x * tileWidth, (right.y + 1) * tileWidth), // bottom left
-                        vec2(right.x * tileWidth, right.y * tileWidth),// top left
-                    ]
-
-                    map.add([
-                        pos(0, 0),
-                        area({ shape: new Polygon(points) }),
-                        // color(0, 0, 255),
-                        // opacity(0.5), // debug     
-                        body({ isStatic: true }),                   
-                    ])
-                }else{
-                    // Put back the non-overlapping edges
-                    allEdges[0].push(edge)
-                    allEdges[1].push(edge)                    
-                }
-            })
-        }
-
-        if(directions[index] === 'top' && directions[j] === 'right'){
-            overlappingEdges.forEach((edge) => {
-                // Draw left bottom corner
-                /**
-                   ..
-                   ..
-                   ....
-                 */
-                const points = [
-                    vec2(edge.x * tileWidth, edge.y * tileWidth),// top left
-                    vec2((edge.x * tileWidth) + 8, edge.y * tileWidth),// top right
-                    vec2((edge.x * tileWidth) + 8, (edge.y * tileWidth) + (tileWidth - 8)),
-                    vec2((edge.x + 1) * tileWidth, (edge.y * tileWidth) + (tileWidth - 8)),
-                    vec2((edge.x + 1) * tileWidth, (edge.y + 1) * tileWidth), // bottom right
-                    vec2(edge.x * tileWidth, (edge.y + 1) * tileWidth), // bottom left
-                    vec2(edge.x * tileWidth, edge.y * tileWidth),// top left
-                ]
-
-                map.add([
-                    pos(0, 0),
-                    area({ shape: new Polygon(points) }),
-                    // color(0, 0, 255),
-                    // opacity(0.5), // debug    
-                    body({ isStatic: true }),                    
-                ])                
-            })
-        }
-
-        if(directions[index] === 'top' && directions[j] === 'left'){
-            overlappingEdges.forEach((edge) => {
-                // Draw right bottom corner
-                /**
-                     ..
-                     ..
-                   ....
-                 */
-                const points = [
-                    vec2((edge.x * tileWidth) + (tileWidth - 8), edge.y * tileWidth),// top left
-                    vec2((edge.x + 1) * tileWidth, edge.y * tileWidth),// top right
-                    vec2((edge.x + 1) * tileWidth, (edge.y + 1) * tileWidth), // bottom right
-                    vec2(edge.x * tileWidth, (edge.y + 1) * tileWidth), // bottom left
-                    vec2(edge.x * tileWidth, (edge.y * tileWidth) + (tileWidth - 8)), 
-                    vec2((edge.x * tileWidth) + (tileWidth - 8), (edge.y * tileWidth) + (tileWidth - 8)), 
-                    vec2((edge.x * tileWidth) + (tileWidth - 8), edge.y * tileWidth),// top left
-                ]
-
-                map.add([
-                    pos(0, 0),
-                    area({ shape: new Polygon(points) }),
-                    // color(0, 0, 255),
-                    // opacity(0.5), // debug    
-                    body({ isStatic: true }),                    
-                ])                            
-            })
-        }
-
-        if(directions[index] === 'bottom' && directions[j] === 'left'){
-            overlappingEdges.forEach((edge) => {
-                // Draw right top corner
-                /**
-                   ....
-                     ..
-                     ..
-                 */  
-                const points = [
-                    vec2(edge.x * tileWidth, edge.y * tileWidth),// top left
-                    vec2((edge.x + 1) * tileWidth, edge.y * tileWidth),// top right
-                    vec2((edge.x + 1) * tileWidth, (edge.y + 1) * tileWidth), // bottom right
-                    vec2((edge.x * tileWidth) + (tileWidth - 8), (edge.y + 1) * tileWidth), // bottom left
-                    vec2((edge.x * tileWidth) + (tileWidth - 8), (edge.y * tileWidth) + 8), 
-                    vec2(edge.x * tileWidth, (edge.y * tileWidth) + 8), 
-                    vec2(edge.x * tileWidth, edge.y * tileWidth),// top left
-                ]       
-                
-                map.add([
-                    pos(0, 0),
-                    area({ shape: new Polygon(points) }),
-                    // color(0, 0, 255),
-                    // opacity(0.5), // debug     
-                    body({ isStatic: true }),                   
-                ])                     
-            })
-        }
-
-        if(directions[index] === 'bottom' && directions[j] === 'right'){
-            overlappingEdges.forEach((edge) => {
-                // Draw left top corner
-                /**
-                   ....
-                   ..
-                   ..
-                 */
-                const points = [
-                    vec2(edge.x * tileWidth, edge.y * tileWidth),// top left
-                    vec2((edge.x + 1) * tileWidth, edge.y * tileWidth),// top right
-                    vec2((edge.x + 1) * tileWidth, (edge.y * tileWidth) + 8), 
-                    vec2((edge.x * tileWidth) + 8, (edge.y * tileWidth) + 8), 
-                    vec2((edge.x * tileWidth) + 8, (edge.y + 1) * tileWidth), // bottom right
-                    vec2(edge.x * tileWidth, (edge.y + 1) * tileWidth), // bottom left
-                    vec2(edge.x * tileWidth, edge.y * tileWidth),// top left
-                ]       
-                
-                map.add([
-                    pos(0, 0),
-                    area({ shape: new Polygon(points) }),
-                    // color(0, 0, 255),
-                    // opacity(0.5), // debug     
-                    body({ isStatic: true }),                   
-                ])                    
-            })
-        }
-
-        if(directions[index] === 'right' && directions[j] === 'left'){
-            // Check if overlapping with top or bottom
-            overlappingEdges.forEach((edge) => {
-                const top = allEdges[0].find(e => e.x === edge.x && e.y === edge.y)
-                const bottom = allEdges[1].find(e => e.x === edge.x && e.y === edge.y)
-
-                if(top && bottom){
-                    // Do nothing. Already handled
-                }else
-                if(top){
-                    /**
-                       ......
-                       ..  ..
-                       ..  ..
-                     */ 
-                    const points = [
-                        vec2(top.x * tileWidth, top.y * tileWidth),// top left
-                        vec2((top.x + 1) * tileWidth, top.y * tileWidth),// top right
-                        vec2((top.x + 1) * tileWidth, (top.y + 1) * tileWidth),// bottom right
-                        vec2((top.x * tileWidth) + (tileWidth - 8), (top.y + 1) * tileWidth),
-                        vec2((top.x * tileWidth) + (tileWidth - 8), top.y * tileWidth + 8),
-                        vec2((top.x * tileWidth) + 8, top.y * tileWidth + 8),
-                        vec2((top.x * tileWidth) + 8, (top.y + 1) * tileWidth),
-                        vec2(top.x * tileWidth, (top.y + 1) * tileWidth), // bottom left
-                        vec2(top.x * tileWidth, top.y * tileWidth),// top left
-                    ]      
-                    
-                    map.add([
-                        pos(0, 0),
-                        area({ shape: new Polygon(points) }),
-                        // color(0, 0, 255),
-                        // opacity(0.5), // debug    
-                        body({ isStatic: true }),                    
-                    ])                        
-                }else
-                if(bottom){
-                    /**
-                       ..  ..
-                       ..  ..
-                       ......
-                     */ 
-                    const points = [
-                        vec2(bottom.x * tileWidth, bottom.y * tileWidth),// top left
-                        vec2((bottom.x * tileWidth) + 8, bottom.y * tileWidth),
-                        vec2((bottom.x * tileWidth) + 8, bottom.y * tileWidth + (tileWidth - 8)),
-                        vec2((bottom.x * tileWidth) + (tileWidth - 8), bottom.y * tileWidth + (tileWidth - 8)),
-                        vec2((bottom.x * tileWidth) + (tileWidth - 8), bottom.y),
-                        vec2((bottom.x + 1) * tileWidth, bottom.y * tileWidth), // top right
-                        vec2((bottom.x + 1) * tileWidth, (bottom.y + 1) * tileWidth), // bottom right
-                        vec2(bottom.x * tileWidth, (bottom.y + 1) * tileWidth), // bottom left
-                        vec2(bottom.x * tileWidth, bottom.y * tileWidth),// top left
-                    ]          
-                    
-                    map.add([
-                        pos(0 ,0),
-                        area({ shape: new Polygon(points) }),
-                        // color(0, 0, 255),
-                        // opacity(0.5), // debug      
-                        body({ isStatic: true }),                  
-                    ])                        
-                }else{
-                    // Put back the non-overlapping edges
-                    allEdges[2].push(edge)
-                    allEdges[3].push(edge)
-                }
-            })
-        }
-    }
-  })
 
   // merge edges
   for(let i=0; i < allEdges.length; i++){
@@ -553,8 +278,8 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
             // right edges
             // Sort
             edgeList.sort((a, b) => {
-                if(a.x === b.x && (b.y - a.y) === 1) return 1
-                else return -1                
+                if(a.x !== b.x) return a.x- b.x
+                return a.y - b.y              
             })            
 
             for(let j=0; j < edgeList.length; j++){
@@ -564,7 +289,7 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
                   (edgeList[j + 1].y - edgeList[j].y) !== 1 || 
                    edgeList[j + 1].x !== x){
                     // Get the starting x
-                    const startY = y - (j - anchor)
+                    const startY = anchor > 0? edgeList[anchor].y : edgeList[0].y
                     // Update anchor
                     anchor = j + 1                       
                     // Create rect
@@ -572,7 +297,7 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
                         pos(x * tileWidth, startY * tileWidth),
                         area({ shape: new Rect(
                             vec2(0),
-                            8, (y - startY + 1) * tileWidth
+                            8, ((y - startY) + 1) * tileWidth
                         ) }),
                         body({ isStatic: true }),
                         // opacity(0.5), // debug
@@ -587,8 +312,8 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
             // left edges
             // Sort
             edgeList.sort((a, b) => {
-                if(a.x === b.x && (b.y - a.y) === 1) return 1
-                else return -1
+                if(a.x !== b.x) return a.x- b.x
+                return a.y - b.y
             })
 
             for(let j=0; j < edgeList.length; j++){
@@ -598,7 +323,7 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
                   (edgeList[j + 1].y - edgeList[j].y) !== 1 || 
                    edgeList[j + 1].x !== x){
                     // Get the starting x
-                    const startY = y - (j - anchor)
+                    const startY = anchor > 0? edgeList[anchor].y : edgeList[0].y
                     // Update anchor
                     anchor = j + 1                        
                     // Create rect
@@ -606,7 +331,7 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
                         pos((x * tileWidth) + (tileWidth - 8), startY * tileWidth),
                         area({ shape:new Rect(
                             vec2(0),
-                            8, (y - startY + 1) * tileWidth
+                            8, ((y - startY) + 1) * tileWidth
                         ) }),
                         body({ isStatic: true }),
                         // opacity(0.5), // debug
@@ -628,17 +353,20 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
 
 const removeDuplicateEdges = (edgeList: {x: number, y: number}[], listToCheck: {x: number, y: number}[], listDirection: string, checkDirection: string) => {
     const overlappingEdges: {x: number, y: number}[] = []
-    edgeList.forEach((edge) => {
+
+    const filteredEdges = edgeList.filter((edge) => {
         const duplicateIndex = listToCheck.findIndex((e) => e.x === edge.x && e.y === edge.y)
         if(duplicateIndex >= 0){
             listToCheck.splice(duplicateIndex, 1)
             overlappingEdges.push(edge)
+        }else{
+            return edge
         }
     })
 
     // console.log(`Overlapping edges between ${listDirection} and ${checkDirection}:`, overlappingEdges)
 
-    return { listToCheck, overlappingEdges }
+    return { filteredEdges, listToCheck, overlappingEdges }
 }
 
 
