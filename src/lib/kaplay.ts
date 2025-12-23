@@ -16,4 +16,22 @@ const k = kaplay({
     narrowPhaseCollisionAlgorithm: 'box'
   })
 
+if (
+  // Make sure to load it only in development mode
+  import.meta.env.DEV &&
+  // I like to enable it only when ?inspector is available in the URL (this is optional)
+  // This gives you an easy way to enable or disable it
+  new URLSearchParams(window.location.search).get("inspector") !== null
+) {
+  console.log('MODE: DEV')
+  import("@stanko/kaplay-inspector/dist/styles.css");
+  import("@stanko/kaplay-inspector").then(({ default: init }) => {
+    // Pass the "k" instance to the inspector
+    init(k);
+  });
+}
+
+console.log(import.meta.env)
+console.log(window.location.search)
+
 export default k
