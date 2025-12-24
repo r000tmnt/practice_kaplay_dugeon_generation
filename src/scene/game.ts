@@ -176,7 +176,8 @@ const drawMap = (level: number[][], rooms: room[], name: string, tileWidth: numb
 
         // Set rects for collision around the rooms
         // Refernce: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Left_shift#using_left_shift
-        getWallEdges(level, tileWidth)             
+        getWallEdges(level, tileWidth)   
+        setChunks()          
     }
 }  
 
@@ -240,7 +241,7 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
                         // opacity(0.5), // debug
                         // color(0, 0, 255),
                         "wall",                        
-                    ])                       
+                    ])
                 }
             }            
         }
@@ -351,23 +352,61 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
   console.log(allEdges[3])
 }
 
-const removeDuplicateEdges = (edgeList: {x: number, y: number}[], listToCheck: {x: number, y: number}[], listDirection: string, checkDirection: string) => {
-    const overlappingEdges: {x: number, y: number}[] = []
+const setChunks = () => {
+    const { props, chunks } = store.get(gameState)
+    const { chunkSize, tileWidth } = store.get(setting)
 
-    const filteredEdges = edgeList.filter((edge) => {
-        const duplicateIndex = listToCheck.findIndex((e) => e.x === edge.x && e.y === edge.y)
-        if(duplicateIndex >= 0){
-            listToCheck.splice(duplicateIndex, 1)
-            overlappingEdges.push(edge)
-        }else{
-            return edge
+    props.forEach(prop => {
+        const tileToChunk = {
+            x: Math.floor((prop.x * tileWidth) / chunkSize ),
+            y: Math.floor((prop.y * tileWidth) / chunkSize )
         }
+
+        const key = `${tileToChunk.x},${tileToChunk.y}`
+
+        const copyMap = new Map(chunks)
+
+        if(!chunks.has(key)){
+            copyMap.set(key, {
+                x: tileToChunk.x,
+                y: tileToChunk.y,
+                props: [],
+                active: false,
+                objects: []
+            })
+
+            store.set(gameState, prev => ({
+                ...prev,
+                chunks: copyMap
+            }))
+        }
+
+        copyMap.get(key)?.props.push(prop)
+
+        store.set(gameState, prev => ({
+            ...prev,
+            chunks: copyMap
+        }))        
     })
-
-    // console.log(`Overlapping edges between ${listDirection} and ${checkDirection}:`, overlappingEdges)
-
-    return { filteredEdges, listToCheck, overlappingEdges }
 }
+
+// const removeDuplicateEdges = (edgeList: {x: number, y: number}[], listToCheck: {x: number, y: number}[], listDirection: string, checkDirection: string) => {
+//     const overlappingEdges: {x: number, y: number}[] = []
+
+//     const filteredEdges = edgeList.filter((edge) => {
+//         const duplicateIndex = listToCheck.findIndex((e) => e.x === edge.x && e.y === edge.y)
+//         if(duplicateIndex >= 0){
+//             listToCheck.splice(duplicateIndex, 1)
+//             overlappingEdges.push(edge)
+//         }else{
+//             return edge
+//         }
+//     })
+
+//     // console.log(`Overlapping edges between ${listDirection} and ${checkDirection}:`, overlappingEdges)
+
+//     return { filteredEdges, listToCheck, overlappingEdges }
+// }
 
 
 const initPlayer = (grid: number[][], entrance: { x: number, y: number }, tileWidth: number) => {
