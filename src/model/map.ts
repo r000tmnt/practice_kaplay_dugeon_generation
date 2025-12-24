@@ -24,20 +24,20 @@ interface prop {
     y: number,
     roomId: number,
     broken?: boolean
+    open?: boolean
 }
 
 interface chunk {
     x: number,
     y: number,
     props: prop[],
-    enemies: [],
-    walls: [],
     active: boolean,
-    object: GameObj[]
+    objects: GameObj[]
 }
 
 export type {
     room,
     corridor,
-    chunk
+    chunk,
+    prop
 }
