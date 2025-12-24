@@ -1,15 +1,18 @@
 import k from '../lib/kaplay'
-import type { GameObj } from "kaplay";
+import type { GameObj, Vec2 } from "kaplay";
 
 // Store
 import { createStore } from 'jotai'
 import { setting } from '../store/setting';
 const store = createStore()
 
+const chunkMargin = 5
+
 const {
     area,
     body,
     getData,
+    getCamPos,
     isKeyDown,
     pos,
     Rect,
@@ -107,7 +110,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
             player.children[0].pos.y = player.height              
 
             // checkStep(player)
-        }        
+        }     
     })  
     // #endregion  
 }
@@ -137,6 +140,7 @@ const setCameraPosition = (map: GameObj, player: GameObj, mapWidth: number, mapH
     if(inX && inY){
         console.log('camera follows player')
         setCamPos(player.pos)
+        getCameraEdges('middle')
     }
         
     if(inX && !inY){
@@ -144,12 +148,14 @@ const setCameraPosition = (map: GameObj, player: GameObj, mapWidth: number, mapH
         if((wPos.y - middleY) <= 0){
             console.log('camera top')
             setCamPos(wPos.x, middleY)
+            getCameraEdges('top')
         }
 
         // Reached down?
         if((wPos.y + middleY) >= mapHeight){
             console.log('camera down')
             setCamPos(wPos.x, mapHeight - middleY)
+            getCameraEdges('down')
         }
     }
 
@@ -158,12 +164,14 @@ const setCameraPosition = (map: GameObj, player: GameObj, mapWidth: number, mapH
         if((wPos.x + middleX) >= mapWidth){
             console.log('camera right')
             setCamPos(mapWidth - middleX, wPos.y)
+            getCameraEdges('right')
         }
 
         // Reached left?
         if((wPos.x - middleX) <= 0){
             console.log('camera left')
             setCamPos(middleX, wPos.y)
+            getCameraEdges('left')
         }
     }
 
@@ -172,25 +180,104 @@ const setCameraPosition = (map: GameObj, player: GameObj, mapWidth: number, mapH
         if((wPos.y - middleY) <= 0 && (wPos.x + middleX) >= mapWidth){
             console.log('camera top right')
             setCamPos(mapWidth - middleX, middleY)
+            getCameraEdges('topRight')
         }
 
         // Reached down right?
         if((wPos.y + middleY) >= mapHeight && (wPos.x + middleX) >= mapWidth){
             console.log('camera down right')
             setCamPos(mapWidth - middleX, mapHeight - middleY)
+            getCameraEdges('downRight')
         }
 
         // Reached down left?
         if((wPos.y + middleY) >= mapHeight && (wPos.x - middleX) <= 0){
             console.log('camera down left')
             setCamPos(middleX, mapHeight - middleY)
+            getCameraEdges('downLeft')
         }
         
         // Reached top left?
         if((wPos.y - middleY) <= 0 && (wPos.x - middleX) <= 0){
             console.log('camera top left')
             setCamPos(middleX, middleY)
+            getCameraEdges('topLeft')
         }
     }
 }
 // #endregion    
+
+// #region Active / Deactive chunks
+const getCameraEdges = (direction: string) => {
+    // Get the distance between the player and the camera edge
+    const { width, height, tileWidth } = store.get(setting)
+    const cPos = getCamPos()
+    const halfWidth = width / 2
+    const halfHeight = height / 2
+
+    switch(direction){
+        case 'top':{
+            const top = Math.floor(0 / tileWidth)
+            const down = Math.floor((0 + halfHeight) / tileWidth)
+            const left = Math.floor((cPos.x - halfWidth) / tileWidth)
+            const right = Math.floor((cPos.x + halfWidth) / tileWidth)
+
+            updateChunks({ top, down, left, right })
+        }
+        break;
+        case 'down':{
+            //
+        }
+        break;
+        case 'left':{
+            //
+        }
+        break;
+        case 'right':{
+            //
+        }
+        break;
+        case 'middle':{
+            //
+        }
+        break;        
+        case 'topLeft':{
+            //
+        }
+        break;
+        case 'topRight':{
+            //
+        }
+        break;
+        case 'downLeft':{
+            //
+        }
+        break;
+        case 'downRight':{
+            //
+        }
+        break;        
+    }    
+}
+
+const updateChunks = (camera: {top: number, down: number, left: number, right: number}) => {
+    // Get the distance between the player and the camera edge
+    const { chunkSize } = store.get(setting)
+
+    const { top, down, left, right } = camera
+
+    const cT = Math.floor(top / chunkSize) - chunkMargin
+    const cD = Math.floor(down / chunkSize) + chunkMargin
+    const cL = Math.floor(left / chunkSize) - chunkMargin
+    const cR = Math.floor(right / chunkSize) + chunkMargin   
+    
+    const needed = new Set()
+
+    for (let cy = cT; cy <= cD; cy++) {
+        for (let cx = cL; cx <= cR; cx++) {
+            needed.add(`${cx},${cy}`)
+        // activateChunk(cx, cy)
+        }
+    }    
+}
+// #endregion
