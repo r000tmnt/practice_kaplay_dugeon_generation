@@ -21,7 +21,13 @@ The algorithm works like this:
        → split → [ right-left ] + [ right-right ]
  */
 
-import type { room, corridor } from "../model/map";
+import type { room, corridor, prop } from "../model/map";
+
+// Store
+import { createStore } from 'jotai'
+import { setting } from '../store/setting';
+import { gameState } from "../store/game";
+const store = createStore()
 
 const MAP_WIDTH = 35;
 const MAP_HEIGHT = 25;
@@ -372,7 +378,89 @@ export const generateBSPDungeon = async() => {
     if(entrance) await checkDoorPosition(grid, entrance)
     if(exit) await checkDoorPosition(grid, exit)
 
+    setPorps(grid, rooms)
+
     // You can return these or store them globally
     return { grid, rooms, entrance, exit };
 }
 //#endregion
+
+//#region Set props for chunks
+const setPorps = (grid: number[][], rooms: room[]) => {
+    // const allProps: prop[] = []
+
+    rooms.map((room, index) => {
+        const margin = 1
+
+        const innerSpace = {
+            x: room.x + margin,
+            y: room.y + margin,
+            w: room.w - margin * 2,
+            h: room.h - margin * 2
+        }
+
+        const tiles = getFloorTiles(grid, innerSpace as room)
+
+        placePot(innerSpace, index, tiles)
+        placeChest(index, tiles)
+    })
+}
+
+const placePot = (innerSpace: { x: number, y:number, w: number, h: number }, roomId: number, tiles: {x: number, y: number}[]) => {
+    const { propRules } = store.get(setting)
+    const area = innerSpace.w * innerSpace.h
+    const expected = area * propRules.pot.density 
+    const possibleCount = expected + (Math.random() * (1 - -1) + -1)
+    const count = Math.min(Math.max(possibleCount, 0), propRules.pot.max)
+
+    for(let i=0; i < count; i++){
+        const rng = tiles[Math.floor(Math.random() * (tiles.length - 1))]
+        store.set(gameState, prev => ({
+            ...prev,
+            props: [
+                ...prev.props,
+                {
+                type: "pot",
+                x: rng.x,
+                y: rng.y,
+                roomId,
+                broken: false
+            }]
+        }))
+    }
+}
+
+const placeChest = (roomId: number, tiles: {x: number, y: number}[]) => {
+    const { propRules } = store.get(setting)
+    const canSpawn = Math.random() <= propRules.chest.perRoomChance
+    const count = canSpawn? propRules.chest.maxPerRoom : 0
+
+    for(let i=0; i < count; i++){
+        const rng = tiles[Math.floor(Math.random() * (tiles.length - 1))]
+        store.set(gameState, prev => ({
+            ...prev,
+            props: [
+                ...prev.props,
+                {
+                type: "chest",
+                x: rng.x,
+                y: rng.y,
+                roomId,
+                open: false
+            }]
+        }))
+    }
+}
+
+const getFloorTiles = (grid: number[][], room: room) => {
+    const tiles =[]
+
+    for(let y= room.y; y < room.y + room.h; y++){
+        for(let x=0; x < room.x + room.w; x++){
+            if(grid[y][x] === 0) tiles.push({ x, y })
+        }
+    }
+
+    return tiles
+}
+//#endrefion
