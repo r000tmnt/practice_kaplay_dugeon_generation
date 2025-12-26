@@ -12,7 +12,7 @@ const k = kaplay({
     height: height,
     letterbox: true,
     background: '#000000',
-    broadPhaseCollisionAlgorithm: 'quadtree',
+    broadPhaseCollisionAlgorithm: 'grid',
     narrowPhaseCollisionAlgorithm: 'box'
   })
 
