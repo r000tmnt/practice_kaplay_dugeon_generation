@@ -12,7 +12,7 @@
   "dependencies": {
     "@stanko/kaplay-inspector": "^0.1.4",
     "jotai": "^2.15.2",
-    "kaplay": "^4000.0.0-alpha.24",
+    "kaplay": "^4000.0.0-alpha.25",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
