@@ -5,10 +5,15 @@ import { createPlayerSprite } from '../utils/player';
 
 // Store
 import { createStore } from 'jotai'
-import { gameState } from '../store/game';
+import { gameState, gameStore, getGameStoreValue } from '../store/game';
 import { setting } from '../store/setting';
-import type { room } from '../model/map';
+// import type { room } from '../model/map';
 const store = createStore()
+
+store.sub(gameState, () => {
+    const newValue = store.get(gameState)
+    console.log('newValue ', newValue)
+})
 
 const { 
     add,
@@ -55,6 +60,14 @@ export default function initGame(){
             }
         })
 
+        loadSprite('pot', 'map/demo_pot.png', {
+            sliceX: 2,
+            sliceY: 2,
+            anims: {
+                break: { from: 1, to: 2, loop: false }
+            }
+        })        
+
         setData('ready', false)
         setMap()
     })
@@ -73,14 +86,14 @@ const setMap = async(index = 0, name = 'testMap') => {
     // If level exist
     if(level[index]){
         // Get the rooms
-        const { rooms, entrances } = store.get(gameState)
+        const { entrances } = store.get(gameState)
 
         const entrance = entrances[index]
 
         // const exit = exits[index]
 
         // Draw map
-        drawMap(level[index], rooms[index], name, tileWidth)
+        drawMap(level[index], entrance, name, tileWidth)
 
         initPlayer(level[index], entrance as { x: number, y: number }, tileWidth)        
     }else{
@@ -108,7 +121,7 @@ const setMap = async(index = 0, name = 'testMap') => {
                 .join("\n")
         );
 
-        store.set(gameState, prev => ({
+        gameStore.set(gameState, prev => ({
             ...prev,
             level: prev.level.concat([grid]),
             rooms: prev.rooms.concat([rooms]),
@@ -116,13 +129,12 @@ const setMap = async(index = 0, name = 'testMap') => {
             exits: prev.exits.toSpliced(index, 0, exit)
         }))
 
-        const {level} = store.get(gameState)
-        drawMap(level[index], rooms, name, tileWidth)
-        initPlayer(grid, entrance as { x: number, y: number }, tileWidth)
+        const {level} = getGameStoreValue()
+        drawMap(level[index], entrance as { x: number, y: number }, name, tileWidth)
     }
 }
 
-const drawMap = (level: number[][], rooms: room[], name: string, tileWidth: number) => {
+const drawMap = (level: number[][], entrance: { x: number, y: number }, name: string, tileWidth: number) => {
     // const { width, height } = store.get(setting)
 
     // Create an invisible canvas
@@ -135,7 +147,7 @@ const drawMap = (level: number[][], rooms: room[], name: string, tileWidth: numb
     const spriteSheet = new Image()
     spriteSheet.src = 'map/demo_tiles_test_48.png'
 
-    spriteSheet.onload = () => {
+    spriteSheet.onload = async() => {
         // Draw the map of the level
         for(let i=0; i < level.length; i++){
             const row = level[i]
@@ -176,13 +188,14 @@ const drawMap = (level: number[][], rooms: room[], name: string, tileWidth: numb
 
         // Set rects for collision around the rooms
         // Refernce: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Left_shift#using_left_shift
-        getWallEdges(level, tileWidth)   
-        setChunks()          
+        await getWallEdges(level, tileWidth)   
+        await setChunks()          
+        // initPlayer(level, entrance, tileWidth)
     }
 }  
 
 // Extract raw edges
-const getWallEdges = (grid: number[][], tileWidth: number) => {
+const getWallEdges = async(grid: number[][], tileWidth: number) => {
     const topEdges: {x: number, y: number}[] = []
     const bottomEdges: {x: number, y: number}[] = []
     const rightEdges: {x: number, y: number}[] = []
@@ -352,9 +365,11 @@ const getWallEdges = (grid: number[][], tileWidth: number) => {
   console.log(allEdges[3])
 }
 
-const setChunks = () => {
-    const { props, chunks } = store.get(gameState)
+const setChunks = async() => {
+    const { props, chunks } = getGameStoreValue()
     const { chunkSize, tileWidth } = store.get(setting)
+
+    console.log('props', props)
 
     props.forEach(prop => {
         const tileToChunk = {
@@ -364,29 +379,24 @@ const setChunks = () => {
 
         const key = `${tileToChunk.x},${tileToChunk.y}`
 
-        const copyMap = new Map(chunks)
+        const copyMap = JSON.parse(JSON.stringify(chunks))
 
-        if(!chunks.has(key)){
-            copyMap.set(key, {
+        if(chunks[`${key}`] === undefined){
+            copyMap[`${key}`] = {
                 x: tileToChunk.x,
                 y: tileToChunk.y,
                 props: [],
                 active: false,
                 objects: []
-            })
-
-            store.set(gameState, prev => ({
-                ...prev,
-                chunks: copyMap
-            }))
+            }
         }
 
-        copyMap.get(key)?.props.push(prop)
+        copyMap[`${key}`].props.push(prop)
 
-        store.set(gameState, prev => ({
+        gameStore.set(gameState, prev => ({
             ...prev,
             chunks: copyMap
-        }))        
+        }))     
     })
 }
 

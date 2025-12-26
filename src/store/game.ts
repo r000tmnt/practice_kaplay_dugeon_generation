@@ -1,4 +1,4 @@
-import { atom } from "jotai";
+import { createStore, atom } from "jotai";
 import type { chunk, prop, room } from "../model/map";
 
 export const gameState = atom({
@@ -7,5 +7,16 @@ export const gameState = atom({
     entrances: [] as { x: number, y: number }[],
     exits: [] as { x: number, y: number }[],
     props: [] as prop[],
-    chunks: {} as Map<string, chunk>
+    chunks: {} as Record<string, chunk>
+})
+
+export const gameStore = createStore()
+
+export const getGameStoreValue = () => {
+    return gameStore.get(gameState)
+}
+
+gameStore.sub(gameState, () => {
+    const newValue = getGameStoreValue()
+    console.log('gameStore update ', newValue)
 })

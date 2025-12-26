@@ -21,12 +21,12 @@ The algorithm works like this:
        → split → [ right-left ] + [ right-right ]
  */
 
-import type { room, corridor, prop } from "../model/map";
+import type { room, corridor } from "../model/map";
 
 // Store
 import { createStore } from 'jotai'
 import { setting } from '../store/setting';
-import { gameState } from "../store/game";
+import { gameState, gameStore, getGameStoreValue } from "../store/game";
 const store = createStore()
 
 const MAP_WIDTH = 35;
@@ -402,7 +402,7 @@ const setPorps = (grid: number[][], rooms: room[]) => {
         const tiles = getFloorTiles(grid, innerSpace as room)
 
         placePot(innerSpace, index, tiles)
-        placeChest(index, tiles)
+        // placeChest(index, tiles)
     })
 }
 
@@ -415,17 +415,15 @@ const placePot = (innerSpace: { x: number, y:number, w: number, h: number }, roo
 
     for(let i=0; i < count; i++){
         const rng = tiles[Math.floor(Math.random() * (tiles.length - 1))]
-        store.set(gameState, prev => ({
+        gameStore.set(gameState, prev => ({
             ...prev,
-            props: [
-                ...prev.props,
-                {
+            props: prev.props.concat({
                 type: "pot",
                 x: rng.x,
                 y: rng.y,
                 roomId,
                 broken: false
-            }]
+            })
         }))
     }
 }
