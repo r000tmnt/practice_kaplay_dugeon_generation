@@ -2,11 +2,9 @@ import k from '../lib/kaplay'
 import type { GameObj } from "kaplay";
 
 // Store
-import { createStore } from 'jotai'
-import { gameState } from '../store/game';
-import { setting } from '../store/setting';
-import type { prop } from '../model/map';
-const store = createStore()
+import { gameState, gameStore, getGameStoreValue } from '../store/game';
+import { setting, getOptionValue } from '../store/setting';
+import type { chunk, prop } from '../model/map';
 
 const {
     area,
@@ -28,7 +26,7 @@ const chunkMargin = 5
 // #region Camera position
 export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: number) => {
     // Decide to move the camera or not
-    const { width, height } = store.get(setting)
+    const { width, height } = getOptionValue()
     const middleX = width / 2 
     const middleY = height / 2 
 
@@ -120,7 +118,7 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
 // #region Active / Deactive chunks
 const getCameraEdges = (direction: string, mapWidth: number, mapHeight: number) => {
     // Get the distance between the player and the camera edge
-    const { width, height, tileWidth } = store.get(setting)
+    const { width, height, tileWidth } = getOptionValue()
     const cPos = getCamPos()
     const halfWidth = width / 2
     const halfHeight = height / 2
@@ -128,7 +126,7 @@ const getCameraEdges = (direction: string, mapWidth: number, mapHeight: number) 
     switch(direction){
         case 'top':{
             const top = Math.floor(0 / tileWidth)
-            const down = Math.floor((0 + halfHeight) / tileWidth)
+            const down = Math.floor(height / tileWidth)
             const left = Math.floor((cPos.x - halfWidth) / tileWidth)
             const right = Math.floor((cPos.x + halfWidth) / tileWidth)
 
@@ -148,7 +146,7 @@ const getCameraEdges = (direction: string, mapWidth: number, mapHeight: number) 
             const top = Math.floor((cPos.y - halfHeight) / tileWidth)
             const down = Math.floor((cPos.y + halfHeight) / tileWidth)
             const left = Math.floor(0 / tileWidth)
-            const right = Math.floor((0 + halfWidth) / tileWidth)
+            const right = Math.floor(width / tileWidth)
 
             updateChunks({ top, down, left, right })
         }
@@ -173,16 +171,16 @@ const getCameraEdges = (direction: string, mapWidth: number, mapHeight: number) 
         break;        
         case 'topLeft':{
             const top = Math.floor(0 / tileWidth)
-            const down = Math.floor((0 + halfHeight) / tileWidth)
+            const down = Math.floor(height / tileWidth)
             const left = Math.floor(0 / tileWidth)
-            const right = Math.floor((0 + halfWidth) / tileWidth)
+            const right = Math.floor(width / tileWidth)
 
             updateChunks({ top, down, left, right })
         }
         break;
         case 'topRight':{
             const top = Math.floor(0 / tileWidth)
-            const down = Math.floor((0 + halfHeight) / tileWidth)
+            const down = Math.floor(height / tileWidth)
             const left = Math.floor((mapWidth - width) / tileWidth)
             const right = Math.floor(mapWidth / tileWidth)
 
@@ -193,7 +191,7 @@ const getCameraEdges = (direction: string, mapWidth: number, mapHeight: number) 
             const top = Math.floor((mapHeight - height) / tileWidth)
             const down = Math.floor(mapHeight / tileWidth)
             const left = Math.floor(0 / tileWidth)
-            const right = Math.floor((0 + halfWidth) / tileWidth)
+            const right = Math.floor(width / tileWidth)
 
             updateChunks({ top, down, left, right })
         }
@@ -212,40 +210,78 @@ const getCameraEdges = (direction: string, mapWidth: number, mapHeight: number) 
 
 const updateChunks = (camera: {top: number, down: number, left: number, right: number}) => {
     // Get the distance between the player and the camera edge
-    const { chunkSize } = store.get(setting)
+    // const { chunkSize } = getOptionValue()
 
     const { top, down, left, right } = camera
 
-    const cT = Math.floor(top / chunkSize) - chunkMargin
-    const cD = Math.floor(down / chunkSize) + chunkMargin
-    const cL = Math.floor(left / chunkSize) - chunkMargin
-    const cR = Math.floor(right / chunkSize) + chunkMargin   
+    const cT = top - chunkMargin
+    const cD = down + chunkMargin
+    const cL = left - chunkMargin
+    const cR = right + chunkMargin   
     
-    const needed = new Set()
+    const needed: string[] = []
 
     for (let cy = cT; cy <= cD; cy++) {
         for (let cx = cL; cx <= cR; cx++) {
-            needed.add(`${cx},${cy}`)
-            activateChunk(cx, cy)
+            const active = activateChunk(cx, cy)
+            if(active) needed.push(`${cx},${cy}`)
         }
     }    
+
+    // Deactivate chunks outside of margins    
+    deactivateChunk(needed)
 }
 // #endregion
 
 const activateChunk = (x: number, y:number) => {
-    const { chunks } = store.get(gameState)
-    const { tileWidth } = store.get(setting)
-    const key = `${x},${y}`
-    const chunk = chunks.get(key)
+    const { chunks } = getGameStoreValue()
+    const { tileWidth } = getOptionValue()
+    const copyChunks = JSON.parse(JSON.stringify(chunks, (key, value) => {
+        console.log(key + ': '+ value)
+        return value
+    }))
+    const chunk = copyChunks[`${x},${y}`]
 
-    if(!chunk || chunk.active) return
+    if(!chunk || chunk.active) return false
 
     chunk.active = true
 
     for(const prop of chunk.props){
         const obj = spawnObject(prop, tileWidth)
-        chunk.objects.push(obj as GameObj)
+        if(obj) chunk.objects.push(obj.pos)
     }
+
+    // Update stored chunk
+    gameStore.set(gameState, (prev) => ({
+        ...prev,
+        chunks: copyChunks
+    }))
+    return true
+}
+
+const deactivateChunk = (activatedChunks: string[]) => {
+    const { chunks } = getGameStoreValue()
+    const copyChunks = JSON.parse(JSON.stringify(chunks))
+
+    const chunksOutSide : Record<string, chunk> = {}
+    Object.entries(copyChunks).filter(([key, value]) => {
+        if(!activatedChunks.find(a => a === key)){
+            chunksOutSide[key] = copyChunks[key]
+        }
+    })
+
+    for(const pos in chunksOutSide){
+        chunksOutSide[pos].active = false
+        chunksOutSide[pos].props.forEach((prop, index) => {
+            //
+        })
+    }
+
+    // Update stored chunk
+    gameStore.set(gameState, (prev) => ({
+        ...prev,
+        chunks: copyChunks
+    }))    
 }
 
 const spawnObject = (prop: prop, tileWidth: number) => {
@@ -259,7 +295,9 @@ const spawnObject = (prop: prop, tileWidth: number) => {
                 body({ isStatic: true }),
                 {
                     broken: prop.broken
-                }
+                },
+                // Tags
+                "pot"
             ])
         case 'chest':
 

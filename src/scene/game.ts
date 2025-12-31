@@ -190,7 +190,7 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, name: st
         // Refernce: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Left_shift#using_left_shift
         await getWallEdges(level, tileWidth)   
         await setChunks()          
-        // initPlayer(level, entrance, tileWidth)
+        initPlayer(level, entrance, tileWidth)
     }
 }  
 
@@ -368,6 +368,7 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
 const setChunks = async() => {
     const { props, chunks } = getGameStoreValue()
     const { chunkSize, tileWidth } = store.get(setting)
+    const copyChunks = JSON.parse(JSON.stringify(chunks))
 
     console.log('props', props)
 
@@ -379,10 +380,8 @@ const setChunks = async() => {
 
         const key = `${tileToChunk.x},${tileToChunk.y}`
 
-        const copyMap = JSON.parse(JSON.stringify(chunks))
-
-        if(chunks[`${key}`] === undefined){
-            copyMap[`${key}`] = {
+        if(chunks[key] === undefined){
+            copyChunks[key] = {
                 x: tileToChunk.x,
                 y: tileToChunk.y,
                 props: [],
@@ -391,13 +390,13 @@ const setChunks = async() => {
             }
         }
 
-        copyMap[`${key}`].props.push(prop)
-
-        gameStore.set(gameState, prev => ({
-            ...prev,
-            chunks: copyMap
-        }))     
+        copyChunks[key].props.push(prop)   
     })
+
+    gameStore.set(gameState, prev => ({
+        ...prev,
+        chunks: copyChunks
+    }))      
 }
 
 // const removeDuplicateEdges = (edgeList: {x: number, y: number}[], listToCheck: {x: number, y: number}[], listDirection: string, checkDirection: string) => {

@@ -40,6 +40,9 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         area({ shape: new Rect(vec2(0), map.tileWidth, map.tileWidth) }),
         // Position relative to the player
         pos(0, player.height),
+        // Attributes
+        // Tags
+        "player"
     ])
 
     setCameraPosition(player, mapWidth, mapHeight)

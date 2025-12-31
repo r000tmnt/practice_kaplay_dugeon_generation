@@ -1,4 +1,4 @@
-import { atom } from "jotai";
+import { atom, createStore } from "jotai";
 
 export const setting = atom({
     width: 1280,
@@ -23,4 +23,15 @@ export const setting = atom({
             perFloorChance: 0.1,
         }
     }
+})
+
+export const optionStore = createStore()
+
+export const getOptionValue = () => {
+    return optionStore.get(setting)
+}
+
+optionStore.sub(setting, () => {
+    const newValue = getOptionValue()
+    console.log('optionStore update ', newValue)
 })

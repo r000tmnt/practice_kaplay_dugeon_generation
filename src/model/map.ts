@@ -32,7 +32,7 @@ interface chunk {
     y: number,
     props: prop[],
     active: boolean,
-    objects: GameObj[]
+    objects: {x:number, y:number}[]
 }
 
 export type {
