@@ -47,9 +47,6 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
     setCameraPosition(player, mapWidth, mapHeight)
 
-    // Enable control
-    setData('ready', true)    
-
     // #region Player control
     player.onUpdate(() => {
         if(!getData('ready', false)) return
