@@ -21,7 +21,7 @@ const {
     vec2
 } = k
 
-const chunkMargin = 5
+const chunkMargin = 1
 
 // #region Camera position
 export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: number) => {
@@ -210,26 +210,29 @@ const getCameraEdges = (direction: string, mapWidth: number, mapHeight: number) 
 
 const updateChunks = (camera: {top: number, down: number, left: number, right: number}) => {
     // Get the distance between the player and the camera edge
-    // const { chunkSize } = getOptionValue()
+    const { chunkSize } = getOptionValue()
 
     const { top, down, left, right } = camera
 
-    const cT = top - chunkMargin
-    const cD = down + chunkMargin
-    const cL = left - chunkMargin
-    const cR = right + chunkMargin   
+    const cT = Math.floor(top / chunkSize) - chunkMargin
+    const cD = Math.floor(down / chunkSize) + chunkMargin
+    const cL = Math.floor(left / chunkSize) - chunkMargin
+    const cR = Math.floor(right / chunkSize) + chunkMargin   
     
     const needed: string[] = []
 
     for (let cy = cT; cy <= cD; cy++) {
         for (let cx = cL; cx <= cR; cx++) {
             const active = activateChunk(cx, cy)
+            // console.log(active)
             if(active) needed.push(`${cx},${cy}`)
         }
     }    
 
-    // Deactivate chunks outside of margins    
-    deactivateChunk(needed)
+    // Deactivate chunks outside of margins
+    if(needed.length) deactivateChunk(needed)
+    // Enable control
+    else setData('ready', true)    
 }
 // #endregion
 
@@ -237,30 +240,41 @@ const activateChunk = (x: number, y:number) => {
     const { chunks } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
     const copyChunks = JSON.parse(JSON.stringify(chunks, (key, value) => {
-        console.log(key + ': '+ value)
+        // console.log(key + ': '+ value)
         return value
     }))
     const chunk = copyChunks[`${x},${y}`]
 
-    if(!chunk || chunk.active) return false
+    if(!chunk || chunk.active || chunk.props.length === chunk.objects.length){
+        return false
+    }else{
+        chunk.active = true
 
-    chunk.active = true
+        for(const prop of chunk.props){
+            // Check if object exist
+            const pot = get('pot').find(pot => {
+                            return (pot.pos.x / tileWidth) === prop.x && (pot.pos.y / tileWidth) === prop.y
+                        })
+            if(!pot){
+                const obj = spawnObject(prop, tileWidth)
+                if(obj) chunk.objects.push(obj.pos)            
+            }
+        }
 
-    for(const prop of chunk.props){
-        const obj = spawnObject(prop, tileWidth)
-        if(obj) chunk.objects.push(obj.pos)
+        copyChunks[`${x},${y}`] = chunk
+
+        // Update stored chunk
+        gameStore.set(gameState, (prev) => ({
+            ...prev,
+            chunks: copyChunks
+        }))
+        return true        
     }
-
-    // Update stored chunk
-    gameStore.set(gameState, (prev) => ({
-        ...prev,
-        chunks: copyChunks
-    }))
-    return true
 }
 
 const deactivateChunk = (activatedChunks: string[]) => {
     const { chunks } = getGameStoreValue()
+    const { tileWidth }= getOptionValue()
     const copyChunks = JSON.parse(JSON.stringify(chunks))
 
     const chunksOutSide : Record<string, chunk> = {}
@@ -272,16 +286,31 @@ const deactivateChunk = (activatedChunks: string[]) => {
 
     for(const pos in chunksOutSide){
         chunksOutSide[pos].active = false
-        chunksOutSide[pos].props.forEach((prop, index) => {
-            //
+        chunksOutSide[pos].props.forEach((prop) => {
+            switch(prop.type){
+                case 'pot':{
+                    const pots = get('pot')
+                    const pot = pots.find(pot => {
+                        return (pot.pos.x / tileWidth) === prop.x && (pot.pos.y / tileWidth) === prop.y
+                    })
+                    pot?.destroy()
+                }
+                break;
+            }
         })
+        chunksOutSide[pos].objects.splice(0)
     }
 
-    // Update stored chunk
-    gameStore.set(gameState, (prev) => ({
-        ...prev,
-        chunks: copyChunks
-    }))    
+    if(Object.entries(chunksOutSide).length){
+        // Update stored chunk
+        gameStore.set(gameState, (prev) => ({
+            ...prev,
+            chunks: { ...copyChunks, ...chunksOutSide }
+        }))         
+    }
+
+    // Enable control
+    setData('ready', true)        
 }
 
 const spawnObject = (prop: prop, tileWidth: number) => {
