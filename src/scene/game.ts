@@ -374,8 +374,8 @@ const setChunks = async() => {
 
     props.forEach(prop => {
         const tileToChunk = {
-            x: Math.floor((prop.x * tileWidth) / chunkSize ),
-            y: Math.floor((prop.y * tileWidth) / chunkSize )
+            x: Math.floor(prop.x / chunkSize ),
+            y: Math.floor(prop.y / chunkSize )
         }
 
         const key = `${tileToChunk.x},${tileToChunk.y}`
