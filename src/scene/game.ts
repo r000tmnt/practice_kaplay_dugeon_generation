@@ -24,6 +24,7 @@ const {
     getLayers,
     layer,
     loadSprite,
+    loadSpriteAtlas,
     opacity,
     pos,
     Polygon,
@@ -52,15 +53,9 @@ export default function initGame(){
         //     sliceY: 2
         // })
 
-        loadSprite('player', 'player/demo_player_idle.png', {
-            sliceX: 3,
-            sliceY: 3,
-            anims: {
-                walk: { from: 3, to: 5, loop: true }
-            }
-        })
+        loadSpriteAtlas('player/demo_player_spritesheet.png', 'player/demo_player_spritesheet.json')
 
-        loadSprite('pot', 'map/demo_pot.png', {
+        loadSprite('pot', 'map/demo_pot_16x16.png', {
             sliceX: 2,
             sliceY: 2,
             anims: {
