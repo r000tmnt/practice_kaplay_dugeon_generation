@@ -10,23 +10,29 @@ import { setCameraPosition } from './camera';
 
 const {
     area,
+    anchor,
     body,
     getData,
     isKeyDown,
     pos,
     Rect,
+    rotate,
     setData,
     sprite,
     vec2
 } = k
 
 export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth: number, mapHeight: number,) => {
-    console.log(x, y)
+    // console.log(x, y)
+    const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
     const player = map.add([
-        sprite("player"), 
-        area(),
+        sprite("player", {
+            frame: 7
+        }), 
+        anchor('center'),
+        area({ shape: new Rect(vec2(0), map.tileWidth, map.tileWidth) }),
         body(),
-        pos(x * map.tileWidth, y * map.tileWidth),
+        pos((x * map.tileWidth) + (sizeWithPadding / 2), (y * map.tileWidth) + (sizeWithPadding / 2)),
         {
             speed: 100,
         },
@@ -35,15 +41,9 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
     ]);
     console.log('player', player)
 
-    // Add an invisible area for the player
-    player.add([
-        area({ shape: new Rect(vec2(0), map.tileWidth, map.tileWidth) }),
-        // Position relative to the player
-        pos(0, player.height),
-        // Attributes
-        // Tags
-        "player"
-    ])
+    // player.onAnimStart((anim: string) => {
+    //     console.log(anim)
+    // })
 
     setCameraPosition(player, mapWidth, mapHeight)
 
@@ -51,64 +51,77 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
     player.onUpdate(() => {
         if(!getData('ready', false)) return
 
+        const currentAnim = player.getCurAnim()
+
+        // console.log(currentAnim)
+
         if(!isKeyDown()){
-            player.stop()
-            // setCameraPosition(mapWidth, mapHeight)
-        }        
+            switch(currentAnim?.name){
+                case 'attack':
+                    // if(currentAnim.frameIndex === 0){
+                    //     player.width = 41
+                    //     player.height = 58
+                    // }
+
+                    // if(currentAnim.frameIndex === 1){
+                    //     player.width = 53
+                    //     player.height = 58
+                    // }
+                    
+                    // if(currentAnim.frameIndex === 2){
+                    //     player.width = 52
+                    //     player.height = 48
+                    // }                      
+                break;
+                default:
+                    player.stop()
+                break;
+            }
+        }
 
         if (isKeyDown("left") && !isKeyDown([ "right", "up", "down" ])){
             setCameraPosition(player, mapWidth, mapHeight)
-            if(player.getCurAnim()?.name !== 'walk') player.play("walk")
+            if(currentAnim?.name !== 'walk') player.play("walk")
             player.flipX = false
 
             const wPos = player.worldPos()
             if(wPos && wPos.x > 0 ) player.move(-player.speed, 0)
-            // Move the invisible area
-            player.children[0].pos.x = -map.tileWidth
-            player.children[0].pos.y = (player.height - map.tileWidth)
-                
-            // checkStep(player)
         }
         
         if (isKeyDown("right") && !isKeyDown([ "left", "up", "down" ])){
             setCameraPosition(player, mapWidth, mapHeight)
-            if(player.getCurAnim()?.name !== 'walk') player.play("walk")
+            if(currentAnim?.name !== 'walk') player.play("walk")
             player.flipX = true
 
             const wPos = player.worldPos()
             if(wPos && (wPos.x + player.width) < mapWidth ) player.move(player.speed, 0)
-            // Move the invisible area
-            player.children[0].pos.x = player.width
-            player.children[0].pos.y = (player.height - map.tileWidth)                
-
-            // checkStep(player)
         }        
 
         if (isKeyDown("up") && !isKeyDown([ "right", "left", "down" ])){
             setCameraPosition(player, mapWidth, mapHeight)
-            if(player.getCurAnim()?.name !== 'walk') player.play("walk")
+            if(currentAnim?.name !== 'walk') player.play("walk")
 
             const wPos = player.worldPos()
             if(wPos && wPos.y > 0 ) player.move(0, -player.speed)
-            // Move the invisible area
-            player.children[0].pos.x = 0
-            player.children[0].pos.y = -map.tileWidth                
-
-            // checkStep(player)
         }     
         
         if (isKeyDown("down") && !isKeyDown([ "right", "up", "left" ])){
             setCameraPosition(player, mapWidth, mapHeight)
-            if(player.getCurAnim()?.name !== 'walk') player.play("walk")
+            if(currentAnim?.name !== 'walk') player.play("walk")
 
             const wPos = player.worldPos()
             if(wPos && (wPos.y + player.height) < mapHeight ) player.move(0, player.speed)
-            // Move the invisible area
-            player.children[0].pos.x = 0
-            player.children[0].pos.y = player.height              
-
-            // checkStep(player)
         }     
+
+        if (isKeyDown('z')){
+            if(currentAnim?.name !== 'attack') {
+                player.play("attack", {
+                    onEnd: () => {
+                        player.frame = 0
+                    }
+                })                
+            }
+        }
     })  
     // #endregion  
 }
