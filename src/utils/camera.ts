@@ -316,24 +316,36 @@ const spawnObject = (prop: prop, tileWidth: number) => {
     const map = get('map')
     switch(prop.type){
         case 'pot':
-            return map[0].add([
-                sprite('pot'),
-                pos(prop.x * tileWidth, prop.y * tileWidth),
-                area(),
-                body({ isStatic: true }),
-                {
-                    broken: prop.broken,
-                    // item: {
-                    //         credit: {
-                    //             min: 1,
-                    //             max: 10
-                    //         },
+            if(prop.broken){
+                return map[0].add([
+                    sprite('pot', { frame: 2 }),
+                    pos(prop.x * tileWidth, prop.y * tileWidth),
+                    area(),
+                    {
+                        broken: prop.broken,
+                    },
+                    // Tags
+                    "pot"
+                ])
+            }else
+                return map[0].add([
+                    sprite('pot'),
+                    pos(prop.x * tileWidth, prop.y * tileWidth),
+                    area(),
+                    body({ isStatic: true }),
+                    {
+                        broken: prop.broken,
+                        // item: {
+                        //         credit: {
+                        //             min: 1,
+                        //             max: 10
+                        //         },
 
-                    //     }
-                },
-                // Tags
-                "pot"
-            ])
+                        //     }
+                    },
+                    // Tags
+                    "pot"
+                ])
         case 'chest':
 
         break;
