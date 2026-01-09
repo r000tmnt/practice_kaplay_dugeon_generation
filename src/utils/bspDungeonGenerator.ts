@@ -29,8 +29,8 @@ import { setting } from '../store/setting';
 import { gameState, gameStore, getGameStoreValue } from "../store/game";
 const store = createStore()
 
-const MAP_WIDTH = 35;
-const MAP_HEIGHT = 25;
+const MAP_WIDTH = 60;
+const MAP_HEIGHT = 40;
 const MIN_LEAF_SIZE = 12;
 const MAX_LEAF_SIZE = 24;
 const MIN_ROOM_SIZE = 6;
@@ -449,6 +449,8 @@ const placeChest = (roomId: number, tiles: {x: number, y: number}[]) => {
         }))
     }
 }
+
+// const placeEnemy = () => {}
 
 const getFloorTiles = (grid: number[][], room: room) => {
     const tiles =[]
