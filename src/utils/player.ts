@@ -10,11 +10,13 @@ import { createHitBox } from './hitBox'
 // const store = createStore()
 
 const {
+    add,
     area,
     anchor,
     body,
     getData,
     isKeyDown,
+    layer,
     pos,
     Rect,
     // rotate,
@@ -26,13 +28,14 @@ const {
 export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth: number, mapHeight: number,) => {
     // console.log(x, y)
     const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
-    const player = map.add([
+    const player = add([
         sprite("player", {
             frame: 7
         }), 
         anchor('center'),
         area({ shape: new Rect(vec2(0), map.tileWidth, map.tileWidth) }),
         body(),
+        layer('game'),
         pos((x * map.tileWidth) + (sizeWithPadding / 2), (y * map.tileWidth) + (sizeWithPadding / 2)),
         {
             speed: 100,
@@ -64,7 +67,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
         switch(currentAnim?.name){
             case 'attack':
-                if(!player.get('attack').length) createHitBox(player, player.direction, currentAnim)         
+                if(!player.get('attack').length && currentAnim.frameIndex === 2) createHitBox(player, player.direction, currentAnim)         
             break;
             default:
                 //
@@ -114,6 +117,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                 player.play("attack", {
                     onEnd: () => {
                         player.frame = 0
+                        console.log('animation end')
                         // Destroy hitBoxes
                         const hitBoxes = player.get('hitBox')
                         hitBoxes.forEach(hitBox => hitBox.destroy())
