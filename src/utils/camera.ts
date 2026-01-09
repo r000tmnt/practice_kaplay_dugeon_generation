@@ -10,15 +10,15 @@ const {
     area,
     body,
     get,
-    getData,
+    // getData,
     getCamPos,
-    isKeyDown,
+    // isKeyDown,
     pos,
-    Rect,
+    // Rect,
     setData,
     sprite,
     setCamPos,
-    vec2
+    // vec2
 } = k
 
 const chunkMargin = 1
@@ -46,7 +46,7 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
     
     // Camera follows player
     if(inX && inY){
-        console.log('camera follows player')
+        // console.log('camera follows player')
         setCamPos(player.pos)
         getCameraEdges('middle', mapWidth, mapHeight)
     }
@@ -54,14 +54,14 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
     if(inX && !inY){
         // Reached top?
         if((wPos.y - middleY) <= 0){
-            console.log('camera top')
+            // console.log('camera top')
             setCamPos(wPos.x, middleY)
             getCameraEdges('top', mapWidth, mapHeight)
         }
 
         // Reached down?
         if((wPos.y + middleY) >= mapHeight){
-            console.log('camera down')
+            // console.log('camera down')
             setCamPos(wPos.x, mapHeight - middleY)
             getCameraEdges('down', mapWidth, mapHeight)
         }
@@ -70,14 +70,14 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
     if(!inX && inY){
         // Reached right?
         if((wPos.x + middleX) >= mapWidth){
-            console.log('camera right')
+            // console.log('camera right')
             setCamPos(mapWidth - middleX, wPos.y)
             getCameraEdges('right', mapWidth, mapHeight)
         }
 
         // Reached left?
         if((wPos.x - middleX) <= 0){
-            console.log('camera left')
+            // console.log('camera left')
             setCamPos(middleX, wPos.y)
             getCameraEdges('left', mapWidth, mapHeight)
         }
@@ -93,21 +93,21 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
 
         // Reached down right?
         if((wPos.y + middleY) >= mapHeight && (wPos.x + middleX) >= mapWidth){
-            console.log('camera down right')
+            // console.log('camera down right')
             setCamPos(mapWidth - middleX, mapHeight - middleY)
             getCameraEdges('downRight', mapWidth, mapHeight)
         }
 
         // Reached down left?
         if((wPos.y + middleY) >= mapHeight && (wPos.x - middleX) <= 0){
-            console.log('camera down left')
+            // console.log('camera down left')
             setCamPos(middleX, mapHeight - middleY)
             getCameraEdges('downLeft', mapWidth, mapHeight)
         }
         
         // Reached top left?
         if((wPos.y - middleY) <= 0 && (wPos.x - middleX) <= 0){
-            console.log('camera top left')
+            // console.log('camera top left')
             setCamPos(middleX, middleY)
             getCameraEdges('topLeft', mapWidth, mapHeight)
         }
@@ -218,31 +218,25 @@ const updateChunks = (camera: {top: number, down: number, left: number, right: n
     const cD = Math.floor(down / chunkSize) + chunkMargin
     const cL = Math.floor(left / chunkSize) - chunkMargin
     const cR = Math.floor(right / chunkSize) + chunkMargin   
-    
-    const needed: string[] = []
 
     for (let cy = cT; cy <= cD; cy++) {
         for (let cx = cL; cx <= cR; cx++) {
-            const active = activateChunk(cx, cy)
-            // console.log(active)
-            if(active) needed.push(`${cx},${cy}`)
+            activateChunk(cx, cy)
+            // Deactivate chunks outside of margins  
         }
     }    
-
-    // Deactivate chunks outside of margins
-    if(needed.length) deactivateChunk(needed)
+    // console.log('loop finish')
+    // console.log('pots', get('map')[0].get('pot'))
+    deactivateChunk(cT, cD, cL, cR)      
     // Enable control
-    else setData('ready', true)    
+    setData('ready', true)    
 }
 // #endregion
 
 const activateChunk = (x: number, y:number) => {
     const { chunks } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
-    const copyChunks = JSON.parse(JSON.stringify(chunks, (key, value) => {
-        // console.log(key + ': '+ value)
-        return value
-    }))
+    const copyChunks = JSON.parse(JSON.stringify(chunks))
     const chunk = copyChunks[`${x},${y}`]
 
     if(!chunk || chunk.active || chunk.props.length === chunk.objects.length){
@@ -252,9 +246,11 @@ const activateChunk = (x: number, y:number) => {
 
         for(const prop of chunk.props){
             // Check if object exist
-            const pot = get('pot').find(pot => {
+            const map = get('map')[0]
+            const pot = map.get('pot').find(pot => {
                             return (pot.pos.x / tileWidth) === prop.x && (pot.pos.y / tileWidth) === prop.y
                         })
+            console.log('pot created', pot)
             if(!pot){
                 const obj = spawnObject(prop, tileWidth)
                 if(obj) chunk.objects.push(obj.pos)            
@@ -272,34 +268,37 @@ const activateChunk = (x: number, y:number) => {
     }
 }
 
-const deactivateChunk = (activatedChunks: string[]) => {
+const deactivateChunk = (top: number, down:number, left: number, right: number) => {
+    console.log(top, down, left, right)
     const { chunks } = getGameStoreValue()
     const { tileWidth }= getOptionValue()
     const copyChunks = JSON.parse(JSON.stringify(chunks))
 
+    // const activatedChunks: string[] = []
     const chunksOutSide : Record<string, chunk> = {}
-    Object.entries(copyChunks).filter(([key, value]) => {
-        if(!activatedChunks.find(a => a === key)){
-            chunksOutSide[key] = copyChunks[key]
+
+    Object.entries(copyChunks).forEach(([key, value]) => {
+        const [x, y] = key.split(',')
+
+        if(Number(x) < left || Number(x) > right || Number(y) < top || Number(y) > down){
+            chunksOutSide[key] = value as chunk
+            chunksOutSide[key].active = false
+            chunksOutSide[key].props.forEach((prop) => {
+                switch(prop.type){
+                    case 'pot':{
+                        const map = get('map')[0]
+                        const pot = map.get('pot').find(pot => {
+                            return (pot.pos.x / tileWidth) === prop.x && (pot.pos.y / tileWidth) === prop.y
+                        })
+                        console.log('find pot to destroy', pot)
+                        pot?.destroy()
+                    }
+                    break;
+                }
+            })
+            chunksOutSide[key].objects.splice(0)            
         }
     })
-
-    for(const pos in chunksOutSide){
-        chunksOutSide[pos].active = false
-        chunksOutSide[pos].props.forEach((prop) => {
-            switch(prop.type){
-                case 'pot':{
-                    const pots = get('pot')
-                    const pot = pots.find(pot => {
-                        return (pot.pos.x / tileWidth) === prop.x && (pot.pos.y / tileWidth) === prop.y
-                    })
-                    pot?.destroy()
-                }
-                break;
-            }
-        })
-        chunksOutSide[pos].objects.splice(0)
-    }
 
     if(Object.entries(chunksOutSide).length){
         // Update stored chunk
@@ -310,7 +309,7 @@ const deactivateChunk = (activatedChunks: string[]) => {
     }
 
     // Enable control
-    setData('ready', true)        
+    // setData('ready', true)        
 }
 
 const spawnObject = (prop: prop, tileWidth: number) => {
@@ -323,7 +322,14 @@ const spawnObject = (prop: prop, tileWidth: number) => {
                 area(),
                 body({ isStatic: true }),
                 {
-                    broken: prop.broken
+                    broken: prop.broken,
+                    // item: {
+                    //         credit: {
+                    //             min: 1,
+                    //             max: 10
+                    //         },
+
+                    //     }
                 },
                 // Tags
                 "pot"
