@@ -48,7 +48,8 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
         pos(size.x, size.y),
         rotate(size.angle),
         // Tags
-        "hitBox"
+        "hitBox",
+        anim.name
     ])
 
     setCollision(hitBox, anim)

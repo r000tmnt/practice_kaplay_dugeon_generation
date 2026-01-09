@@ -57,14 +57,14 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
         // console.log(currentAnim)
 
-        if(!isKeyDown() && !currentAnim ){
+        if(!isKeyDown() && currentAnim?.name === 'walk'){
             player.stop()
             player.frame = 0
         }
 
         switch(currentAnim?.name){
             case 'attack':
-                createHitBox(player, player.direction, currentAnim)         
+                if(!player.get('attack').length) createHitBox(player, player.direction, currentAnim)         
             break;
             default:
                 //
