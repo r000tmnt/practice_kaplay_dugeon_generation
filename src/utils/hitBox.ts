@@ -1,10 +1,12 @@
 import type { GameObj, SpriteCurAnim } from "kaplay";
 import k  from '../lib/kaplay'
+import { gameState, gameStore, getGameStoreValue } from '../store/game';
 import { setting, getOptionValue } from '../store/setting';
 
 const { 
     area,
     anchor,
+    get,
     Rect,
     pos,
     rotate,
@@ -58,17 +60,22 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
 }
 
 const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
+    const { props } = getGameStoreValue()
+    const { tileWidth } = getOptionValue()
+
     hitBox.onCollide('pot', (obj: GameObj) => {
         console.log(obj)
-        // console.log(col)
-
-        if(anim.name === 'attack' && anim.frameIndex === 2){
-            if(!obj.break){
-                obj.break = true
-                obj.play('break')   
-                // Drop items              
-            }
-        }
+        obj.broken = true
+        obj.play('break')  
+        obj.unuse('body')
+        // Update props
+        const pot = props.findIndex(prop => prop.type === 'pot' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
+        props[pot].broken = true
+        gameStore.set(gameState, prve => ({
+            ...prve,
+            props: props
+        }))
+        // Drop items         
 
         // And more
     })      
