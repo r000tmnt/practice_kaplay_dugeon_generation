@@ -2,6 +2,7 @@ import k from '../lib/kaplay'
 import type { GameObj} from "kaplay";
 
 import { setCameraPosition } from './camera';
+import { createHitBox } from './hitBox'
 
 // Store
 // import { createStore } from 'jotai'
@@ -16,8 +17,8 @@ const {
     isKeyDown,
     pos,
     Rect,
-    rotate,
-    setData,
+    // rotate,
+    // setData,
     sprite,
     vec2
 } = k
@@ -35,6 +36,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         pos((x * map.tileWidth) + (sizeWithPadding / 2), (y * map.tileWidth) + (sizeWithPadding / 2)),
         {
             speed: 100,
+            direction: 'left',
         },
         // tags
         "player"
@@ -55,31 +57,22 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
         // console.log(currentAnim)
 
-        if(!isKeyDown()){
-            switch(currentAnim?.name){
-                case 'attack':
-                    // if(currentAnim.frameIndex === 0){
-                    //     player.width = 41
-                    //     player.height = 58
-                    // }
-
-                    // if(currentAnim.frameIndex === 1){
-                    //     player.width = 53
-                    //     player.height = 58
-                    // }
-                    
-                    // if(currentAnim.frameIndex === 2){
-                    //     player.width = 52
-                    //     player.height = 48
-                    // }                      
-                break;
-                default:
-                    player.stop()
-                break;
-            }
+        if(!isKeyDown() && !currentAnim ){
+            player.stop()
+            player.frame = 0
         }
 
+        switch(currentAnim?.name){
+            case 'attack':
+                createHitBox(player, player.direction, currentAnim)         
+            break;
+            default:
+                //
+            break;
+        }        
+
         if (isKeyDown("left") && !isKeyDown([ "right", "up", "down" ])){
+            player.direction = 'left'
             setCameraPosition(player, mapWidth, mapHeight)
             if(currentAnim?.name !== 'walk') player.play("walk")
             player.flipX = false
@@ -89,6 +82,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         }
         
         if (isKeyDown("right") && !isKeyDown([ "left", "up", "down" ])){
+            player.direction = 'right'
             setCameraPosition(player, mapWidth, mapHeight)
             if(currentAnim?.name !== 'walk') player.play("walk")
             player.flipX = true
@@ -98,6 +92,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         }        
 
         if (isKeyDown("up") && !isKeyDown([ "right", "left", "down" ])){
+            player.direction = 'top'
             setCameraPosition(player, mapWidth, mapHeight)
             if(currentAnim?.name !== 'walk') player.play("walk")
 
@@ -106,6 +101,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         }     
         
         if (isKeyDown("down") && !isKeyDown([ "right", "up", "left" ])){
+            player.direction = 'down'
             setCameraPosition(player, mapWidth, mapHeight)
             if(currentAnim?.name !== 'walk') player.play("walk")
 
@@ -118,8 +114,11 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                 player.play("attack", {
                     onEnd: () => {
                         player.frame = 0
+                        // Destroy hitBoxes
+                        const hitBoxes = player.get('hitBox')
+                        hitBoxes.forEach(hitBox => hitBox.destroy())
                     }
-                })                
+                })
             }
         }
     })  
