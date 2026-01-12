@@ -61,7 +61,6 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         // console.log(currentAnim)
 
         if(!isKeyDown() && currentAnim?.name === 'walk'){
-            player.stop()
             player.frame = 0
         }
 
@@ -69,62 +68,59 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
             case 'attack':
                 if(!player.get('attack').length && currentAnim.frameIndex === 2) createHitBox(player, player.direction, currentAnim)         
             break;
-            default:
-                //
+            default: {
+                // Reference: https://jslegenddev.substack.com/p/how-to-fix-diagonal-movement-in-2d
+                const diagonalFactor = vec2(0, 0)
+
+                if (isKeyDown("left")){
+                    player.direction = 'left'
+                    setCameraPosition(player, mapWidth, mapHeight)
+                    if(currentAnim?.name !== 'walk') player.play("walk")
+                    player.flipX = false
+                    diagonalFactor.x = -1
+                }
+                
+                if (isKeyDown("right")){
+                    player.direction = 'right'
+                    setCameraPosition(player, mapWidth, mapHeight)
+                    if(currentAnim?.name !== 'walk') player.play("walk")
+                    player.flipX = true
+                    diagonalFactor.x = 1
+                }        
+
+                if (isKeyDown("up")){
+                    player.direction = 'top'
+                    setCameraPosition(player, mapWidth, mapHeight)
+                    if(currentAnim?.name !== 'walk') player.play("walk")
+                    diagonalFactor.y = -1
+                }     
+                
+                if (isKeyDown("down")){
+                    player.direction = 'down'
+                    setCameraPosition(player, mapWidth, mapHeight)
+                    if(currentAnim?.name !== 'walk') player.play("walk")
+                    diagonalFactor.y = 1
+                }     
+
+                const unitVector = diagonalFactor.unit()
+                player.move(unitVector.scale(player.speed))
+
+                if (isKeyDown('z')){
+                    if(currentAnim?.name !== 'attack') {
+                        player.play("attack", {
+                            onEnd: () => {
+                                player.frame = 0
+                                console.log('animation end')
+                                // Destroy hitBoxes
+                                const hitBoxes = player.get('hitBox')
+                                hitBoxes.forEach(hitBox => hitBox.destroy())
+                            }
+                        })
+                    }
+                }                
+            }
             break;
         }        
-
-        if (isKeyDown("left") && !isKeyDown([ "right", "up", "down" ])){
-            player.direction = 'left'
-            setCameraPosition(player, mapWidth, mapHeight)
-            if(currentAnim?.name !== 'walk') player.play("walk")
-            player.flipX = false
-
-            const wPos = player.worldPos()
-            if(wPos && wPos.x > 0 ) player.move(-player.speed, 0)
-        }
-        
-        if (isKeyDown("right") && !isKeyDown([ "left", "up", "down" ])){
-            player.direction = 'right'
-            setCameraPosition(player, mapWidth, mapHeight)
-            if(currentAnim?.name !== 'walk') player.play("walk")
-            player.flipX = true
-
-            const wPos = player.worldPos()
-            if(wPos && (wPos.x + player.width) < mapWidth ) player.move(player.speed, 0)
-        }        
-
-        if (isKeyDown("up") && !isKeyDown([ "right", "left", "down" ])){
-            player.direction = 'top'
-            setCameraPosition(player, mapWidth, mapHeight)
-            if(currentAnim?.name !== 'walk') player.play("walk")
-
-            const wPos = player.worldPos()
-            if(wPos && wPos.y > 0 ) player.move(0, -player.speed)
-        }     
-        
-        if (isKeyDown("down") && !isKeyDown([ "right", "up", "left" ])){
-            player.direction = 'down'
-            setCameraPosition(player, mapWidth, mapHeight)
-            if(currentAnim?.name !== 'walk') player.play("walk")
-
-            const wPos = player.worldPos()
-            if(wPos && (wPos.y + player.height) < mapHeight ) player.move(0, player.speed)
-        }     
-
-        if (isKeyDown('z')){
-            if(currentAnim?.name !== 'attack') {
-                player.play("attack", {
-                    onEnd: () => {
-                        player.frame = 0
-                        console.log('animation end')
-                        // Destroy hitBoxes
-                        const hitBoxes = player.get('hitBox')
-                        hitBoxes.forEach(hitBox => hitBox.destroy())
-                    }
-                })
-            }
-        }
     })  
     // #endregion  
 }
