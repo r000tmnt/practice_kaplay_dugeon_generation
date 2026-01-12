@@ -26,7 +26,7 @@ import type { room, corridor } from "../model/map";
 // Store
 import { createStore } from 'jotai'
 import { setting } from '../store/setting';
-import { gameState, gameStore, getGameStoreValue } from "../store/game";
+import { gameState, gameStore, } from "../store/game";
 const store = createStore()
 
 const MAP_WIDTH = 60;
@@ -35,6 +35,7 @@ const MIN_LEAF_SIZE = 12;
 const MAX_LEAF_SIZE = 24;
 const MIN_ROOM_SIZE = 6;
 const MAX_ROOM_SIZE = 20;
+const CORRIDOR_WIDTH = 2;   // tiles
 
 //#region Utils
 const randBetween = (a: number, b: number) => {
@@ -70,6 +71,30 @@ const createCorridors = (leaf: Leaf) => {
 
     if (leaf.left) createCorridors(leaf.left);
     if (leaf.right) createCorridors(leaf.right);    
+}
+
+const carveHorizontal = (map: number[][], y: number, x1: number, x2: number) => {
+    const from = Math.min(x1, x2)
+    const to   = Math.max(x1, x2)
+    const half = Math.floor(CORRIDOR_WIDTH / 2)
+
+    for (let x = from; x <= to; x++) {
+        for(let dy = -half; dy < CORRIDOR_WIDTH - half; dy++){
+            if (map[y + dy] !== undefined) map[y + dy][x] = 0            
+        }
+    }
+}
+
+const carveVertical = (map: number[][], x: number, y1: number, y2: number) => {
+    const from = Math.min(y1, y2)
+    const to   = Math.max(y1, y2)
+    const half = Math.floor(CORRIDOR_WIDTH / 2)
+
+    for (let y = from; y <= to; y++) {
+        for(let dx = -half; dx < CORRIDOR_WIDTH - half; dx++){
+            if (map[y][x + dx] !== undefined) map[y][x + dx] = 0         
+        }
+    }
 }
 
 const getManhattanDistance = (a: room, b: room) => {
@@ -336,19 +361,25 @@ export const generateBSPDungeon = async() => {
 
     // Carve corridors
     leaves.forEach(leaf => {
-        leaf.corridors.forEach(c => {
-            const dx = Math.sign(c.x2 - c.x1);
-            const dy = Math.sign(c.y2 - c.y1);
+        leaf.corridors.forEach(({x1, x2, y1, y2}) => {
+            // const dx = Math.sign(c.x2 - c.x1);
+            // const dy = Math.sign(c.y2 - c.y1);
 
-            let x = c.x1;
-            let y = c.y1;
+            // let x = c.x1;
+            // let y = c.y1;
 
-            while (x !== c.x2 || y !== c.y2) {
-                grid[y][x] = 0;
-                if (x !== c.x2) x += dx;
-                if (y !== c.y2) y += dy;
+            // while (x !== c.x2 || y !== c.y2) {
+            //     grid[y][x] = 0;
+            //     if (x !== c.x2) x += dx;
+            //     if (y !== c.y2) y += dy;
+            // }
+            // grid[c.y2][c.x2] = 0;
+            if(x1 === x2){
+                carveVertical(grid, x1, y1, y2)
+            }else
+            if(y1 === y2){
+                carveHorizontal(grid, y1, x1, x2)
             }
-            grid[c.y2][c.x2] = 0;
         });
     });
 
