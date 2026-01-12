@@ -16,7 +16,7 @@ export const setting = atom({
             max: 6,
         },
         chest: {
-            perRoomChance: 0.25,
+            perRoomChance: 0.9,
             maxPerRoom: 1,
         },
         shrine: {
