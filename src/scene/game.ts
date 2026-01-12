@@ -54,6 +54,7 @@ export default function initGame(){
         // })
 
         loadSpriteAtlas('player/demo_player_spritesheet.png', 'player/demo_player_spritesheet.json')
+        loadSpriteAtlas('enemy/demo_enemy_spritesheet.png', 'enemy/demo_enemy_spritesheet.json')
 
         loadSprite('pot', 'map/demo_pot_16x16.png', {
             sliceX: 2,
@@ -62,6 +63,13 @@ export default function initGame(){
                 break: { from: 1, to: 2, loop: false }
             }
         })        
+
+        loadSprite('item', 'map/demo_item.png', {
+            sliceX: 5,
+            anims: {
+                open: { from: 3, to: 4, loop: false }
+            }
+        })
 
         setData('ready', false)
         setMap()
@@ -74,7 +82,7 @@ const setMap = async(index = 0, name = 'testMap') => {
     const {level} = store.get(gameState)
     const { tileWidth } = store.get(setting)
 
-    map = add([pos(0, 0), opacity(1), "map", { tileWidth }],)
+    map = add([pos(0, 0), opacity(1), "map", { tileWidth }])
 
     // setCamPos(map.pos.x + ((tileWidth * 16) / 2), map.pos.y + ((tileWidth * 9) / 2))
 
@@ -243,7 +251,7 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
                         pos(startX * tileWidth, (y * tileWidth) + (tileWidth - 8)),
                         area({ shape: new Rect(
                             vec2(0),
-                            (x - startX + 1) * tileWidth, 8
+                            (x - startX + 1) * tileWidth, 1
                         )}),
                         body({ isStatic: true }),
                         // opacity(0.5), // debug
@@ -272,7 +280,7 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
                         pos(startX * tileWidth, y * tileWidth),
                         area({ shape: new Rect(
                             vec2(0),
-                            (x - startX + 1) * tileWidth, 8
+                            (x - startX + 1) * tileWidth, 1
                         ) }),
                         body({ isStatic: true }),
                         // opacity(0.5), // debug
@@ -306,7 +314,7 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
                         pos(x * tileWidth, startY * tileWidth),
                         area({ shape: new Rect(
                             vec2(0),
-                            8, ((y - startY) + 1) * tileWidth
+                            1, ((y - startY) + 1) * tileWidth
                         ) }),
                         body({ isStatic: true }),
                         // opacity(0.5), // debug
@@ -340,7 +348,7 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
                         pos((x * tileWidth) + (tileWidth - 8), startY * tileWidth),
                         area({ shape:new Rect(
                             vec2(0),
-                            8, ((y - startY) + 1) * tileWidth
+                            1, ((y - startY) + 1) * tileWidth
                         ) }),
                         body({ isStatic: true }),
                         // opacity(0.5), // debug
@@ -354,10 +362,19 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
     }
   }
 
-  console.log(allEdges[0])
-  console.log(allEdges[1])
-  console.log(allEdges[2])
-  console.log(allEdges[3])
+  // Set collision
+//   const walls = map.get('wall')
+
+//   walls.forEach(wall => {
+//     wall.onCollide('player', (obj) => {
+//         console.log('wall collide with player')
+//     })
+//   })
+
+//   console.log(allEdges[0])
+//   console.log(allEdges[1])
+//   console.log(allEdges[2])
+//   console.log(allEdges[3])
 }
 
 const setChunks = async() => {
