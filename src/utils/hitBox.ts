@@ -67,6 +67,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
         console.log(obj)
         obj.broken = true
         obj.play('break')  
+        obj.unuse('area')
         obj.unuse('body')
         // Update props
         const pot = props.findIndex(prop => prop.type === 'pot' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))

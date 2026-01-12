@@ -320,7 +320,6 @@ const spawnObject = (prop: prop, tileWidth: number) => {
                 return map[0].add([
                     sprite('pot', { frame: 2 }),
                     pos(prop.x * tileWidth, prop.y * tileWidth),
-                    area(),
                     {
                         broken: prop.broken,
                     },
