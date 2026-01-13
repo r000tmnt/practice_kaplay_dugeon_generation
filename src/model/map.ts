@@ -11,6 +11,11 @@ interface room {
     }
 }
 
+interface roomNode extends room {
+    id: number,
+    connections: Set<number>
+}
+
 interface corridor {
     x1: number, 
     y1: number, 
@@ -37,6 +42,7 @@ interface chunk {
 
 export type {
     room,
+    roomNode,
     corridor,
     chunk,
     prop
