@@ -33,7 +33,7 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
     const wPos = player.worldPos()
     let inX = false, inY = false;
 
-    console.log(wPos)
+    // console.log(wPos)
 
     // Player pos relative to the game world
     if((wPos.x + middleX) <= mapWidth && (wPos.x - middleX) >= 0){ 
@@ -269,7 +269,7 @@ const activateChunk = (x: number, y:number) => {
 }
 
 const deactivateChunk = (top: number, down:number, left: number, right: number) => {
-    console.log(top, down, left, right)
+    // console.log(top, down, left, right)
     const { chunks } = getGameStoreValue()
     const { tileWidth }= getOptionValue()
     const copyChunks = JSON.parse(JSON.stringify(chunks))
@@ -284,17 +284,13 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
             chunksOutSide[key] = value as chunk
             chunksOutSide[key].active = false
             chunksOutSide[key].props.forEach((prop) => {
-                switch(prop.type){
-                    case 'pot':{
-                        const map = get('map')[0]
-                        const pot = map.get('pot').find(pot => {
-                            return (pot.pos.x / tileWidth) === prop.x && (pot.pos.y / tileWidth) === prop.y
+                const type = prop.type
+                const map = get('map')[0]
+                const target = map.get(type).find(obj => {
+                            return (obj.pos.x / tileWidth) === prop.x && (obj.pos.y / tileWidth) === prop.y
                         })
-                        console.log('find pot to destroy', pot)
-                        pot?.destroy()
-                    }
-                    break;
-                }
+                console.log('Find object to destory', target)
+                target?.destroy()
             })
             chunksOutSide[key].objects.splice(0)            
         }
@@ -320,9 +316,6 @@ const spawnObject = (prop: prop, tileWidth: number) => {
                 return map[0].add([
                     sprite('pot', { frame: 2 }),
                     pos(prop.x * tileWidth, prop.y * tileWidth),
-                    {
-                        broken: prop.broken,
-                    },
                     // Tags
                     "pot"
                 ])
@@ -346,7 +339,36 @@ const spawnObject = (prop: prop, tileWidth: number) => {
                     "pot"
                 ])
         case 'chest':
+            if(prop.open){
+                return map[0].add([
+                    sprite('item', { frame: 4 }),
+                    pos(prop.x * tileWidth, prop.y * tileWidth),
+                    {
+                        open: prop.open,
+                    },
+                    // Tags
+                    "chest"
+                ])
+            }else{
+                return map[0].add([
+                    sprite('item', { frame: 3 }),
+                    pos(prop.x * tileWidth, prop.y * tileWidth),
+                    area(),
+                    body({ isStatic: true }),
+                    {
+                        open: prop.open,
+                        // item: {
+                        //         credit: {
+                        //             min: 1,
+                        //             max: 10
+                        //         },
 
+                        //     }
+                    },
+                    // Tags
+                    "chest"
+                ])
+            }
         break;
         case 'enemy':
         
