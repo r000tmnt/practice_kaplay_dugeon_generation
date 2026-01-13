@@ -21,7 +21,7 @@ The algorithm works like this:
        → split → [ right-left ] + [ right-right ]
  */
 
-import type { room, corridor, prop } from "../model/map";
+import type { room, roomNode, corridor, prop } from "../model/map";
 
 // Store
 import { getOptionValue } from '../store/setting';
@@ -36,6 +36,7 @@ const MAX_ROOM_SIZE = 20;
 const CORRIDOR_WIDTH = 2;   // tiles
 
 const PROP: prop[] = []
+const ROOMNODES: roomNode[] = []
 
 //#region Utils
 const randBetween = (a: number, b: number) => {
@@ -65,7 +66,9 @@ const createCorridors = (leaf: Leaf) => {
             } else {
                 leaf.corridors.push({ x1: pointA.x, y1: pointA.y, x2: pointA.x, y2: pointB.y });
                 leaf.corridors.push({ x1: pointA.x, y1: pointB.y, x2: pointB.x, y2: pointB.y });
-            }            
+            }          
+            roomA.connections.add(roomB.id)     
+            roomB.connections.add(roomA.id)     
         }
     }
 
@@ -236,7 +239,7 @@ class Leaf{
     h: number;
     left: null|Leaf;
     right: null|Leaf;
-    room: null|room;
+    room: null|roomNode;
     corridors: corridor[];
 
     constructor(x: number, y: number, w: number, h: number) {
@@ -288,25 +291,37 @@ class Leaf{
         const roomX = randBetween(this.x + 1, this.x + this.w - roomW - 1);
         const roomY = randBetween(this.y + 1, this.y + this.h - roomH - 1);
 
-        this.room = { x: roomX, y: roomY, w: roomW, h: roomH, center: { 
-            x: roomX + Math.floor(roomW / 2), 
-            y: roomY + Math.floor(roomH / 2) 
-        } };
+        this.room = { 
+            id: ROOMNODES.length + 1,
+            x: roomX, 
+            y: roomY, 
+            w: roomW, 
+            h: roomH, 
+            center: { 
+                x: roomX + Math.floor(roomW / 2), 
+                y: roomY + Math.floor(roomH / 2) 
+            },
+            connections: new Set() 
+        };
+
+        ROOMNODES.push(this.room)
     }    
 
     // Get a room somewhere inside this leaf (going down tree if needed)
-    getRoom(): null|{x: number, y: number, w: number, h: number} {
+    getRoom(): null| roomNode {
         if (this.room) return this.room;
-        let lRoom = null;
-        let rRoom = null;
 
-        if (this.left) lRoom = this.left.getRoom();
-        if (this.right) rRoom = this.right.getRoom();
+        if (this.left) {
+            const room = this.left.getRoom();
+            if (room) return room;
+        }
 
-        if (!lRoom && !rRoom) return null;
-        else if (!rRoom) return lRoom;
-        else if (!lRoom) return rRoom;
-        else return Math.random() > 0.5 ? lRoom : rRoom;
+        if (this.right) {
+            const room = this.right.getRoom();
+            if (room) return room;
+        }
+
+        return null;
     }    
 }
 //#endregion
@@ -315,6 +330,8 @@ class Leaf{
 export const generateBSPDungeon = async() => {
     const root = new Leaf(0, 0, MAP_WIDTH, MAP_HEIGHT);
     const leaves = [root];
+
+    console.log(root)
 
     // 1. Split until no more splitting possible
     let didSplit = true;
@@ -337,17 +354,25 @@ export const generateBSPDungeon = async() => {
         }
     }
 
+    console.log(leaves)
+
     // 2. Create rooms
     leaves.forEach(leaf => {
         if (!leaf.left && !leaf.right) leaf.createRoom();
     }); 
+
+    // 3. Collect all rooms
+    const rooms = leaves
+        .filter(l => l.room)
+        .map(l => l.room as room);
     
-    // 3. Connect rooms with corridors
+    // 4. Connect rooms with corridors
     createCorridors(root)
 
-    // 4. Build final tilemap
+    // 5. Build final tilemap
     const grid = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(1)); // 1 = wall   
     
+
     // Carve rooms
     leaves.forEach(leaf => {
         if (leaf.room) {
@@ -362,18 +387,6 @@ export const generateBSPDungeon = async() => {
     // Carve corridors
     leaves.forEach(leaf => {
         leaf.corridors.forEach(({x1, x2, y1, y2}) => {
-            // const dx = Math.sign(c.x2 - c.x1);
-            // const dy = Math.sign(c.y2 - c.y1);
-
-            // let x = c.x1;
-            // let y = c.y1;
-
-            // while (x !== c.x2 || y !== c.y2) {
-            //     grid[y][x] = 0;
-            //     if (x !== c.x2) x += dx;
-            //     if (y !== c.y2) y += dy;
-            // }
-            // grid[c.y2][c.x2] = 0;
             if(x1 === x2){
                 carveVertical(grid, x1, y1, y2)
             }else
@@ -383,10 +396,11 @@ export const generateBSPDungeon = async() => {
         });
     });
 
-    // Collect all rooms
-    const rooms = leaves
-        .filter(l => l.room)
-        .map(l => l.room as room);
+    for (const room of ROOMNODES) {
+        console.log(
+            `Room ${room.id} → [${[...room.connections].join(", ")}]`
+        );
+    }
 
     let entranceRoom = null;
     let exitRoom = null;
@@ -409,7 +423,7 @@ export const generateBSPDungeon = async() => {
     if(entrance) await checkDoorPosition(grid, entrance)
     if(exit) await checkDoorPosition(grid, exit)
 
-    await setPorps(grid, rooms)
+    // await setPorps(grid, rooms)
 
     // You can return these or store them globally
     return { grid, rooms, entrance, exit };
