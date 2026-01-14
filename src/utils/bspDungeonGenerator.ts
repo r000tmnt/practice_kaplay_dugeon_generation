@@ -1,4 +1,20 @@
 /**
+[Rooms + Corridors]
+        ↓
+     Build Graph
+        ↓
+ Pick Entrance
+        ↓
+      BFS
+        ↓
+ Find Unreachable Rooms
+        ↓
+  Carve Missing Corridors
+        ↓
+   Update Graph
+        ↓
+   Final Entrance / Exit
+
 The algorithm works like this:
 
 1. Start with one giant rectangle (the whole map).
@@ -18,10 +34,11 @@ The algorithm works like this:
 [ whole map ]
    → split → [ left ] + [ right ]
        → split → [ left-top ] + [ left-bottom ]
-       → split → [ right-left ] + [ right-right ]
+       → split → [ right-left ] + [ right-right ]       
  */
 
 import type { room, roomNode, corridor, prop } from "../model/map";
+import { RoomState } from '../model/map'
 
 // Store
 import { getOptionValue } from '../store/setting';
@@ -36,17 +53,59 @@ const MAX_ROOM_SIZE = 20;
 const CORRIDOR_WIDTH = 2;   // tiles
 
 const PROP: prop[] = []
+const ENEMY: prop[] = []
 const ROOMNODES: roomNode[] = []
 
 type RoomNode = {
     id: number;
     room: room;
+    type: number;
     neighbors: Set<number>;
 };
+
+// Not all dead-ends should be equal.
+const DeadEndType = {
+    Treasure: 0.35,
+    Breakables: 0.60,
+    Lore: 0.75,
+    RiskReward: 0.90,
+    Empty: 0
+}
+
+const RoomType = {
+    Entrance: 0,
+    Exit: 1,
+    MainPath: 2,
+    SidePath: 3,
+    DeadEndReward: 4,    
+}
 
 //#region Utils
 const randBetween = (a: number, b: number) => {
     return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+
+const setCorridor = (leaf: Leaf, roomA: roomNode, roomB: roomNode) => {
+    const pointA = {
+        x: randBetween(roomA.x, roomA.x + roomA.w - 1),
+        y: randBetween(roomA.y, roomA.y + roomA.h - 1)
+    };
+
+    const pointB = {
+        x: randBetween(roomB.x, roomB.x + roomB.w - 1),
+        y: randBetween(roomB.y, roomB.y + roomB.h - 1)
+    };
+
+    // L-shaped corridor
+    if (Math.random() > 0.5) {
+        leaf.corridors.push({ x1: pointA.x, y1: pointA.y, x2: pointB.x, y2: pointA.y });
+        leaf.corridors.push({ x1: pointB.x, y1: pointA.y, x2: pointB.x, y2: pointB.y });
+    } else {
+        leaf.corridors.push({ x1: pointA.x, y1: pointA.y, x2: pointA.x, y2: pointB.y });
+        leaf.corridors.push({ x1: pointA.x, y1: pointB.y, x2: pointB.x, y2: pointB.y });
+    }          
+    roomA.connections.add(roomB.id)     
+    roomB.connections.add(roomA.id)     
 }
 
 const createCorridors = (leaf: Leaf) => {
@@ -54,28 +113,7 @@ const createCorridors = (leaf: Leaf) => {
         const roomA = leaf.left.getRoom();
         const roomB = leaf.right.getRoom();
 
-        if(roomA && roomB){
-            const pointA = {
-                x: randBetween(roomA.x, roomA.x + roomA.w - 1),
-                y: randBetween(roomA.y, roomA.y + roomA.h - 1)
-            };
-
-            const pointB = {
-                x: randBetween(roomB.x, roomB.x + roomB.w - 1),
-                y: randBetween(roomB.y, roomB.y + roomB.h - 1)
-            };
-
-            // L-shaped corridor
-            if (Math.random() > 0.5) {
-                leaf.corridors.push({ x1: pointA.x, y1: pointA.y, x2: pointB.x, y2: pointA.y });
-                leaf.corridors.push({ x1: pointB.x, y1: pointA.y, x2: pointB.x, y2: pointB.y });
-            } else {
-                leaf.corridors.push({ x1: pointA.x, y1: pointA.y, x2: pointA.x, y2: pointB.y });
-                leaf.corridors.push({ x1: pointA.x, y1: pointB.y, x2: pointB.x, y2: pointB.y });
-            }          
-            roomA.connections.add(roomB.id)     
-            roomB.connections.add(roomA.id)     
-        }
+        if(roomA && roomB) setCorridor(leaf, roomA, roomB)
     }
 
     if (leaf.left) createCorridors(leaf.left);
@@ -318,7 +356,6 @@ const findConnectedRooms = (
         } catch {
             console.log(`Can't find id ${current}`)
         }
-
     }
 
     return visited;
@@ -346,6 +383,143 @@ const findNearestReachableRoom =(
     return best;
 }
 
+const findDeadEnds = (graph: Map<number, RoomNode>) => {
+    const deadEnds = [];
+
+    for (const [id, node] of graph) {
+        if (node.neighbors.size === 1) {
+            deadEnds.push(id);
+        }
+    }
+
+    return deadEnds;
+}
+
+const rollDeadEndType = () => {
+    const r = Math.random();
+
+    switch(r){
+        case DeadEndType.Treasure:
+            return DeadEndType.Treasure
+        case DeadEndType.Breakables:
+            return DeadEndType.Breakables
+        case DeadEndType.Lore:
+            return DeadEndType.Lore
+        case DeadEndType.RiskReward:
+            return DeadEndType.RiskReward
+        default:
+            return DeadEndType.Empty
+    }
+}
+
+const getInnerSpaceAndTiles = (grid: number[][], room: room) => {
+    const margin = 1
+
+    const innerSpace = {
+        x: room.x + margin,
+        y: room.y + margin,
+        w: room.w - margin * 2,
+        h: room.h - margin * 2
+    }
+
+    const tiles = getFloorTiles(grid, innerSpace as room)
+
+    return { innerSpace, tiles }
+}
+
+const computeRoomDepths = (startId: number, graph: Map<number, RoomNode>) => {
+    const depth = new Map();
+    const queue = [[startId, 0]];
+    depth.set(startId, 0);
+
+    while (queue.length) {
+        const item = queue.shift();
+        if (!item) break;
+        const [id, d] = item;
+        for (const n of graph.get(id)!.neighbors) {
+            if (!depth.has(n)) {
+                depth.set(n, d + 1);
+                queue.push([n, d + 1]);
+            }
+        }
+    }
+
+    return depth;
+}
+
+const getEnemySpawnRule = (roomNode: RoomNode) => {
+    switch (roomNode.type) {
+        case RoomType.Entrance:
+            return null;
+
+        case RoomType.Exit:
+            return { min: 0, max: 1 };
+
+        case RoomType.MainPath:
+            return { min: 1, max: 3 };
+
+        case RoomType.SidePath:
+            return { min: 0, max: 2 };
+
+        case RoomType.DeadEndReward:
+            return { min: 0, max: 0 };
+
+        default:
+            return null;
+    }
+}
+
+const scaleEnemies = (base: { min: number, max: number }, depth: number) => {
+    return Math.min(
+        base.max,
+        base.min + Math.floor(depth / 3)
+    );
+}
+
+const buildSpawnGrid = (room: roomNode, tilemap: number[][]) => {
+    const free = [];
+
+    for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
+        for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
+            const propExist = PROP.find(prop => prop.x === room.x && prop.y === room.y)
+            if (tilemap[y][x] === 0 && !propExist) {
+                free.push({ x, y });
+            }
+        }
+    }
+
+    return free;
+}
+
+// Refernce: https://stackoverflow.com/a/46545530/14173422
+const shuffle = (array: any[]) => {
+    const shuffled = array.map(value => ({ value, sort: Math.random() }))
+                    .sort((a, b) => a.sort - b.sort)
+                    .map(({ value }) => value)
+
+    return shuffled
+}
+
+const placeEnemies = (room: roomNode, count: number, tilemap: number[][]) => {
+    let candidates = buildSpawnGrid(room, tilemap);
+    candidates = shuffle(candidates)
+
+    for (let i = 0; i < count && candidates.length; i++) {
+        // Add props
+        ENEMY.push({
+            type: 'enemy',
+            x: candidates[i].x,
+            y: candidates[i].y,
+            roomId: room.id,
+            defeat: false,
+            active: false,
+        })
+
+        candidates.pop()
+    }
+
+    return candidates;
+}
 //#endregion
 
 //#region Leaf node
@@ -418,6 +592,7 @@ class Leaf{
                 x: roomX + Math.floor(roomW / 2), 
                 y: roomY + Math.floor(roomH / 2) 
             },
+            state: RoomState.Unvisited,
             connections: new Set() 
         };
 
@@ -490,7 +665,7 @@ export const generateBSPDungeon = async() => {
     const grid = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(1)); // 1 = wall   
     
 
-    // Carve rooms
+    // 6. Carve rooms
     leaves.forEach(leaf => {
         if (leaf.room) {
             for (let y = leaf.room.y + 1; y < (leaf.room.y + leaf.room.h) - 1; y++) {
@@ -499,9 +674,10 @@ export const generateBSPDungeon = async() => {
                 }
             }
         }
-    });    
+    });  
 
-    // Draw graph
+
+    // 7. Draw graph
     for (const room of ROOMNODES) {
         console.log(
             `Room ${room.id} → [${[...room.connections].join(", ")}]`
@@ -540,6 +716,7 @@ export const generateBSPDungeon = async() => {
                 h: room.h,
                 center: { ...room.center },
             },
+            type: RoomType.SidePath,
             neighbors: new Set()
         })
     })
@@ -557,6 +734,30 @@ export const generateBSPDungeon = async() => {
             }
         });
     });
+
+    // 8. Assign room type
+    graph.get(entranceId)!.type = RoomType.Entrance;
+    graph.get(exitId)!.type = RoomType.Exit;
+
+    // 9. Mark critical path rooms
+    for (const id of criticalPath) {
+        if (
+            id !== entranceId &&
+            id !== exitId
+        ) {
+            graph.get(id)!.type = RoomType.MainPath;
+        }
+    }    
+
+    // 10. Mark dead-end reward rooms
+    for (const [id, node] of graph) {
+        if (
+            node.neighbors.size === 1 &&
+            node.type === RoomType.SidePath
+        ) {
+            node.type = RoomType.DeadEndReward;
+        }
+    }    
 
     const reachable = findConnectedRooms(entranceId, graph)
 
@@ -581,27 +782,8 @@ export const generateBSPDungeon = async() => {
                 const roomB = leaf.room
 
                 if(roomA && roomB){
-                    const pointA = {
-                        x: randBetween(roomA.x, roomA.x + roomA.w - 1),
-                        y: randBetween(roomA.y, roomA.y + roomA.h - 1)
-                    };
-
-                    const pointB = {
-                        x: randBetween(roomB.x, roomB.x + roomB.w - 1),
-                        y: randBetween(roomB.y, roomB.y + roomB.h - 1)
-                    };
-
-                    // L-shaped corridor
-                    if (Math.random() > 0.5) {
-                        leaf.corridors.push({ x1: pointA.x, y1: pointA.y, x2: pointB.x, y2: pointA.y });
-                        leaf.corridors.push({ x1: pointB.x, y1: pointA.y, x2: pointB.x, y2: pointB.y });
-                    } else {
-                        leaf.corridors.push({ x1: pointA.x, y1: pointA.y, x2: pointA.x, y2: pointB.y });
-                        leaf.corridors.push({ x1: pointA.x, y1: pointB.y, x2: pointB.x, y2: pointB.y });
-                    }          
-                    roomA.connections.add(roomB.id)     
-                    roomB.connections.add(roomA.id)   
-                    
+                    setCorridor(leaf, roomA, roomB)
+                                        
                     // Update graph          
                     graph.get(id)!.neighbors.add(roomB.id);
                     graph.get(roomB.id)!.neighbors.add(id);
@@ -630,21 +812,43 @@ export const generateBSPDungeon = async() => {
         console.warn("Dungeon still disconnected!");
     }
 
-    // Find entrance and exit
-    let entranceRoom = null;
-    let exitRoom = null;
-    let maxDist = -Infinity;
+    // Find dead-ends
+    const deadEnds = findDeadEnds(graph)
 
-    for (let i = 0; i < rooms.length; i++) {
-        for (let j = i + 1; j < rooms.length; j++) {
-            const d = getManhattanDistance(rooms[i], rooms[j]);
-            if (d > maxDist) {
-                maxDist = d;
-                entranceRoom = rooms[i];
-                exitRoom = rooms[j];
-            }
+    console.log('dead-ends', deadEnds)
+
+    // Exclude critical path rooms
+    const rewardDeadEnds = deadEnds.filter(
+        id => !criticalPath.includes(id)
+    );
+
+    console.log('rewardDeadEnds', rewardDeadEnds)
+
+    // Apply content per room (NOT per tile)
+    for (const roomId of rewardDeadEnds) {
+        if (roomId === entranceId) return;
+        if (roomId === exitId) return;
+
+        const room = graph.get(roomId)!.room;
+        const type = rollDeadEndType();
+
+        const { innerSpace, tiles } = getInnerSpaceAndTiles(grid, room)
+
+        // decorateDeadEnd(room, type);
+        // Add props
+        switch(type){
+            case DeadEndType.Treasure:
+                placeChest(roomId, tiles)   
+            break;
+            case DeadEndType.Breakables:
+                placePot(innerSpace, roomId, tiles)   
+            break;
         }
     }
+
+    // Find entrance and exit
+    const entranceRoom = ROOMNODES[entranceId];
+    const exitRoom = ROOMNODES[exitId];
 
     const entrance = entranceRoom !== null ? getValidDoorTiles(entranceRoom, grid) : null
     const exit = exitRoom !== null ? getValidDoorTiles(exitRoom, grid) : null
@@ -652,6 +856,45 @@ export const generateBSPDungeon = async() => {
     if(entrance) await checkDoorPosition(grid, entrance)
     if(exit) await checkDoorPosition(grid, exit)
     await setPorps(grid, rooms)
+
+    //#region enemy spawn rule 
+    // Compute room depth
+    const roomDepth = computeRoomDepths(entranceId, graph)
+
+    console.log('roomDepth', roomDepth)
+
+    // Decide spawn count
+    const enemySpawnRule: ({ min: number, max: number }|null)[] = []
+    graph.forEach(node => enemySpawnRule.push(getEnemySpawnRule(node)))
+    // ROOMNODES.forEach(room => {
+    //     const enemySpawnRule = getEnemySpawnRule(room.id, entranceId, exitId, criticalPath)
+
+    console.log(`spawmnRule: ${JSON.stringify(enemySpawnRule)}`)
+    // })
+    
+    // Scale by depth
+    const scaledEnemyRules = enemySpawnRule.map((rule, index) => {
+        const depth = roomDepth.get(index)
+        if(rule){
+            return scaleEnemies(rule, depth)
+        }else{
+            return null
+        }
+    }) 
+
+    console.log('scaledEnemyRules', scaledEnemyRules)  
+
+    // Build a room “spawn grid”
+    ROOMNODES.forEach((room, index) => {
+        placeEnemies(room, scaledEnemyRules[index]?? 0, grid)
+    })
+    //#endregion  
+
+    gameStore.set(gameState, prev => ({
+        ...prev,
+        enemies: ENEMY,
+        roomNodes: ROOMNODES
+    }))
 
     // You can return these or store them globally
     return { grid, rooms, entrance, exit };
@@ -663,16 +906,7 @@ const setPorps = async(grid: number[][], rooms: room[]) => {
     // const allProps: prop[] = []
 
     rooms.map((room, index) => {
-        const margin = 1
-
-        const innerSpace = {
-            x: room.x + margin,
-            y: room.y + margin,
-            w: room.w - margin * 2,
-            h: room.h - margin * 2
-        }
-
-        const tiles = getFloorTiles(grid, innerSpace as room)
+        const { innerSpace, tiles } = getInnerSpaceAndTiles(grid, room)
 
         placePot(innerSpace, index, tiles)
         placeChest(index, tiles)
@@ -724,8 +958,6 @@ const placeChest = (roomId: number, tiles: {x: number, y: number}[]) => {
         )
     }
 }
-
-// const placeEnemy = () => {}
 
 const getFloorTiles = (grid: number[][], room: room) => {
     const tiles =[]
