@@ -101,39 +101,43 @@ const setMap = async(index = 0, name = 'testMap') => {
         initPlayer(level[index], entrance as { x: number, y: number }, tileWidth)        
     }else{
         // Generate the map
-        const { grid, rooms, entrance, exit } = await generateBSPDungeon();
+        const dungeon = await generateBSPDungeon();
 
-        console.log(entrance, exit)
+        if(dungeon){
+            const { grid, rooms, entrance, exit } = dungeon
 
-        if(entrance) grid[entrance.y][entrance.x] = 2
+            console.log(entrance, exit)
 
-        if(exit) grid[exit.y][exit.x] = 2
+            if(entrance) grid[entrance.y][entrance.x] = 2
 
-        console.log(
-            grid
-                .map(row => row.map(cell => {
-                    switch(cell){
-                        case 1:
-                            return '#'
-                        case 2:
-                            return '□'
-                        default:
-                            return '.'
-                    }
-                }).join(""))
-                .join("\n")
-        );
+            if(exit) grid[exit.y][exit.x] = 2
 
-        gameStore.set(gameState, prev => ({
-            ...prev,
-            level: prev.level.concat([grid]),
-            rooms: prev.rooms.concat([rooms]),
-            entrances: prev.entrances.toSpliced(index, 0, entrance),
-            exits: prev.exits.toSpliced(index, 0, exit)
-        }))
+            console.log(
+                grid
+                    .map(row => row.map(cell => {
+                        switch(cell){
+                            case 1:
+                                return '#'
+                            case 2:
+                                return '□'
+                            default:
+                                return '.'
+                        }
+                    }).join(""))
+                    .join("\n")
+            );
 
-        const {level} = getGameStoreValue()
-        drawMap(level[index], entrance as { x: number, y: number }, name, tileWidth)
+            gameStore.set(gameState, prev => ({
+                ...prev,
+                level: prev.level.concat([grid]),
+                rooms: prev.rooms.concat([rooms]),
+                entrances: prev.entrances.toSpliced(index, 0, entrance),
+                exits: prev.exits.toSpliced(index, 0, exit)
+            }))
+
+            const {level} = getGameStoreValue()
+            drawMap(level[index], entrance as { x: number, y: number }, name, tileWidth)            
+        }
     }
 }
 
