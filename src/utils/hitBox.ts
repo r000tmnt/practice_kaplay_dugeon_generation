@@ -80,4 +80,20 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
 
         // And more
     })      
+
+    hitBox.onCollide('chest', (obj: GameObj) => {
+        console.log(obj)
+        obj.broken = true
+        obj.play('open') 
+        // Update props
+        const chest = props.findIndex(prop => prop.type === 'chest' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
+        props[chest].open = true
+        gameStore.set(gameState, prve => ({
+            ...prve,
+            props: props
+        }))
+        // Drop items         
+
+        // And more
+    })          
 }
