@@ -1,5 +1,5 @@
 import { createStore, atom } from "jotai";
-import type { chunk, prop, room } from "../model/map";
+import type { chunk, prop, room, roomNode } from "../model/map";
 
 export const gameState = atom({
     level: [] as number[][][],
@@ -7,7 +7,9 @@ export const gameState = atom({
     entrances: [] as { x: number, y: number }[],
     exits: [] as { x: number, y: number }[],
     props: [] as prop[],
-    chunks: {} as Record<string, chunk>
+    chunks: {} as Record<string, chunk>,
+    enemies: [] as prop[],
+    roomNodes: [] as roomNode[]
 })
 
 export const gameStore = createStore()
