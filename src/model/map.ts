@@ -1,5 +1,3 @@
-import type { GameObj } from "kaplay"
-
 interface room {
     x: number, 
     y: number, 
@@ -13,6 +11,7 @@ interface room {
 
 interface roomNode extends room {
     id: number,
+    state: number,
     connections: Set<number>
 }
 
@@ -30,6 +29,8 @@ interface prop {
     roomId: number,
     broken?: boolean
     open?: boolean
+    defeat?: boolean
+    active?: boolean
 }
 
 interface chunk {
@@ -40,10 +41,20 @@ interface chunk {
     objects: {x:number, y:number}[]
 }
 
+const RoomState = {
+    Unvisited: 0,
+    Active: 1,
+    Cleared: 2
+}
+
 export type {
     room,
     roomNode,
     corridor,
     chunk,
-    prop
+    prop,
+}
+
+export {
+    RoomState
 }
