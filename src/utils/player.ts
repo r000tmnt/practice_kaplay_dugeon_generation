@@ -58,19 +58,19 @@ const spawnEnemiesForRoom = (room: roomNode) => {
     if(count.length){
         count.forEach((e: prop, i: number) => {
             console.log('spawn enemy')
-            map.add([
+            const enemy = map.add([
                 sprite('enemy'),
-                health(10),
+                health(10, 10),
                 anchor('center'),
                 area({ shape: new Rect(vec2(0), map.tileWidth, map.tileWidth) }),
-                body(),
+                body({ isStatic: true }),
                 layer('game'),
                 pos(e.x * map.tileWidth  + (sizeWithPadding / 2), e.y * map.tileWidth  + (sizeWithPadding / 2)),
                 {
                     //predefined data
                     roomId: room.id,
                     defeat: e.defeat,
-                    active: e.active,
+                    active: !e.active,
                     state: 'idle',
                     path: [],
                     speed: 100,
@@ -79,6 +79,35 @@ const spawnEnemiesForRoom = (room: roomNode) => {
                 // tags
                 "enemy"
             ])
+
+            // enemy.play('lose', {
+            //     onEnd: () => {
+            //         console.log('lose animation ended')
+            //     }
+            // })
+
+            enemy.onDeath(() => {
+                console.log('enemy dead')
+                console.log(enemy.getCurAnim())
+                // enemy.unuse('area')
+                // enemy.unuse('body')                
+
+                // Update props
+                const eIndex = enemies.findIndex(prop => prop.type === 'enemy' && prop.x === e.x && prop.y === e.y)
+                enemies[eIndex].defeat = true
+                enemies[eIndex].active = false
+
+                gameStore.set(gameState, prve => ({
+                    ...prve,
+                    enemies: [
+                        ...prve.enemies,
+                        { ...enemies[eIndex] }
+                    ]
+                }))
+                // Drop items         
+
+                // And more                
+            })
 
             // Remove enemies in game store   
             copy.splice(i, 1)
@@ -95,9 +124,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
     // console.log(x, y)
     const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
     const player = add([
-        sprite("player", {
-            frame: 7
-        }), 
+        sprite("player"), 
         anchor('center'),
         area({ shape: new Rect(vec2(0), map.tileWidth, map.tileWidth) }),
         body(),
