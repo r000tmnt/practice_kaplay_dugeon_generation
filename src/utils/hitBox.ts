@@ -13,7 +13,7 @@ const {
     vec2,
  } = k
 
-export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAnim) => {
+export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAnim, ignore: string[] = []) => {
     const { tileWidth } = getOptionValue()
 
     // Temporary set to attack only
@@ -45,7 +45,10 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
 
 
     const hitBox = unit.add([
-        area({ shape: new Rect(vec2(0), 5, tileWidth)}),
+        area({ 
+            shape: new Rect(vec2(0), 5, tileWidth),
+            collisionIgnore: ignore
+        }),
         anchor('center'),
         pos(size.x, size.y),
         rotate(size.angle),
@@ -59,8 +62,13 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
     return hitBox
 }
 
+/**
+ * Set hitbox onCollde event
+ * @param hitBox - {GameObj} The hitbox itself
+ * @param anim - {string} Name of the current animation
+ */
 const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
-    const { props, enemies } = getGameStoreValue()
+    const { props } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
 
     hitBox.onCollide('pot', (obj: GameObj) => {
@@ -118,5 +126,28 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
                 console.log('enemy hp', obj.hp)
             }
         }) 
-    })         
+    })        
+    
+    hitBox.onCollide('player', (obj: GameObj) => {
+        console.log('player get hit', obj)
+
+        // if(!obj.active || obj.hp <= 0) return
+
+        // obj.hp -= 2;
+
+        // if(obj.hp <= 0){
+        //     obj.play('lose', {
+        //         onEnd: () => {
+        //             console.log('lose animation ended')
+        //         }
+        //     })
+        //     return
+        // }
+
+        // obj.play('hurt', {
+        //     onEnd: () => {
+        //         console.log('enemy hp', obj.hp)
+        //     }
+        // }) 
+    })            
 }
