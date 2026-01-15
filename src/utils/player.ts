@@ -6,6 +6,8 @@ import { setCameraPosition } from './camera';
 import { createHitBox } from './hitBox'
 import { gameState, gameStore, getGameStoreValue } from '../store/game';
 import { RoomState } from '../model/map'
+import { getOptionValue } from '../store/setting';
+import { spawnEnemiesForRoom } from './enemy';
 
 // Store
 // import { createStore } from 'jotai'
@@ -26,6 +28,7 @@ const {
     Rect,
     // rotate,
     // setData,
+    state,
     sprite,
     vec2
 } = k
@@ -40,84 +43,8 @@ const onEnterRoom = (room: roomNode) => {
     spawnEnemiesForRoom(room);
 }
 
-const spawnEnemiesForRoom = (room: roomNode) => {
-    const { enemies } = getGameStoreValue()
-    const copy : prop[] = JSON.parse(JSON.stringify(enemies))
-    const index: number[] = []
-    const count = copy.filter((e: prop, i: number) => {
-        if(e.roomId === room.id){
-            index.push(i)
-            return e
-        }
-    })
-
-    // Check if spawned
-    const map = get('map')[0]
-    const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
-
-    if(count.length){
-        count.forEach((e: prop, i: number) => {
-            console.log('spawn enemy')
-            const enemy = map.add([
-                sprite('enemy'),
-                health(10, 10),
-                anchor('center'),
-                area({ shape: new Rect(vec2(0), map.tileWidth, map.tileWidth) }),
-                body({ isStatic: true }),
-                layer('game'),
-                pos(e.x * map.tileWidth  + (sizeWithPadding / 2), e.y * map.tileWidth  + (sizeWithPadding / 2)),
-                {
-                    //predefined data
-                    roomId: room.id,
-                    defeat: e.defeat,
-                    active: !e.active,
-                    state: 'idle',
-                    path: [],
-                    speed: 100,
-                    direction: 'left'
-                },
-                // tags
-                "enemy"
-            ])
-
-            // enemy.play('lose', {
-            //     onEnd: () => {
-            //         console.log('lose animation ended')
-            //     }
-            // })
-
-            enemy.onDeath(() => {
-                console.log('enemy dead')
-                console.log(enemy.getCurAnim())
-                // enemy.unuse('area')
-                // enemy.unuse('body')                
-
-                // Update props
-                const eIndex = enemies.findIndex(prop => prop.type === 'enemy' && prop.x === e.x && prop.y === e.y)
-                enemies[eIndex].defeat = true
-                enemies[eIndex].active = false
-
-                gameStore.set(gameState, prve => ({
-                    ...prve,
-                    enemies: [
-                        ...prve.enemies,
-                        { ...enemies[eIndex] }
-                    ]
-                }))
-                // Drop items         
-
-                // And more                
-            })
-
-            // Remove enemies in game store   
-            copy.splice(i, 1)
-        })     
-        
-        gameStore.set(gameState, prev => ({
-            ...prev,
-            enemies: copy
-        }))
-    }
+export const getPlayers = () => {
+    return get('player')
 }
 
 export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth: number, mapHeight: number,) => {
