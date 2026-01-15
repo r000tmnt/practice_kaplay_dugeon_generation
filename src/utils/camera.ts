@@ -236,6 +236,7 @@ const updateChunks = (camera: {top: number, down: number, left: number, right: n
 const activateChunk = (x: number, y:number) => {
     const { chunks } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
+    // const enemies = get('map')[0]?.get('enemy')
     const copyChunks = JSON.parse(JSON.stringify(chunks))
     const chunk = copyChunks[`${x},${y}`]
 
@@ -264,6 +265,14 @@ const activateChunk = (x: number, y:number) => {
             ...prev,
             chunks: copyChunks
         }))
+
+        // enemies.forEach(enemy => {
+        //     if(x === enemy.chunk.x && y === enemy.chunk.y && !enemy.defeat){
+        //         // Activate enemy
+                
+        //     }
+        // })
+
         return true        
     }
 }
@@ -272,6 +281,7 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
     // console.log(top, down, left, right)
     const { chunks } = getGameStoreValue()
     const { tileWidth }= getOptionValue()
+    const enemies = get('map')[0]?.get('enemy')
     const copyChunks = JSON.parse(JSON.stringify(chunks))
 
     // const activatedChunks: string[] = []
@@ -292,8 +302,18 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
                 console.log('Find object to destory', target)
                 target?.destroy()
             })
-            chunksOutSide[key].objects.splice(0)            
-        }
+            chunksOutSide[key].objects.splice(0)    
+            
+            enemies.forEach(enemy => {
+                if(x === enemy.chunk.x && y === enemy.chunk.y && !enemy.defeat && enemy.active){
+                    // Deactivate enemy
+                    enemy.stop()
+                    enemy.frame = 0
+                    // Back to spawn position
+                    // enemy.moveTo(enemy.spawn)
+                }
+            })              
+        }     
     })
 
     if(Object.entries(chunksOutSide).length){
