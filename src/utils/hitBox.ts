@@ -60,7 +60,7 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
 }
 
 const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
-    const { props } = getGameStoreValue()
+    const { props, enemies } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
 
     hitBox.onCollide('pot', (obj: GameObj) => {
@@ -96,4 +96,27 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
 
         // And more
     })          
+
+    hitBox.onCollide('enemy', (obj: GameObj) => {
+        console.log(obj)
+
+        if(!obj.active || obj.hp <= 0) return
+
+        obj.hp -= 2;
+
+        if(obj.hp <= 0){
+            obj.play('lose', {
+                onEnd: () => {
+                    console.log('lose animation ended')
+                }
+            })
+            return
+        }
+
+        obj.play('hurt', {
+            onEnd: () => {
+                console.log('enemy hp', obj.hp)
+            }
+        }) 
+    })         
 }
