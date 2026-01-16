@@ -23,7 +23,7 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
     switch(direction){
         case 'top':
             size.x = 0
-            size.y = -((tileWidth / 2) + 5)
+            size.y = -((tileWidth / 2) + 10)
             size.angle = 90
         break;
         case 'down':
@@ -32,7 +32,7 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
             size.angle = 90                 
         break;
         case 'right':
-            size.x = (tileWidth / 2) + 5
+            size.x = (tileWidth / 2) + 10
             size.y = 0
             size.angle = 0 
         break;
@@ -46,7 +46,7 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
 
     const hitBox = unit.add([
         area({ 
-            shape: new Rect(vec2(0), 5, tileWidth),
+            shape: new Rect(vec2(0), 10, tileWidth),
             collisionIgnore: ignore
         }),
         anchor('center'),
