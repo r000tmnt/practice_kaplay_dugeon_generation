@@ -15,6 +15,7 @@ import { getPlayers } from './player'
 
 const {
     area,
+    add,
     anchor,
     body,
     // getData,
@@ -31,24 +32,22 @@ const {
 } = k
 
 const chaseOrNot = (enemy: GameObj, sizeWithPadding: number) => {
-    const players = getPlayers()
+    const player = getPlayers()[0]
     // console.log('players', players)
 
     let result = false
 
-    if(players.length){
-        players.forEach(player => {
-            const distance = enemy.pos.dist(player.pos)
+    if(player){
+        const distance = enemy.pos.dist(player.pos)
 
-            console.log('distance', distance)
+        console.log('distance', distance)
 
-            if(distance < 200){
-                enemy.enterState('chase', player)
-                result = true
-            }else{
-                result = false
-            }
-        })
+        if(distance < 200){
+            enemy.enterState('chase', player)
+            result = true
+        }else{
+            result = false
+        }
     }else{
         result = false
     }
@@ -94,15 +93,19 @@ const stayOrNot = (enemy: GameObj, sizeWithPadding: number) => {
             }
         }
     }
-
-    const randomPos = Math.floor(Math.random() * tilesInRange.length - 1)
-    const destination = {
-        pos: vec2(
-        tilesInRange[randomPos].x + (sizeWithPadding / 2),
-        tilesInRange[randomPos].y + (sizeWithPadding / 2)
-    )
+    console.log('tilesInRange', tilesInRange)
+    if(tilesInRange.length){
+        const randomPos = Math.floor(Math.random() * tilesInRange.length - 1)
+        const destination = {
+            pos: vec2(
+                tilesInRange[randomPos].x + (sizeWithPadding / 2),
+                tilesInRange[randomPos].y + (sizeWithPadding / 2)
+            )
+        }
+        enemy.enterState('chase', destination)        
+    }else{
+        enemy.enterState('idle')   
     }
-    enemy.enterState('chase', destination)
 }
 
 export const spawnEnemiesForRoom = (room: roomNode) => {
@@ -136,12 +139,12 @@ export const spawnEnemiesForRoom = (room: roomNode) => {
                 y: e.y * map.tileWidth  + (sizeWithPadding / 2)
             }
 
-            const enemy = map.add([
+            const enemy = add([
                 sprite('enemy'),
                 health(10, 10),
                 anchor('center'),
                 area({ shape: new Rect(vec2(0), map.tileWidth, map.tileWidth) }),
-                body({ isStatic: true }),
+                body(),
                 layer('game'),
                 pos(spawn.x, spawn.y),
                 state('idle', ['idle', 'attack', 'move', 'chase']),
@@ -151,7 +154,7 @@ export const spawnEnemiesForRoom = (room: roomNode) => {
                     defeat: e.defeat,
                     active: !e.active,
                     path: [],
-                    speed: 100,
+                    speed: 75,
                     direction: 'left',
                     spawn,
                     chunk,
@@ -160,9 +163,16 @@ export const spawnEnemiesForRoom = (room: roomNode) => {
                 "enemy"
             ])
 
+            // enemy.moveTo(get('player')[0].pos, enemy.speed)
+
             // enemy.onStateEnter('idle', () => {
             //     // Check distance between the enemy and player
-            //     chaseOrNot(enemy, sizeWithPadding)
+            //     const chase = chaseOrNot(enemy, sizeWithPadding)
+
+            //     if(!chase){
+            //         // Decide to patrol or not
+            //         stayOrNot(enemy, sizeWithPadding)
+            //     }
             // })
 
             enemy.onStateUpdate('idle', () => {
@@ -178,7 +188,8 @@ export const spawnEnemiesForRoom = (room: roomNode) => {
             enemy.onStateEnter('move', (obj) => {
                 console.log('move to', obj)
                 
-                enemy.moveTo(obj.pos)
+                const dir = obj.pos.sub(enemy.pos).unit();
+                enemy.move(dir.scale(enemy.speed));
                 enemy.play('walk')
             })
 
@@ -189,22 +200,26 @@ export const spawnEnemiesForRoom = (room: roomNode) => {
             enemy.onStateEnter('chase', (obj) => {
                 console.log('chase to', obj)
                 
-                enemy.moveTo(obj.pos)
+                const dir = obj.pos.sub(enemy.pos).unit();
+                enemy.move(dir.scale(enemy.speed));
                 enemy.play('walk')
             })            
 
             enemy.onStateUpdate('chase', () => {
-                const players = getPlayers()
-                // console.log('players', players)
-                players.forEach(player => {
-                    const distance = enemy.pos.dist(player.pos)
+                const player = getPlayers()[0]
+                // // console.log('players', players)
+                // players.forEach(player => {
+                const distance = enemy.pos.dist(player.pos)
 
-                    console.log('distance', distance)
+                console.log('distance', distance)
 
-                    if(distance < 10){
-                        enemy.enterState('attack', player)
-                    }
-                })
+                if(distance < 50){
+                    enemy.enterState('attack', player)
+                }else{
+                    const dir = player.pos.sub(enemy.pos).unit();
+                    enemy.move(dir.scale(enemy.speed));
+                }
+                // })
             })
 
             enemy.onStateEnter('attack', (player) => {
@@ -217,6 +232,15 @@ export const spawnEnemiesForRoom = (room: roomNode) => {
                     onEnd: () => {
                         enemy.frame = 0
                         // And more
+                        const distance = enemy.pos.dist(player.pos)
+
+                        console.log('distance', distance)
+
+                        if(distance < 10){
+                            enemy.enterState('attack', player)
+                        }else{
+                            enemy.enterState('idle')
+                        }
                     }
                 })
             })            
@@ -254,13 +278,15 @@ export const spawnEnemiesForRoom = (room: roomNode) => {
                     case 'walk':{
                         // Update direction
                         const { x, y } = enemy.vel 
-
+                        console.log(enemy.vel)
                         if(x < 0){
                             enemy.direction = 'left'
+                            enemy.flipX = false
                         }
 
                         if(x > 0){
                             enemy.direction = 'right'
+                            enemy.flipX = true
                         }
 
                         if(y < 0){
