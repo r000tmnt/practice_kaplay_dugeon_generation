@@ -53,7 +53,8 @@ export default function initGame(){
         //     sliceY: 2
         // })
 
-        loadSpriteAtlas('player/demo_player_spritesheet.png', 'player/demo_player_spritesheet.json')
+        // loadSpriteAtlas('player/demo_player_spritesheet.png', 'player/demo_player_spritesheet.json')
+        loadSpriteAtlas('player/demo_player_68x68.png', 'player/demo_player_spritesheet.json')
         loadSpriteAtlas('enemy/demo_enemy_spritesheet.png', 'enemy/demo_enemy_spritesheet.json')
 
         loadSprite('pot', 'map/demo_pot_16x16.png', {
@@ -383,7 +384,7 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
 
 const setChunks = async() => {
     const { props, chunks } = getGameStoreValue()
-    const { chunkSize, tileWidth } = store.get(setting)
+    const { chunkSize } = store.get(setting)
     const copyChunks = JSON.parse(JSON.stringify(chunks))
 
     console.log('props', props)
