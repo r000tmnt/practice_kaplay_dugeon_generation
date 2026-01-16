@@ -19,6 +19,6 @@ export const getGameStoreValue = () => {
 }
 
 gameStore.sub(gameState, () => {
-    const newValue = getGameStoreValue()
-    console.log('gameStore update ', newValue)
+    // const newValue = getGameStoreValue()
+    // console.log('gameStore update ', newValue)
 })
