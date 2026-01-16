@@ -299,7 +299,7 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
                 const target = map.get(type).find(obj => {
                             return (obj.pos.x / tileWidth) === prop.x && (obj.pos.y / tileWidth) === prop.y
                         })
-                console.log('Find object to destory', target)
+                // console.log('Find object to destory', target)
                 target?.destroy()
             })
             chunksOutSide[key].objects.splice(0)    
@@ -389,9 +389,5 @@ const spawnObject = (prop: prop, tileWidth: number) => {
                     "chest"
                 ])
             }
-        break;
-        case 'enemy':
-        
-        break;
     }
 }
