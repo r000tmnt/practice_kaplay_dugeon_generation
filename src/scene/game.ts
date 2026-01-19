@@ -19,7 +19,6 @@ const {
     add,
     area,
     body,
-    color,
     go,
     getLayers,
     layer,
@@ -27,14 +26,9 @@ const {
     loadSpriteAtlas,
     opacity,
     pos,
-    Polygon,
-    polygon,
     Rect,
-    rect,
-    rotate,
     setLayers,
     setData,
-    setCamPos,
     scene,
     sprite,
     vec2,
@@ -79,7 +73,7 @@ export default function initGame(){
     go('game')    
 }
 
-const setMap = async(index = 0, name = 'testMap') => {
+const setMap = async(name = 'testMap') => {
     const {level} = store.get(gameState)
     const { tileWidth } = store.get(setting)
 
@@ -88,24 +82,24 @@ const setMap = async(index = 0, name = 'testMap') => {
     // setCamPos(map.pos.x + ((tileWidth * 16) / 2), map.pos.y + ((tileWidth * 9) / 2))
 
     // If level exist
-    if(level[index]){
+    if(level.length){
         // Get the rooms
-        const { entrances } = store.get(gameState)
+        const { entrance, exit } = store.get(gameState)
 
-        const entrance = entrances[index]
+        if(entrance) level[entrance.y][entrance.x] = 2
 
-        // const exit = exits[index]
+        if(exit) level[exit.y][exit.x] = 2
 
         // Draw map
-        drawMap(level[index], entrance, name, tileWidth)
+        drawMap(level, entrance, name, tileWidth)
 
-        initPlayer(level[index], entrance as { x: number, y: number }, tileWidth)        
+        initPlayer(level, entrance as { x: number, y: number }, tileWidth)        
     }else{
         // Generate the map
         const dungeon = await generateBSPDungeon();
 
         if(dungeon){
-            const { grid, rooms, entrance, exit } = dungeon
+            const { grid, entrance, exit, polygon } = dungeon
 
             console.log(entrance, exit)
 
@@ -128,16 +122,8 @@ const setMap = async(index = 0, name = 'testMap') => {
                     .join("\n")
             );
 
-            gameStore.set(gameState, prev => ({
-                ...prev,
-                level: prev.level.concat([grid]),
-                rooms: prev.rooms.concat([rooms]),
-                entrances: prev.entrances.toSpliced(index, 0, entrance),
-                exits: prev.exits.toSpliced(index, 0, exit)
-            }))
-
             const {level} = getGameStoreValue()
-            drawMap(level[index], entrance as { x: number, y: number }, name, tileWidth)            
+            drawMap(level, entrance as { x: number, y: number }, name, tileWidth)            
         }
     }
 }
