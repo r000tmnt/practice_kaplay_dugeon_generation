@@ -30,7 +30,7 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
     const middleX = width / 2 
     const middleY = height / 2 
 
-    const wPos = player.worldPos()
+    const wPos = player.worldPos
     let inX = false, inY = false;
 
     // console.log(wPos)
