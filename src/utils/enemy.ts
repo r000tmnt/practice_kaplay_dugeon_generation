@@ -124,6 +124,14 @@ const getPathAndFollow = (enemy: GameObj, destination: Vec2) => {
                 x: enemy.path[0].x - currentPos.x,
                 y: enemy.path[0].y - currentPos.y
             }
+            // if(dist.y === 0 && dist.x > 0 ) enemy.facing = 'right'
+            // if(dist.y === 0 && dist.x < 0 ) enemy.facing = 'left'
+            // if(dist.y > 0 && dist.x === 0 ) enemy.facing = 'down'
+            // if(dist.y < 0 && dist.x === 0 ) enemy.facing = 'up'
+            if(dist.y > 0 && dist.x > 0 ) enemy.facing = 'downRight'
+            if(dist.y > 0 && dist.x < 0 ) enemy.facing = 'downleft'
+            if(dist.y < 0 && dist.x > 0 ) enemy.facing = 'upRight'
+            if(dist.y < 0 && dist.x < 0 ) enemy.facing = 'upleft'
 
             enemy.flipX = dist.x > 0
             console.log('dist', dist)
@@ -131,6 +139,10 @@ const getPathAndFollow = (enemy: GameObj, destination: Vec2) => {
         }           
     } catch (error) {
         console.warn('pathfinding error', error)
+        const dir = destination.sub(enemy.pos).unit();
+        console.log('dir', dir)
+        enemy.move(dir.scale(enemy.speed));
+        enemy.play('walk')  
     }
 }
 
@@ -191,6 +203,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                     roomId: room.id,
                     defeat: e.defeat,
                     active: !e.active,
+                    facing: 'left',
                     path: [],
                     speed: 75,
                     spawn,
@@ -203,7 +216,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
             enemy.onObjectsSpotted((objs) => {
                 const playerInSight = objs.find(o => o.is('player'))
 
-                if(playerInSight){
+                if(playerInSight && enemy.state !== 'attack'){
                     const chase = chaseOrNot(enemy, playerInSight)
 
                     if(!chase){
@@ -243,6 +256,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                 // console.log('distance', distance)
 
                 if(distance < 50){
+                    enemy.waypoints?.splice(0)
                     enemy.enterState('attack', player)
                 }else{
                     // const dir = player.pos.sub(enemy.pos).unit();
