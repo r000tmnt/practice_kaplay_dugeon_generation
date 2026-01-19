@@ -36,9 +36,10 @@ The algorithm works like this:
        → split → [ left-top ] + [ left-bottom ]
        → split → [ right-left ] + [ right-right ]       
  */
-
+import k from '../lib/kaplay';
 import type { room, roomNode, corridor, prop } from "../model/map";
 import { RoomState } from '../model/map'
+import type { Vec2 } from 'kaplay';
 
 // Store
 import { getOptionValue } from '../store/setting';
@@ -51,6 +52,22 @@ const MAX_LEAF_SIZE = 24;
 const MIN_ROOM_SIZE = 6;
 const MAX_ROOM_SIZE = 20;
 const CORRIDOR_WIDTH = 2;   // tiles
+const EDGE_TABLE : Record<number, number[][][]> = {
+  1:  [[[0,0.5],[0.5,0]]],
+  2:  [[[0.5,0],[1,0.5]]],
+  3:  [[[0,0.5],[1,0.5]]],
+  4:  [[[1,0.5],[0.5,1]]],
+  5:  [[[0,0.5],[0.5,0]], [[1,0.5],[0.5,1]]],
+  6:  [[[0.5,0],[0.5,1]]],
+  7:  [[[0,0.5],[0.5,1]]],
+  8:  [[[0.5,1],[0,0.5]]],
+  9:  [[[0.5,0],[0.5,1]]],
+  10: [[[0.5,0],[1,0.5]], [[0.5,1],[0,0.5]]],
+  11: [[[1,0.5],[0.5,1]]],
+  12: [[[1,0.5],[0,0.5]]],
+  13: [[[0.5,0],[1,0.5]]],
+  14: [[[0,0.5],[0.5,0]]],
+};
 
 const PROP: prop[] = []
 const ENEMY: prop[] = []
@@ -79,6 +96,10 @@ const RoomType = {
     SidePath: 3,
     DeadEndReward: 4,    
 }
+
+const { NavMesh, vec2 } = k
+
+export const nav = new NavMesh();
 
 //#region Utils
 const randBetween = (a: number, b: number) => {
@@ -520,6 +541,86 @@ const placeEnemies = (room: roomNode, count: number, tilemap: number[][]) => {
 
     return candidates;
 }
+
+const marchingSquares = (grid: number[][]) => {
+  const { tileWidth } = getOptionValue()
+  const edges = [];
+
+  const h = grid.length;
+  const w = grid[0].length;
+
+  for (let y = 0; y < h - 1; y++) {
+    for (let x = 0; x < w - 1; x++) {
+      const A = grid[y][x]     === 0 ? 1 : 0;
+      const B = grid[y][x + 1] === 0 ? 1 : 0;
+      const C = grid[y + 1][x] === 0 ? 1 : 0;
+      const D = grid[y + 1][x + 1] === 0 ? 1 : 0;
+
+      const caseIndex = A | (B << 1) | (D << 2) | (C << 3);
+
+      const caseEdges = EDGE_TABLE[caseIndex];
+      if (!caseEdges) continue;
+
+      for (const [[x1, y1], [x2, y2]] of caseEdges) {
+        // Conver to the x and y on worldPos
+        edges.push([
+          { x: (x + x1) * tileWidth, y: (y + y1) * tileWidth },
+          { x: (x + x2) * tileWidth, y: (y + y2) * tileWidth },
+        ]);
+      }
+    }
+  }
+
+  return edges;
+}
+
+const buildPolygons = (edges: { x:number, y: number }[][]) => {
+  const map = new Map();
+
+  const key = (p: { x:number, y: number }) => `${p.x},${p.y}`;
+
+  for (const [a, b] of edges) {
+    if (!map.has(key(a))) map.set(key(a), []);
+    if (!map.has(key(b))) map.set(key(b), []);
+
+    map.get(key(a)).push(b);
+    map.get(key(b)).push(a);
+  }
+
+  const polygons = [];
+  const visited = new Set();
+
+  for (const startKey of map.keys()) {
+    if (visited.has(startKey)) continue;
+
+    const polygon = [];
+    let currentKey = startKey;
+    let prevKey: string|null = null;
+
+    while (!visited.has(currentKey)) {
+      visited.add(currentKey);
+
+      const [x, y] = currentKey.split(",").map(Number);
+      polygon.push({ x, y });
+
+      const neighbors = map.get(currentKey);
+      const next = neighbors.find(
+        (p: { x:number, y: number }) => key(p) !== prevKey
+      );
+
+      if (!next) break;
+
+      prevKey = currentKey;
+      currentKey = key(next);
+    }
+
+    if (polygon.length > 2) {
+      polygons.push(polygon);
+    }
+  }
+
+  return polygons;
+}
 //#endregion
 
 //#region Leaf node
@@ -890,14 +991,35 @@ export const generateBSPDungeon = async() => {
     })
     //#endregion  
 
-    gameStore.set(gameState, prev => ({
-        ...prev,
-        enemies: ENEMY,
-        roomNodes: ROOMNODES
-    }))
+    // #region Get polygon
+    const edges = marchingSquares(grid)
+    const polygon = buildPolygons(edges)
+
+    polygon.forEach(poly => {
+        const shape: Vec2[] = []
+        poly.forEach(node => {
+            shape.push(vec2(node.x, node.y))
+        })
+        nav.addPolygon(shape)
+    })
+
+    console.log('nav', nav)
+    // #endRegion
+
+    if(entrance && exit){
+        gameStore.set(gameState, prev => ({
+            ...prev,
+            level: grid,
+            entrance,
+            exit,
+            enemies: ENEMY,
+            roomNodes: ROOMNODES,
+            polygon
+        }))        
+    }
 
     // You can return these or store them globally
-    return { grid, rooms, entrance, exit };
+    return { grid, entrance, exit, polygon };
 }
 //#endregion
 
@@ -914,7 +1036,7 @@ const setPorps = async(grid: number[][], rooms: room[]) => {
 
     gameStore.set(gameState, prev => ({
         ...prev,
-        props: prev.props.concat(PROP)
+        props: PROP
     }))
 }
 
