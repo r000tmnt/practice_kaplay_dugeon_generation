@@ -24,10 +24,10 @@
     ],
     "anims": {
         "idle": { "from": 0, "to": 2, "loop": true },
-        "walk": { "from": 3, "to": 5, "loop": true },
+        "walk": { "from": 3, "to": 5, "speed": 5, "loop": true },
         "hurt": 6,
         "lose": { "from": 7, "to": 8, "loop": false },      
-        "attack": { "frames": [9, 9, 10, 11], "speed": 10, "loop": false }
+        "attack": { "frames": [9, 9, 10, 11], "loop": false }
     }
   } 
 }
