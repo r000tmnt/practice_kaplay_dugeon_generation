@@ -5,6 +5,7 @@ import type { GameObj } from "kaplay";
 import { gameState, gameStore, getGameStoreValue } from '../store/game';
 import { setting, getOptionValue } from '../store/setting';
 import type { chunk, prop } from '../model/map';
+import { spawnObject } from './staticObject';
 
 const {
     area,
@@ -326,68 +327,4 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
 
     // Enable control
     // setData('ready', true)        
-}
-
-const spawnObject = (prop: prop, tileWidth: number) => {
-    const map = get('map')
-    switch(prop.type){
-        case 'pot':
-            if(prop.broken){
-                return map[0].add([
-                    sprite('pot', { frame: 2 }),
-                    pos(prop.x * tileWidth, prop.y * tileWidth),
-                    // Tags
-                    "pot"
-                ])
-            }else
-                return map[0].add([
-                    sprite('pot'),
-                    pos(prop.x * tileWidth, prop.y * tileWidth),
-                    area(),
-                    body({ isStatic: true }),
-                    {
-                        broken: prop.broken,
-                        // item: {
-                        //         credit: {
-                        //             min: 1,
-                        //             max: 10
-                        //         },
-
-                        //     }
-                    },
-                    // Tags
-                    "pot"
-                ])
-        case 'chest':
-            if(prop.open){
-                return map[0].add([
-                    sprite('item', { frame: 4 }),
-                    pos(prop.x * tileWidth, prop.y * tileWidth),
-                    {
-                        open: prop.open,
-                    },
-                    // Tags
-                    "chest"
-                ])
-            }else{
-                return map[0].add([
-                    sprite('item', { frame: 3 }),
-                    pos(prop.x * tileWidth, prop.y * tileWidth),
-                    area(),
-                    body({ isStatic: true }),
-                    {
-                        open: prop.open,
-                        // item: {
-                        //         credit: {
-                        //             min: 1,
-                        //             max: 10
-                        //         },
-
-                        //     }
-                    },
-                    // Tags
-                    "chest"
-                ])
-            }
-    }
 }
