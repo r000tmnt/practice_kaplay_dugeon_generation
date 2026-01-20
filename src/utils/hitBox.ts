@@ -114,6 +114,8 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
 
         if(!obj.active || obj.hp <= 0) return
 
+        obj.waypoints?.splice(0)
+
         obj.hp -= 2;
 
         if(obj.hp <= 0){
@@ -128,6 +130,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
         obj.play('hurt', {
             onEnd: () => {
                 console.log('enemy hp', obj.hp)
+                obj.enterState('idle')
             }
         }) 
     })        
