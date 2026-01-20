@@ -874,7 +874,7 @@ export const generateBSPDungeon = async() => {
 
         console.log(findNewPath)
 
-        if(findNewPath){
+        if(typeof findNewPath === 'number'){
             // Find the leaf
             const leaf = leaves.find(l => l.room?.id === findNewPath)
             // Carve a new corridor
