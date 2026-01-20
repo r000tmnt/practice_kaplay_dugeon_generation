@@ -21,14 +21,14 @@ const {
     body,
     getData,
     get,
-    health,
+    // health,
     isKeyDown,
     layer,
     pos,
     Rect,
     // rotate,
     // setData,
-    state,
+    // state,
     sprite,
     vec2
 } = k
@@ -86,7 +86,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
         switch(currentAnim?.name){
             case 'attack':
-                if(!player.get('attack').length && currentAnim.frameIndex === 2) createHitBox(player, player.direction, currentAnim)         
+                if(!player.get('attack').length && currentAnim.frameIndex === 2) createHitBox(player, player.direction, currentAnim, 'collide', ['player'])         
             break;
             default: {
                 // Reference: https://jslegenddev.substack.com/p/how-to-fix-diagonal-movement-in-2d
