@@ -1,5 +1,5 @@
 import k from "../lib/kaplay"
-import type { GameObj } from "kaplay";
+import type { GameObj, Rect } from "kaplay";
 import type { prop } from "../model/map"
 import { setting, getOptionValue } from '../store/setting';
 
@@ -11,7 +11,7 @@ const {
     pos
  } = k
 
-export const spawnObject = (prop: prop, tileWidth: number) => {
+export const spawnObject = (prop: prop, tileWidth: number, shape = {} as Rect) => {
     const map = get('map')
     let obj;
     switch(prop.type){
@@ -76,6 +76,16 @@ export const spawnObject = (prop: prop, tileWidth: number) => {
                 ])
             }
             break;
+        case 'wall':
+            obj = map[0].add([
+                pos(prop.x, prop.y),
+                area({ shape }),
+                body({ isStatic: true }),
+                // opacity(0.5), // debug
+                // color(0, 0, 255),
+                "wall",                        
+            ])
+        break;  
     }
 
     if(obj) setObjectEvents(obj, prop)
@@ -84,31 +94,14 @@ export const spawnObject = (prop: prop, tileWidth: number) => {
 }
 
 const setObjectEvents = (obj: GameObj, prop: prop) => {
-    const { tileWidth } = getOptionValue()
 
     obj.onCollide('enemy', (enemy: GameObj) => {
         console.log('object collide with enemy', enemy)
         // If enemy is moving
-        if(enemy.path.length){
-            // Get current enemy direction
-            switch(enemy.facing){
-                case 'downLeft':
-                    // Set on a different path away from the object
-                    enemy.waypoints = [{ x: obj.pos.x + tileWidth, y: obj.pos.y }, { x: obj.pos.x + tileWidth, y: obj.pos.y + tileWidth }]
-                break;
-                case 'downRight':
-                    // Set on a different path away from the object
-                    enemy.waypoints = [{ x: obj.pos.x - tileWidth, y: obj.pos.y }, { x: obj.pos.x - tileWidth, y: obj.pos.y + tileWidth }]                    
-                break;          
-                case 'upLeft':
-                    // Set on a different path away from the object
-                    enemy.waypoints = [{ x: obj.pos.x + tileWidth, y: obj.pos.y }, { x: obj.pos.x + tileWidth, y: obj.pos.y - tileWidth }]                    
-                break;  
-                case 'upRight':
-                    // Set on a different path away from the object
-                    enemy.waypoints = [{ x: obj.pos.x - tileWidth, y: obj.pos.y }, { x: obj.pos.x - tileWidth, y: obj.pos.y - tileWidth }]                    
-                break;                                    
-            }
+        if(enemy.path.length || enemy.waypoints?.length){
+            enemy.steering(obj)
+        }else{
+            enemy.enterState('idle')
         }
     })
 
