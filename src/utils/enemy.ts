@@ -4,14 +4,8 @@ import type { prop, roomNode } from '../model/map'
 
 import { createHitBox } from './hitBox'
 import { gameState, gameStore, getGameStoreValue } from '../store/game';
-// import { RoomState } from '../model/map'
 import { getOptionValue } from '../store/setting';
 import { getPlayers } from './player'
-
-// Store
-// import { createStore } from 'jotai'
-// import { setting } from '../store/setting';
-// const store = createStore()
 
 const {
     area,
@@ -31,7 +25,8 @@ const {
     state,
     sentry,
     sprite,
-    vec2
+    vec2,
+    wait,
 } = k
 
 const chaseOrNot = (enemy: GameObj, player: GameObj) => {
@@ -47,7 +42,7 @@ const chaseOrNot = (enemy: GameObj, player: GameObj) => {
     }
 }
 
-const stayOrNot = (enemy: GameObj, sizeWithPadding: number) => {
+const stayOrNot = (enemy: GameObj) => {
     const { level } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
 
@@ -62,8 +57,8 @@ const stayOrNot = (enemy: GameObj, sizeWithPadding: number) => {
     const most = (distanceToTiles * 2) + 1
 
     const currentPos = {
-        x: enemy.pos.x - (sizeWithPadding / 2),
-        y: enemy.pos.y - (sizeWithPadding / 2)
+        x: enemy.pos.x - (tileWidth / 2),
+        y: enemy.pos.y - (tileWidth / 2)
     }
 
     let newX=0, newY=0
@@ -89,7 +84,7 @@ const stayOrNot = (enemy: GameObj, sizeWithPadding: number) => {
         }
     }
     console.log('tilesInRange', tilesInRange)
-    if(tilesInRange.length){
+    if(tilesInRange.length && enemy.state !== 'chase'){
         const randomPos = Math.floor(Math.random() * (tilesInRange.length - 1))
 
         if(tilesInRange[randomPos] === undefined){
@@ -99,14 +94,27 @@ const stayOrNot = (enemy: GameObj, sizeWithPadding: number) => {
 
         const destination = {
             pos: vec2(
-                tilesInRange[randomPos].x + (sizeWithPadding / 2),
-                tilesInRange[randomPos].y + (sizeWithPadding / 2)
+                tilesInRange[randomPos].x + (tileWidth / 2),
+                tilesInRange[randomPos].y + (tileWidth / 2)
             )
         }
         enemy.enterState('move', destination)        
     }else{
-        enemy.enterState('idle')   
+        if(enemy.state !== 'chase') enemy.enterState('idle')   
     }
+}
+
+const setDirection = (enemy: GameObj, destination: Vec2) => {
+    const dist = {
+        x: destination.x - enemy.pos.x,
+        y: destination.y - enemy.pos.y
+    }
+
+    console.log('setDirection dist', dist)
+
+    enemy.facing = dist.x > dist.y? 'right' : 'left'
+    enemy.facing = dist.y > dist.x ? 'down' : 'top'
+    enemy.flipX = dist.x > 0    
 }
 
 const getPathAndFollow = (enemy: GameObj, destination: Vec2) => {
@@ -115,40 +123,36 @@ const getPathAndFollow = (enemy: GameObj, destination: Vec2) => {
         enemy.path = enemy.navigateTo(destination)
         if(enemy.path?.length) {
             enemy.waypoints = [enemy.path[0]]
-            const currentPos = enemy.pos
-            console.log('waypoints', enemy.waypoints) 
-            console.log('enemy.pos', currentPos) 
             enemy.path.splice(0, 1)
             // Get direction relative to enemy position
-            const dist = {
-                x: enemy.path[0].x - currentPos.x,
-                y: enemy.path[0].y - currentPos.y
-            }
-            // if(dist.y === 0 && dist.x > 0 ) enemy.facing = 'right'
-            // if(dist.y === 0 && dist.x < 0 ) enemy.facing = 'left'
-            // if(dist.y > 0 && dist.x === 0 ) enemy.facing = 'down'
-            // if(dist.y < 0 && dist.x === 0 ) enemy.facing = 'up'
-            if(dist.y > 0 && dist.x > 0 ) enemy.facing = 'downRight'
-            if(dist.y > 0 && dist.x < 0 ) enemy.facing = 'downleft'
-            if(dist.y < 0 && dist.x > 0 ) enemy.facing = 'upRight'
-            if(dist.y < 0 && dist.x < 0 ) enemy.facing = 'upleft'
-
-            enemy.flipX = dist.x > 0
-            console.log('dist', dist)
+            setDirection(enemy, enemy.path[0])
+            // if(dist.y > 0 && dist.x > 0 ) enemy.facing = 'downRight'
+            // if(dist.y > 0 && dist.x < 0 ) enemy.facing = 'downleft'
+            // if(dist.y < 0 && dist.x > 0 ) enemy.facing = 'upRight'
+            // if(dist.y < 0 && dist.x < 0 ) enemy.facing = 'upleft'
             enemy.play('walk')        
         }           
     } catch (error) {
         console.warn('pathfinding error', error)
-        const dir = destination.sub(enemy.pos).unit();
-        console.log('dir', dir)
-        enemy.move(dir.scale(enemy.speed));
+        enemy.waypoints = [destination]
+        setDirection(enemy, destination)
         enemy.play('walk')  
     }
 }
 
+// Reference: https://stackoverflow.com/a/17411276/14173422
+const rotateXY = (center: Vec2, point: Vec2, angle: number) => {
+    const radians = (Math.PI / 180) * angle,
+        cos = Math.cos(radians),
+        sin = Math.sin(radians),
+        nx = (cos * (point.x - center.x)) + (sin * (point.y - center.y)) + center.x,
+        ny = (cos * (point.y - center.y)) - (sin * (point.x - center.x)) + center.y;
+    return vec2(nx, ny);
+}
+
 export const spawnEnemiesForRoom = async(room: roomNode) => {
-    const { enemies } = getGameStoreValue()
-    const { chunkSize } = getOptionValue()
+    const { enemies, level } = getGameStoreValue()
+    const { chunkSize, tileWidth } = getOptionValue()
     const copy : prop[] = JSON.parse(JSON.stringify(enemies))
     const index: number[] = []
     const count = copy.filter((e: prop, i: number) => {
@@ -159,8 +163,8 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
     })
 
     // Check if spawned
-    const map = get('map')[0]
-    const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
+    // const map = get('map')[0]
+    // const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
 
     if(count.length){
         const { nav } = await import('../utils/bspDungeonGenerator');
@@ -175,24 +179,30 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
             }            
 
             const spawn = {
-                x: e.x * map.tileWidth  + (sizeWithPadding / 2),
-                y: e.y * map.tileWidth  + (sizeWithPadding / 2)
+                x: (e.x * tileWidth) + (tileWidth / 2),
+                y: (e.y * tileWidth) + (tileWidth / 2)
             }
 
             const enemy = add([
                 sprite('enemy'),
                 health(10, 10),
                 anchor('center'),
-                area({ shape: new Rect(vec2(0), map.tileWidth, map.tileWidth) }),
+                area({ shape: new Rect(vec2(0), tileWidth, tileWidth) }),
                 body(),
                 layer('game'),
                 pos(spawn.x, spawn.y),
-                state('idle', ['idle', 'attack', 'move', 'chase']),
+                state('idle', ['idle', 'attack', 'move', 'chase', 'pause']),
                 // Sentry makes it easy to check for visibility of the player
-                sentry({ include: "player" }, {
-                    lineOfSight: true,
-                    raycastExclude: ["enemy"],
-                }),                
+                sentry(
+                    { 
+                        include: ["player", "pot", "chest"],
+                        includeOp: 'or'
+                    }, 
+                    {
+                        lineOfSight: true,
+                        raycastExclude: ["enemy"],
+                    }
+                ),                
                 // Patrol can make the enemy follow a computed path
                 patrol({ speed: 75 }),                
                 pathfinder({
@@ -208,6 +218,88 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                     speed: 75,
                     spawn,
                     chunk,
+                    steering: (ObjectInSight: GameObj) => {
+                        if(enemy.waypoints?.length){
+                            const dist = {
+                                x: ObjectInSight.pos.x - enemy.pos.x,
+                                y: ObjectInSight.pos.y - enemy.pos.y
+                            }
+
+                            const currentPos = {
+                                x: Math.floor((enemy.pos.x - (tileWidth / 2)) / tileWidth),
+                                y: Math.floor((enemy.pos.y - (tileWidth / 2)) / tileWidth)
+                            }                    
+
+                            const distanceToTiles = Math.floor(200/tileWidth)
+
+                            console.log('dist to object', dist)
+
+                            if(dist.x <= tileWidth && dist.y <= tileWidth){
+                                switch(enemy.facing){
+                                    case 'top': case 'down':{
+                                        // Check left and right
+                                        let blockLeft = 0
+                                        let blockRight = 0
+
+                                        for(let i=1; i <= distanceToTiles; i++){
+                                            if(level[currentPos.y][currentPos.x - i] !== undefined && level[currentPos.y][currentPos.x - i] === 1) {
+                                                blockLeft++
+                                            }
+
+                                            if(level[currentPos.y][currentPos.x + i] !== undefined && level[currentPos.y][currentPos.x + i] === 1) {
+                                                blockRight++
+                                            }
+                                        }
+
+                                        if(blockLeft < blockRight){
+                                            // Go left
+                                            const newPoint = rotateXY(vec2(enemy.pos.x, enemy.pos.y), vec2(ObjectInSight.pos.x, ObjectInSight.pos.y), (enemy.facing === 'top')? 90 : -90)
+                                            console.log('newPoint left', newPoint)
+                                            enemy.waypoints = [vec2(newPoint.x, newPoint.y)]
+                                            setDirection(enemy, ObjectInSight.pos)
+                                        }else{
+                                            // Go right
+                                            const newPoint = rotateXY(vec2(enemy.pos.x, enemy.pos.y), vec2(ObjectInSight.pos.x, ObjectInSight.pos.y), (enemy.facing === 'top')? -90 : 90)
+                                            console.log('newPoint right', newPoint)
+                                            enemy.waypoints = [vec2(newPoint.x, newPoint.y)]
+                                            setDirection(enemy, ObjectInSight.pos)
+                                        }
+                                    }
+                                    break;
+                                    case 'left': case 'right':{
+                                        // Check top and down
+                                        let blockTop = 0
+                                        let blockDown = 0
+
+                                        for(let i=1; i <= distanceToTiles; i++){
+                                            if(level[currentPos.y - i] && level[currentPos.y - i][currentPos.x] !== undefined && level[currentPos.y - i][currentPos.x] === 1) {
+                                                blockTop++
+                                            }
+
+                                            if(level[currentPos.y + i] && level[currentPos.y + i][currentPos.x] !== undefined && level[currentPos.y + i][currentPos.x] === 1) {
+                                                blockDown++
+                                            }
+                                        }
+
+                                        if(blockTop < blockDown){
+                                            // Go top
+                                            const newPoint = rotateXY(vec2(enemy.pos.x, enemy.pos.y), vec2(ObjectInSight.pos.x, ObjectInSight.pos.y), (enemy.facing === 'left')? -90 : 90)
+                                            console.log('newPoint top', newPoint)
+                                            enemy.waypoints = [vec2(newPoint.x, newPoint.y)]
+                                            setDirection(enemy, ObjectInSight.pos)
+                                        }else{
+                                            // Go down
+                                            const newPoint = rotateXY(vec2(enemy.pos.x, enemy.pos.y), vec2(ObjectInSight.pos.x, ObjectInSight.pos.y), (enemy.facing === 'left')? 90 : -90)
+                                            console.log('newPoint down', newPoint)
+                                            enemy.waypoints = [vec2(newPoint.x, newPoint.y)]
+                                            setDirection(enemy, ObjectInSight.pos)
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    } 
                 },
                 // tags
                 "enemy"
@@ -215,8 +307,10 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
 
             enemy.onObjectsSpotted((objs) => {
                 const playerInSight = objs.find(o => o.is('player'))
+                const ObjectInSight = objs.find(o => o.is('pot') || o.is('chest'))
 
                 if(playerInSight && enemy.state !== 'attack'){
+                    console.log('playerInSight', playerInSight)
                     const chase = chaseOrNot(enemy, playerInSight)
 
                     if(!chase){
@@ -224,17 +318,30 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                     }
                     // if(chase && enemy.waypoints?.length) enemy.waypoints?.splice(0)
                 }
+
+                // If object is in the way
+                if(ObjectInSight){
+                    console.log('ObjectInSight', ObjectInSight)
+                    enemy.steering(ObjectInSight)
+                }
             })
 
             enemy.onPatrolFinished(()=> {
                 if(enemy.path?.length) {
                     enemy.waypoints = [enemy.path[0]]
                     enemy.path.splice(0, 1)
+                }else{
+                    enemy.stop()
+                    enemy.frame = 0                    
+                    wait(Math.random(), () => {
+                        if(enemy.state === 'chase' || enemy.state === 'attack' || enemy.state === 'pause') return
+                        enemy.enterState('idle')
+                    })
                 }
             })
 
             enemy.onStateUpdate('idle', () => {
-                stayOrNot(enemy, sizeWithPadding)
+                stayOrNot(enemy)
             })
 
             enemy.onStateEnter('move', (obj) => {
@@ -258,11 +365,12 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                 if(distance < 50){
                     enemy.waypoints?.splice(0)
                     enemy.enterState('attack', player)
-                }else{
-                    // const dir = player.pos.sub(enemy.pos).unit();
-                    // enemy.move(dir.scale(enemy.speed));
                 }
-                // })
+                
+                // If player is out of range, go for the last known position
+                if(distance > 200){
+                    getPathAndFollow(enemy, player.pos)
+                }
             })
 
             enemy.onStateEnter('attack', (player) => {
@@ -273,20 +381,32 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
 
                 enemy.play('attack', {
                     onEnd: () => {
+                        if(enemy.hp <= 0) return
+
                         enemy.frame = 0
                         // And more
                         const distance = enemy.pos.dist(player.pos)
 
                         console.log('distance', distance)
 
-                        if(distance < 10){
+                        if(distance < 50){
                             enemy.enterState('attack', player)
+                        }else
+                        if(distance < 200){
+                            enemy.enterState('chase', player)
                         }else{
                             enemy.enterState('idle')
                         }
                     }
                 })
-            })            
+            })      
+            
+            enemy.onStateEnter('pause', () => {
+                enemy.waypoints?.splice(0)
+                enemy.stop()
+                enemy.frame = 0
+                enemy.hidden = true
+            })
 
             enemy.onDeath(() => {
                 console.log('enemy dead')
@@ -316,7 +436,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
 
                 switch(currentAnim?.name){
                     case 'attack':
-                        if(!enemy.get('attack').length && currentAnim.frameIndex === 3) createHitBox(enemy, 'left', currentAnim, [ 'enemy', 'pot', 'chest']) 
+                        if(!enemy.get('attack').length && currentAnim.frameIndex === 3) createHitBox(enemy, enemy.facing, currentAnim, 'collide', [ 'enemy', 'pot', 'chest']) 
                     break;
                     case 'walk':{
                         // Update direction
