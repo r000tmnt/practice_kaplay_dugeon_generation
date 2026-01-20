@@ -2,6 +2,7 @@ import k from '../lib/kaplay'
 import { type GameObj, type Vec2 } from 'kaplay';
 import { generateBSPDungeon } from '../utils/bspDungeonGenerator';
 import { createPlayerSprite } from '../utils/player';
+import { spawnObject } from '../utils/staticObject';
 
 // Store
 import { createStore } from 'jotai'
@@ -224,71 +225,47 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
     let anchor = 0
 
     switch(i){
-        case 0:{
+        case 0: case 1: {
             // Top edges
+            // Bottom edges
             for(let j=0; j < edgeList.length; j++){
                 const { x, y } = edgeList[j]
                 // If next edge is not in the same row or col
                 if(edgeList[j + 1] === undefined ||
                   (edgeList[j + 1].x - edgeList[j].x) !== 1 || 
                    edgeList[j + 1].y !== y){
+
                     // Get the starting x
                     const startX = x - (j - anchor)
                     // Update anchor
-                    anchor = j + 1
-
+                    anchor = j + 1     
+                    
                     // Create rect
-                    map.add([
-                        pos(startX * tileWidth, (y * tileWidth) + (tileWidth - 8)),
-                        area({ shape: new Rect(
+                    spawnObject(
+                        { 
+                            x: startX * tileWidth, 
+                            y: (i === 1)? y * tileWidth : (y * tileWidth) + (tileWidth - 1), 
+                            type: 'wall', 
+                            roomId: -1 
+                        }, 
+                        tileWidth, 
+                        new Rect(
                             vec2(0),
                             (x - startX + 1) * tileWidth, 1
-                        )}),
-                        body({ isStatic: true }),
-                        // opacity(0.5), // debug
-                        // color(0, 0, 255),
-                        "wall",                        
-                    ])
+                        )
+                    )  
                 }
             }            
         }
         break;
-        case 1:{
-            // bottom edges
-            for(let j=0; j < edgeList.length; j++){
-                const { x, y } = edgeList[j]
-                // If next edge is not in the same row or col
-                if(edgeList[j + 1] === undefined ||
-                  (edgeList[j + 1].x - edgeList[j].x) !== 1 || 
-                   edgeList[j + 1].y !== y){
-                    // Get the starting x
-                    const startX = x - (j - anchor)
-                    // Update anchor
-                    anchor = j + 1
-
-                    // Create rect
-                    map.add([
-                        pos(startX * tileWidth, y * tileWidth),
-                        area({ shape: new Rect(
-                            vec2(0),
-                            (x - startX + 1) * tileWidth, 1
-                        ) }),
-                        body({ isStatic: true }),
-                        // opacity(0.5), // debug
-                        // color(0, 0, 255),
-                        "wall",                        
-                    ])                        
-                }
-            }                
-        }        
-        break;
-        case 2:{
+        case 2: case 3: {
             // right edges
+            // left edges       
             // Sort
             edgeList.sort((a, b) => {
                 if(a.x !== b.x) return a.x- b.x
                 return a.y - b.y              
-            })            
+            })              
 
             for(let j=0; j < edgeList.length; j++){
                 const { x, y } = edgeList[j]
@@ -299,73 +276,28 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
                     // Get the starting x
                     const startY = anchor > 0? edgeList[anchor].y : edgeList[0].y
                     // Update anchor
-                    anchor = j + 1                       
+                    anchor = j + 1
+                    
                     // Create rect
-                    map.add([
-                        pos(x * tileWidth, startY * tileWidth),
-                        area({ shape: new Rect(
+                    spawnObject(
+                        { 
+                            x: (i === 2)? x * tileWidth : (x * tileWidth) + (tileWidth - 1), 
+                            y: startY * tileWidth, 
+                            type: 'wall', 
+                            roomId: -1 
+                        }, 
+                        tileWidth, 
+                        new Rect(
                             vec2(0),
                             1, ((y - startY) + 1) * tileWidth
-                        ) }),
-                        body({ isStatic: true }),
-                        // opacity(0.5), // debug
-                        // color(0, 0, 255),
-                        "wall",                        
-                    ])
+                        )
+                    )    
                 }
             }               
         }                  
-        break;
-        case 3:{
-            // left edges
-            // Sort
-            edgeList.sort((a, b) => {
-                if(a.x !== b.x) return a.x- b.x
-                return a.y - b.y
-            })
-
-            for(let j=0; j < edgeList.length; j++){
-                const { x, y } = edgeList[j]
-                // If next edge is not in the same col or col
-                if(edgeList[j + 1] === undefined ||
-                  (edgeList[j + 1].y - edgeList[j].y) !== 1 || 
-                   edgeList[j + 1].x !== x){
-                    // Get the starting x
-                    const startY = anchor > 0? edgeList[anchor].y : edgeList[0].y
-                    // Update anchor
-                    anchor = j + 1                        
-                    // Create rect
-                    map.add([
-                        pos((x * tileWidth) + (tileWidth - 8), startY * tileWidth),
-                        area({ shape:new Rect(
-                            vec2(0),
-                            1, ((y - startY) + 1) * tileWidth
-                        ) }),
-                        body({ isStatic: true }),
-                        // opacity(0.5), // debug
-                        // color(0, 0, 255),
-                        "wall",                        
-                    ])
-                }
-            }               
-        }             
-        break;                        
+        break;                     
     }
   }
-
-  // Set collision
-//   const walls = map.get('wall')
-
-//   walls.forEach(wall => {
-//     wall.onCollide('player', (obj) => {
-//         console.log('wall collide with player')
-//     })
-//   })
-
-//   console.log(allEdges[0])
-//   console.log(allEdges[1])
-//   console.log(allEdges[2])
-//   console.log(allEdges[3])
 }
 
 const setChunks = async() => {
