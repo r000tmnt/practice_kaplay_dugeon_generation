@@ -87,7 +87,7 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
     if(!inX && !inY){
         // Reached top right?
         if((wPos.y - middleY) <= 0 && (wPos.x + middleX) >= mapWidth){
-            console.log('camera top right')
+            // console.log('camera top right')
             setCamPos(mapWidth - middleX, middleY)
             getCameraEdges('topRight', mapWidth, mapHeight)
         }
@@ -237,7 +237,7 @@ const updateChunks = (camera: {top: number, down: number, left: number, right: n
 const activateChunk = (x: number, y:number) => {
     const { chunks } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
-    // const enemies = get('map')[0]?.get('enemy')
+    const enemies = get('map')[0]?.get('enemy')
     const copyChunks = JSON.parse(JSON.stringify(chunks))
     const chunk = copyChunks[`${x},${y}`]
 
@@ -267,12 +267,13 @@ const activateChunk = (x: number, y:number) => {
             chunks: copyChunks
         }))
 
-        // enemies.forEach(enemy => {
-        //     if(x === enemy.chunk.x && y === enemy.chunk.y && !enemy.defeat){
-        //         // Activate enemy
-                
-        //     }
-        // })
+        enemies.find(enemy => {
+            if(x === enemy.chunk.x && y === enemy.chunk.y && enemy.state === 'pause'){
+                // Activate enemy
+                enemy.hidden = false
+                enemy.enterState('idle')
+            }
+        })
 
         return true        
     }
@@ -305,13 +306,10 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
             })
             chunksOutSide[key].objects.splice(0)    
             
-            enemies.forEach(enemy => {
+            enemies.find(enemy => {
                 if(x === enemy.chunk.x && y === enemy.chunk.y && !enemy.defeat && enemy.active){
                     // Deactivate enemy
-                    enemy.stop()
-                    enemy.frame = 0
-                    // Back to spawn position
-                    // enemy.moveTo(enemy.spawn)
+                    enemy.enterState('pause')
                 }
             })              
         }     
