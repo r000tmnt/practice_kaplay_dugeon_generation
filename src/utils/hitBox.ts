@@ -13,7 +13,7 @@ const {
     vec2,
  } = k
 
-export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAnim, ignore: string[] = []) => {
+export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAnim, type: string, ignore: string[] = []) => {
     const { tileWidth } = getOptionValue()
 
     // Temporary set to attack only
@@ -47,6 +47,7 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
     const hitBox = unit.add([
         area({ 
             shape: new Rect(vec2(0), 10, tileWidth),
+            isSensor: true,
             collisionIgnore: ignore
         }),
         anchor('center'),
@@ -57,7 +58,10 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
         anim.name
     ])
 
-    setCollision(hitBox, anim)
+    console.log('hitBox created', hitBox)
+
+    if(type === 'collide') setCollision(hitBox, anim)
+    // if(type === 'overlap') setOverlap(hitBox, anim)
 
     return hitBox
 }
@@ -131,23 +135,108 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
     hitBox.onCollide('player', (obj: GameObj) => {
         console.log('player get hit', obj)
 
-        // if(!obj.active || obj.hp <= 0) return
+        if(!obj.active || obj.hp <= 0) return
 
-        // obj.hp -= 2;
+        obj.hp -= 2;
 
-        // if(obj.hp <= 0){
-        //     obj.play('lose', {
-        //         onEnd: () => {
-        //             console.log('lose animation ended')
-        //         }
-        //     })
-        //     return
-        // }
+        if(obj.hp <= 0){
+            obj.play('lose', {
+                onEnd: () => {
+                    console.log('lose animation ended')
+                }
+            })
+            return
+        }
 
-        // obj.play('hurt', {
-        //     onEnd: () => {
-        //         console.log('enemy hp', obj.hp)
-        //     }
-        // }) 
+        obj.play('hurt', {
+            onEnd: () => {
+                console.log('enemy hp', obj.hp)
+            }
+        }) 
     })            
 }
+
+// const setOverlap = (hitBox: GameObj, anim: SpriteCurAnim) => {
+//     const { props } = getGameStoreValue()
+//     const { tileWidth } = getOptionValue()
+
+//     hitBox.isOverlapping('pot', (obj: GameObj) => {
+//         console.log(obj)
+//         obj.broken = true
+//         obj.play('break')  
+//         obj.unuse('area')
+//         obj.unuse('body')
+//         // Update props
+//         const pot = props.findIndex(prop => prop.type === 'pot' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
+//         props[pot].broken = true
+//         gameStore.set(gameState, prve => ({
+//             ...prve,
+//             props: props
+//         }))
+//         // Drop items         
+
+//         // And more        
+//     })
+
+//     hitBox.isOverlapping('chest', (obj: GameObj) => {
+//         console.log(obj)
+//         obj.broken = true
+//         obj.play('open') 
+//         // Update props
+//         const chest = props.findIndex(prop => prop.type === 'chest' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
+//         props[chest].open = true
+//         gameStore.set(gameState, prve => ({
+//             ...prve,
+//             props: props
+//         }))
+//         // Drop items         
+
+//         // And more            
+//     })    
+
+//     hitBox.isOverlapping('enemy', (obj: GameObj) => {
+//         console.log(obj)
+
+//         if(!obj.active || obj.hp <= 0) return
+
+//         obj.hp -= 2;
+
+//         if(obj.hp <= 0){
+//             obj.play('lose', {
+//                 onEnd: () => {
+//                     console.log('lose animation ended')
+//                 }
+//             })
+//             return
+//         }
+
+//         obj.play('hurt', {
+//             onEnd: () => {
+//                 console.log('enemy hp', obj.hp)
+//             }
+//         })             
+//     })        
+
+//     hitBox.isOverlapping('player', (obj: GameObj) => {
+//         console.log(obj)
+
+//         if(!obj.active || obj.hp <= 0) return
+
+//         obj.hp -= 2;
+
+//         if(obj.hp <= 0){
+//             obj.play('lose', {
+//                 onEnd: () => {
+//                     console.log('lose animation ended')
+//                 }
+//             })
+//             return
+//         }
+
+//         obj.play('hurt', {
+//             onEnd: () => {
+//                 console.log('enemy hp', obj.hp)
+//             }
+//         })             
+//     })            
+// }
