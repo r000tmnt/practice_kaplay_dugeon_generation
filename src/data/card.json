@@ -1,0 +1,76 @@
+[
+    {
+        "id": "card_001",
+        "name": "Claustrophobia",
+        "type": 3, 
+        "desc": "Reduce map size",
+        "effect": {
+            "size": -10
+        }
+    },
+    {
+        "id": "card_002",
+        "name": "Treasure Hunter",
+        "type": 3, 
+        "desc": "Increase chance of finding treasure chests",
+        "effect": {
+            "treasure_find_rate": 0.15
+        }
+    },
+    {
+        "id": "card_003",
+        "name": "Swift Feet",
+        "type": 3, 
+        "desc": "Increase movement speed",
+        "effect": {
+            "move_speed": 1.2
+        }
+    },
+    {
+        "id": "card_004",
+        "name": "Iron Skin",
+        "type": 3, 
+        "desc": "Increase defense",
+        "effect": {
+            "defense": 5
+        }
+    },
+    {
+        "id": "card_005",
+        "name": "Berserker's Rage",
+        "type": 3, 
+        "desc": "Increase attack power but decrease defense",
+        "effect": {
+            "attack": 5,
+            "defense": -3
+        }
+    },
+    {
+        "id": "card_006",
+        "name": "Lucky Charm",
+        "type": 3, 
+        "desc": "Increase luck, improving critical hit rate and item find rate",
+        "effect": {
+            "crit_rate": 0.1,
+            "item_find_rate": 0.1
+        }
+    },
+    {
+        "id": "card_007",
+        "name": "Mana Surge",
+        "type": 3, 
+        "desc": "Increase maximum mana points",
+        "effect": {
+            "max_mp": 20
+        }
+    },
+    {
+        "id": "card_008",
+        "name": "Health Boost",
+        "type": 3, 
+        "desc": "Increase maximum health points",
+        "effect": {
+            "max_hp": 20
+        }
+    }
+]
