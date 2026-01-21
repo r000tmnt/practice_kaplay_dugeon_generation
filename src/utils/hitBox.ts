@@ -2,6 +2,7 @@ import type { GameObj, SpriteCurAnim } from "kaplay";
 import k  from '../lib/kaplay'
 import { gameState, gameStore, getGameStoreValue } from '../store/game';
 import { setting, getOptionValue } from '../store/setting';
+import { dropItem } from './item'
 
 const { 
     area,
@@ -79,36 +80,51 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
 
     hitBox.onCollide('pot', (obj: GameObj) => {
         console.log(obj)
-        obj.broken = true
-        obj.play('break')  
-        obj.unuse('area')
-        obj.unuse('body')
-        // Update props
-        const pot = props.findIndex(prop => prop.type === 'pot' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
-        props[pot].broken = true
-        gameStore.set(gameState, prve => ({
-            ...prve,
-            props: props
-        }))
-        // Drop items         
 
-        // And more
+        try {
+            if(!obj.broken){
+                obj.broken = true
+                obj.play('break')  
+                // obj.unuse('area')
+                // obj.unuse('body')
+                // Update props
+                const pot = props.findIndex(prop => prop.type === 'pot' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
+                props[pot].broken = true
+                gameStore.set(gameState, prve => ({
+                    ...prve,
+                    props: props
+                }))
+                // Drop items  
+                dropItem(obj, 'pot')
+
+                // And more            
+            }            
+        } catch (error) {
+            console.warn('hitbox collision error', error)
+        }
     })      
 
     hitBox.onCollide('chest', (obj: GameObj) => {
         console.log(obj)
-        obj.broken = true
-        obj.play('open') 
-        // Update props
-        const chest = props.findIndex(prop => prop.type === 'chest' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
-        props[chest].open = true
-        gameStore.set(gameState, prve => ({
-            ...prve,
-            props: props
-        }))
-        // Drop items         
-
-        // And more
+        
+        try {
+            if(!obj.open){
+                obj.open = true
+                obj.play('open') 
+                // Update props
+                const chest = props.findIndex(prop => prop.type === 'chest' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
+                props[chest].open = true
+                gameStore.set(gameState, prve => ({
+                    ...prve,
+                    props: props
+                }))
+                // Drop items         
+                dropItem(obj, 'chest')
+                // And more            
+            }            
+        } catch (error) {
+            console.warn('hitbox collision error', error)
+        }
     })          
 
     hitBox.onCollide('enemy', (obj: GameObj) => {
