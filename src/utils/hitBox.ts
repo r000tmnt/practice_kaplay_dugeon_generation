@@ -53,9 +53,11 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
         anchor('center'),
         pos(size.x, size.y),
         rotate(size.angle),
+        {
+            anim: anim.name
+        },
         // Tags
-        "hitBox",
-        anim.name
+        "hitBox"
     ])
 
     console.log('hitBox created', hitBox)
