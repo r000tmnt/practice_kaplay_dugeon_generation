@@ -237,7 +237,7 @@ const updateChunks = (camera: {top: number, down: number, left: number, right: n
 const activateChunk = (x: number, y:number) => {
     const { chunks } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
-    const enemies = get('map')[0]?.get('enemy')
+    const enemies = get('enemy')
     const copyChunks = JSON.parse(JSON.stringify(chunks))
     const chunk = copyChunks[`${x},${y}`]
 
@@ -283,7 +283,7 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
     // console.log(top, down, left, right)
     const { chunks } = getGameStoreValue()
     const { tileWidth }= getOptionValue()
-    const enemies = get('map')[0]?.get('enemy')
+    const enemies = get('enemy')
     const copyChunks = JSON.parse(JSON.stringify(chunks))
 
     // const activatedChunks: string[] = []
