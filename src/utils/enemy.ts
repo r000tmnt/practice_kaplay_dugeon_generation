@@ -13,7 +13,7 @@ const {
     anchor,
     body,
     // getData,
-    get,
+    // get,
     health,
     layer,
     patrol,
@@ -112,8 +112,11 @@ const setDirection = (enemy: GameObj, destination: Vec2) => {
 
     console.log('setDirection dist', dist)
 
-    enemy.facing = dist.x > dist.y? 'right' : 'left'
-    enemy.facing = dist.y > dist.x ? 'down' : 'top'
+    enemy.facing = dist.x > 0? 'right' : 'left'
+
+    if(dist.y > (Math.abs(dist.x) * 2)) enemy.facing = 'down'
+    if(dist.y < 0 && Math.abs(dist.y) > (Math.abs(dist.x) * 2)) enemy.facing = 'top'
+
     enemy.flipX = dist.x > 0    
 }
 
@@ -153,11 +156,8 @@ const rotateXY = (center: Vec2, point: Vec2, angle: number) => {
 export const spawnEnemiesForRoom = async(room: roomNode) => {
     const { enemies, level } = getGameStoreValue()
     const { chunkSize, tileWidth } = getOptionValue()
-    const copy : prop[] = JSON.parse(JSON.stringify(enemies))
-    const index: number[] = []
-    const count = copy.filter((e: prop, i: number) => {
+    const count = enemies.filter((e: prop) => {
         if(e.roomId === room.id && !e.defeat){
-            index.push(i)
             return e
         }
     })
@@ -195,8 +195,8 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                 // Sentry makes it easy to check for visibility of the player
                 sentry(
                     { 
-                        include: ["player", "pot", "chest"],
-                        includeOp: 'or'
+                        include: ["player", "pot", "chest"], // Tags to check
+                        includeOp: 'or' // Rule to checking tags (and/or)
                     }, 
                     {
                         lineOfSight: true,
@@ -216,6 +216,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                     facing: 'left',
                     path: [],
                     speed: 75,
+                    index: `${room.id}_${i}`,
                     spawn,
                     chunk,
                     steering: (ObjectInSight: GameObj) => {
@@ -364,6 +365,8 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
 
                 if(distance < 50){
                     enemy.waypoints?.splice(0)
+                    // Direction to player
+                    setDirection(enemy, player.pos)
                     enemy.enterState('attack', player)
                 }
                 
@@ -384,6 +387,15 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                         if(enemy.hp <= 0) return
 
                         enemy.frame = 0
+
+                        // Destory hitBoxes
+                        const hitBoxes = enemy.get('hitBox')
+
+                        hitBoxes.forEach(hitBox => {
+                            if(hitBox.anim === 'attack')
+                                hitBox.destroy()
+                        })
+
                         // And more
                         const distance = enemy.pos.dist(player.pos)
 
@@ -436,7 +448,14 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
 
                 switch(currentAnim?.name){
                     case 'attack':
-                        if(!enemy.get('attack').length && currentAnim.frameIndex === 3) createHitBox(enemy, enemy.facing, currentAnim, 'collide', [ 'enemy', 'pot', 'chest']) 
+                        if(!enemy.get('attack').length && currentAnim.frameIndex === 3) 
+                            createHitBox(
+                                enemy, 
+                                enemy.facing,
+                                currentAnim, 
+                                'collide', 
+                                [ 'enemy', 'pot', 'chest']
+                            ) 
                     break;
                     case 'walk':{
                         // Update direction
@@ -465,14 +484,6 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                     break;
                 }
             })
-
-            // Remove enemies in game store   
-            copy.splice(i, 1)
-        })     
-        
-        gameStore.set(gameState, prev => ({
-            ...prev,
-            enemies: copy
-        }))
+        })
     }
 }
