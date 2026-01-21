@@ -86,7 +86,14 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
         switch(currentAnim?.name){
             case 'attack':
-                if(!player.get('attack').length && currentAnim.frameIndex === 2) createHitBox(player, player.direction, currentAnim, 'collide', ['player'])         
+                if(!player.get('attack').length && currentAnim.frameIndex === 2) 
+                    createHitBox(
+                        player, 
+                        player.direction,
+                        currentAnim, 
+                        'collide', 
+                        ['player']
+                    )         
             break;
             default: {
                 // Reference: https://jslegenddev.substack.com/p/how-to-fix-diagonal-movement-in-2d
@@ -142,7 +149,10 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                                 console.log('animation end')
                                 // Destroy hitBoxes
                                 const hitBoxes = player.get('hitBox')
-                                hitBoxes.forEach(hitBox => hitBox.destroy())
+                                hitBoxes.forEach(hitBox => {
+                                    if(hitBox.anim === 'attack')
+                                        hitBox.destroy()
+                                })
                             }
                         })
                     }
