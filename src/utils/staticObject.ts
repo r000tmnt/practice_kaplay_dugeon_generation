@@ -27,7 +27,7 @@ export const spawnObject = (prop: prop, tileWidth: number, shape = {} as Rect) =
                 obj = map[0].add([
                     sprite('pot'),
                     pos(prop.x * tileWidth, prop.y * tileWidth),
-                    area(),
+                    area({ collisionIgnore: ["item"] }),
                     body({ isStatic: true }),
                     {
                         broken: prop.broken,
@@ -59,7 +59,7 @@ export const spawnObject = (prop: prop, tileWidth: number, shape = {} as Rect) =
                 obj = map[0].add([
                     sprite('item', { frame: 3 }),
                     pos(prop.x * tileWidth, prop.y * tileWidth),
-                    area(),
+                    area({ collisionIgnore: ["item"] }),
                     body({ isStatic: true }),
                     {
                         open: prop.open,
@@ -79,7 +79,7 @@ export const spawnObject = (prop: prop, tileWidth: number, shape = {} as Rect) =
         case 'wall':
             obj = map[0].add([
                 pos(prop.x, prop.y),
-                area({ shape }),
+                area({ shape, collisionIgnore: ["item"] }),
                 body({ isStatic: true }),
                 // opacity(0.5), // debug
                 // color(0, 0, 255),

@@ -187,7 +187,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                 sprite('enemy'),
                 health(10, 10),
                 anchor('center'),
-                area({ shape: new Rect(vec2(0), tileWidth, tileWidth) }),
+                area({ shape: new Rect(vec2(0), tileWidth, tileWidth), collisionIgnore: ["item"] }),
                 body(),
                 layer('game'),
                 pos(spawn.x, spawn.y),
@@ -454,7 +454,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                                 enemy.facing,
                                 currentAnim, 
                                 'collide', 
-                                [ 'enemy', 'pot', 'chest']
+                                ['enemy', 'pot', 'chest', "item"]
                             ) 
                     break;
                     case 'walk':{
