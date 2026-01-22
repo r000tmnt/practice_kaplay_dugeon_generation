@@ -1,5 +1,5 @@
 import k from '../lib/kaplay'
-import type { GameObj} from "kaplay";
+import type { GameObj, TimerController } from "kaplay";
 import type { prop, roomNode } from '../model/map'
 
 import { setCameraPosition } from './camera';
@@ -24,6 +24,7 @@ const {
     // health,
     isKeyDown,
     layer,
+    loop,
     pos,
     Rect,
     // rotate,
@@ -65,12 +66,27 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         "player"
     ]);
     console.log('player', player)
-
-    // player.onAnimStart((anim: string) => {
-    //     console.log(anim)
-    // })
-
     setCameraPosition(player, mapWidth, mapHeight)
+
+    player.onCollide('enemy', (enemy: GameObj) => {
+        // Set both player and enemy body to be static for awhile
+        if(enemy.getCurAnim()?.name === 'attack'){
+            enemy.isStatic = true
+        }
+
+        if(enemy.getCurAnim()?.name === 'walk' && player.getCurAnim()?.name !== 'walk'){
+            player.isStatic = true
+        }
+    })
+
+    player.onCollideEnd('enemy', (enemy: GameObj) => {
+    //     // player.isStatic = false
+    //     if(enemy.getCurAnim()?.name === 'walk'){
+            player.isStatic = false
+    //     }else{
+            enemy.isStatic = false
+    //     }
+    })    
 
     // #region Player control
     player.onUpdate(() => {
@@ -92,18 +108,13 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
                     if(hitBoxes) return
 
-                    try {
-                        createHitBox(
-                            player, 
-                            player.direction,
-                            currentAnim, 
-                            'collide', 
-                            ['player', 'item']
-                        )                          
-                    } catch (error) {
-                        console.warn('create hitbox error', error)
-                    }
-                    
+                    createHitBox(
+                        player, 
+                        player.direction,
+                        currentAnim, 
+                        'collide', 
+                        ['player', 'item']
+                    )
                 }       
             break;
             default: {
