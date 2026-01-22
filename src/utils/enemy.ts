@@ -172,12 +172,6 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
         count.forEach((e: prop, i: number) => {
             console.log('spawn enemy')
 
-            // Get chunk position
-            const chunk = {
-                x: Math.floor(e.x / chunkSize ),
-                y: Math.floor(e.y / chunkSize )
-            }            
-
             const spawn = {
                 x: (e.x * tileWidth) + (tileWidth / 2),
                 y: (e.y * tileWidth) + (tileWidth / 2)
@@ -218,7 +212,6 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                     speed: 75,
                     index: `${room.id}_${i}`,
                     spawn,
-                    chunk,
                     steering: (ObjectInSight: GameObj) => {
                         if(enemy.waypoints?.length){
                             const dist = {
@@ -227,8 +220,8 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                             }
 
                             const currentPos = {
-                                x: Math.floor((enemy.pos.x - (tileWidth / 2)) / tileWidth),
-                                y: Math.floor((enemy.pos.y - (tileWidth / 2)) / tileWidth)
+                                x: Math.floor(enemy.pos.x / tileWidth),
+                                y: Math.floor(enemy.pos.y / tileWidth)
                             }                    
 
                             const distanceToTiles = Math.floor(200/tileWidth)
@@ -318,10 +311,9 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                         enemy.enterState('idle')
                     }
                     // if(chase && enemy.waypoints?.length) enemy.waypoints?.splice(0)
-                }
-
+                }else
                 // If object is in the way
-                if(ObjectInSight){
+                if(ObjectInSight && enemy.waypoints?.length){
                     console.log('ObjectInSight', ObjectInSight)
                     enemy.steering(ObjectInSight)
                 }
@@ -421,6 +413,8 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
             })
 
             enemy.onDeath(() => {
+                enemy.defeat = true
+                enemy.unuse('body')
                 console.log('enemy dead')
                 console.log(enemy.getCurAnim())
                 // enemy.unuse('area')
@@ -430,6 +424,8 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                 const eIndex = enemies.findIndex(prop => prop.type === 'enemy' && prop.x === e.x && prop.y === e.y)
                 enemies[eIndex].defeat = true
                 enemies[eIndex].active = false
+                enemies[eIndex].x = Math.floor((enemy.pos.x - (tileWidth / 2)) / tileWidth)
+                enemies[eIndex].y = Math.floor((enemy.pos.y - (tileWidth / 2)) / tileWidth)
 
                 gameStore.set(gameState, prve => ({
                     ...prve,
@@ -440,8 +436,18 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                 }))
                 // Drop items         
 
-                // And more                
+                // And more       
+                wait(1, () => enemy.destroy())         
             })
+
+            // enemy.onCollide('enemy', (isEnemy) => {
+            //     // Set enemy body to be static for awhile
+            //     isEnemy.isStatic = true
+            // })
+
+            // enemy.onCollideEnd('enemy', (isEnemy) => {
+            //     isEnemy.isStatic = false
+            // })                
 
             enemy.onUpdate(() => {
                 const currentAnim = enemy.getCurAnim()
