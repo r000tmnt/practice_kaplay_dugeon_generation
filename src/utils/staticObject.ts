@@ -16,14 +16,7 @@ export const spawnObject = (prop: prop, tileWidth: number, shape = {} as Rect) =
     let obj;
     switch(prop.type){
         case 'pot':
-            if(prop.broken){
-                obj = map[0].add([
-                    sprite('pot', { frame: 2 }),
-                    pos(prop.x * tileWidth, prop.y * tileWidth),
-                    // Tags
-                    "pot"
-                ])
-            }else{
+            if(!prop.broken){
                 obj = map[0].add([
                     sprite('pot'),
                     pos(prop.x * tileWidth, prop.y * tileWidth),
@@ -41,7 +34,7 @@ export const spawnObject = (prop: prop, tileWidth: number, shape = {} as Rect) =
                     },
                     // Tags
                     "pot"
-                ])                
+                ])    
             }
             break   
         case 'chest':
