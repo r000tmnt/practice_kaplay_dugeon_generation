@@ -4,7 +4,7 @@ import potionData from '../data/potion.json'
 import otherData from '../data/other.json'  
 // import cardData from '../data/card.json'
 
-import type { GameObj } from 'kaplay'
+import type { GameObj, Vec2 } from 'kaplay'
 import k from '../lib/kaplay'
 import { getGameStoreValue } from '../store/game'
 import { getOptionValue } from '../store/setting'
@@ -20,7 +20,31 @@ const {
     text,
     tween,
     vec2,
+    wait,
  } = k
+
+const continuousTween = (sequence: Vec2[]|number[], obj: GameObj, target: string, duration: number, count=0) => {
+    tween(
+        obj[target],
+        sequence[count],
+        duration,
+        (value) => {
+            console.log('time', count)
+            console.log('next', value)
+            obj[target] = value
+        },
+        easings.linear
+    ).onEnd(() => {
+        if(count < (sequence.length - 1))
+            continuousTween(
+                sequence,
+                obj,
+                target,
+                duration,
+                count + 1
+            )
+    })
+}
 
 export const dropItem = (obj: GameObj, type: string) => {
     const items = []
@@ -75,7 +99,7 @@ export const dropItem = (obj: GameObj, type: string) => {
     const map = get('map')[0]
 
     // Check the space around the obj to drop the item
-    const range = obj.width / 2
+    const range = obj.width
     const dropX = { start: obj.pos.x - range, end: obj.pos.x + obj.width + range } 
     const dropY = { start: obj.pos.y - range, end: obj.pos.y + obj.width + range }    
     
@@ -108,7 +132,7 @@ export const dropItem = (obj: GameObj, type: string) => {
 
     items.forEach(item => {
         // Drop item logic here
-        // console.log('Dropped item:', item)
+        console.log('item:', item)
 
         const x = Math.floor(Math.random() * (dropX.end - dropX.start) + dropX.start) 
         const y = Math.floor(Math.random() * (dropY.end - dropY.start) + dropY.start)
@@ -121,8 +145,8 @@ export const dropItem = (obj: GameObj, type: string) => {
                 // Create the item entity here
                 const dropped = map.add([
                     sprite('item', { frame: item.frame }),
-                    area({ isSensor: true, collisionIgnore: ["item"] }),
-                    pos(x, y),
+                    area(),
+                    pos(obj.pos.x, obj.pos.y),
                     {
                         item: item.item
                     },
@@ -132,37 +156,31 @@ export const dropItem = (obj: GameObj, type: string) => {
 
                 console.log('dropped item', dropped)
 
+                const dist = {
+                    x: x - obj.pos.x,
+                    y: y - obj.pos.y
+                }
+
                 // Visual effect
                 const points = [
-                    vec2(dropped.pos.x, dropped.pos.y), 
-                    vec2(dropped.pos.x, dropped.pos.y + (dropped.pos.y * 1.3)), 
-                    vec2(dropped.pos.x, dropped.pos.y + (dropped.pos.y * 1.5)), 
-                    vec2(dropped.pos.x, dropped.pos.y)
+                    vec2(
+                        (dist.x < 0)? obj.pos.x - Math.floor(Math.abs(dist.x) * 1/3) : obj.pos.x + Math.floor(dist.x * 1/3), 
+                        obj.pos.y + Math.floor(obj.y * 1/3)
+                    ), 
+                    vec2(
+                        (dist.x < 0)? obj.pos.x - Math.floor(Math.abs(dist.x) * 2/3) : obj.pos.x + Math.floor(dist.x * 2/3), 
+                        obj.pos.y + Math.floor(obj.y * 2/3) 
+                    ), 
+                    vec2(x, y)
                 ]
-                let times = 0
+                console.log('points', points)
+                continuousTween(
+                    points,
+                    dropped,
+                    'pos',
+                    0.25,
+                )
 
-                loop(0.1, () => {
-                        console.log('times', times)
-                        const newPos = points[times]
-                        times += 1 
-                        tween(
-                            dropped.pos,
-                            newPos,
-                            0,
-                            (p) => {
-                                try {
-                                    console.log('point', p)
-                                    dropped.pos = p           
-                                } catch (error) {
-                                    console.warn('tween error', error)
-                                }
-                            },
-                            easings.easeInBounce
-                        )                            
-                    },
-                    points.length,
-                    true
-                )                
             } catch (error) {
                 console.warn('item object create error', error)
             }
