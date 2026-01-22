@@ -18,8 +18,9 @@ store.sub(gameState, () => {
 
 const { 
     add,
-    area,
-    body,
+    // area,
+    // body,
+    drawSprite,
     go,
     getLayers,
     layer,
@@ -100,7 +101,7 @@ const setMap = async(name = 'testMap') => {
         const dungeon = await generateBSPDungeon();
 
         if(dungeon){
-            const { grid, entrance, exit, polygon } = dungeon
+            const { grid, entrance, exit } = dungeon
 
             console.log(entrance, exit)
 
@@ -331,7 +332,29 @@ const setChunks = async() => {
     gameStore.set(gameState, prev => ({
         ...prev,
         chunks: copyChunks
-    }))      
+    }))  
+    
+    map.onUpdate(() => {
+        props.filter(prop => prop.type === 'pot').forEach(prop => {
+            if(prop.broken){
+                drawSprite({
+                    sprite: 'pot',
+                    pos: vec2(prop.x * map.tileWidth, prop.y * map.tileWidth),
+                    frame: 2
+                })
+            }
+        })
+
+        props.filter(prop => prop.type === 'enemy').forEach(prop => {
+            if(prop.defeat){
+                drawSprite({
+                    sprite: 'enemy',
+                    pos: vec2(prop.x * map.tileWidth, prop.y * map.tileWidth),
+                    frame: 13
+                })
+            }
+        })        
+    })    
 }
 
 // const removeDuplicateEdges = (edgeList: {x: number, y: number}[], listToCheck: {x: number, y: number}[], listDirection: string, checkDirection: string) => {
