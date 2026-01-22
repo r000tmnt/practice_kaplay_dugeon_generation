@@ -236,7 +236,7 @@ const updateChunks = (camera: {top: number, down: number, left: number, right: n
 
 const activateChunk = (x: number, y:number) => {
     const { chunks } = getGameStoreValue()
-    const { tileWidth } = getOptionValue()
+    const { tileWidth, chunkSize } = getOptionValue()
     const enemies = get('enemy')
     const copyChunks = JSON.parse(JSON.stringify(chunks))
     const chunk = copyChunks[`${x},${y}`]
@@ -268,10 +268,18 @@ const activateChunk = (x: number, y:number) => {
         }))
 
         enemies.find(enemy => {
-            if(x === enemy.chunk.x && y === enemy.chunk.y && enemy.state === 'pause'){
-                // Activate enemy
-                enemy.hidden = false
-                enemy.enterState('idle')
+            if(enemy.state === 'pause'){
+                // Get chunk position
+                const chunk = {
+                    x: Math.floor((enemy.pos.x / tileWidth) / chunkSize ),
+                    y: Math.floor((enemy.pos.y / tileWidth) / chunkSize )
+                }            
+
+                if(Number(x) === chunk.x && Number(y) === chunk.y && !enemy.defeat && enemy.active){
+                    // Activate enemy
+                    enemy.hidden = false
+                    enemy.enterState('idle')
+                }                
             }
         })
 
@@ -282,7 +290,7 @@ const activateChunk = (x: number, y:number) => {
 const deactivateChunk = (top: number, down:number, left: number, right: number) => {
     // console.log(top, down, left, right)
     const { chunks } = getGameStoreValue()
-    const { tileWidth }= getOptionValue()
+    const { tileWidth, chunkSize }= getOptionValue()
     const enemies = get('enemy')
     const copyChunks = JSON.parse(JSON.stringify(chunks))
 
@@ -307,7 +315,13 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
             chunksOutSide[key].objects.splice(0)    
             
             enemies.find(enemy => {
-                if(x === enemy.chunk.x && y === enemy.chunk.y && !enemy.defeat && enemy.active){
+                // Get chunk position
+                const chunk = {
+                    x: Math.floor((enemy.pos.x / tileWidth) / chunkSize ),
+                    y: Math.floor((enemy.pos.y / tileWidth) / chunkSize )
+                }            
+
+                if(Number(x) === chunk.x && Number(y) === chunk.y && !enemy.defeat && enemy.active){
                     // Deactivate enemy
                     enemy.enterState('pause')
                 }
