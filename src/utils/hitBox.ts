@@ -7,11 +7,14 @@ import { dropItem } from './item'
 const { 
     area,
     anchor,
+    Asset,
+    canvas,
     get,
     Rect,
     pos,
     rotate,
     vec2,
+    wait
  } = k
 
 export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAnim, type: string, ignore: string[] = []) => {
@@ -81,28 +84,24 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
     hitBox.onCollide('pot', (obj: GameObj) => {
         console.log(obj)
 
-        try {
-            if(!obj.broken){
-                obj.broken = true
-                obj.play('break')  
-                // obj.unuse('area')
-                // obj.unuse('body')
-                // Update props
-                const pot = props.findIndex(prop => prop.type === 'pot' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
-                props[pot].broken = true
-                gameStore.set(gameState, prve => ({
-                    ...prve,
-                    props: props
-                }))
-                // Drop items  
-                dropItem(obj, 'pot')
+        if(!obj.broken){
+            obj.broken = true
+            obj.unuse('body')  
+            obj.play('break')
+            // Update props
+            const pot = props.findIndex(prop => prop.type === 'pot' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
+            props[pot].broken = true
+            gameStore.set(gameState, prve => ({
+                ...prve,
+                props: props
+            }))
+            // Drop items  
+            dropItem(obj, 'pot')
 
-                // And more            
-            }            
-        } catch (error) {
-            console.warn('hitbox collision error', error)
-        }
-    })      
+            // And more     
+            wait(1, () => obj.destroy())             
+        }     
+    })  
 
     hitBox.onCollide('chest', (obj: GameObj) => {
         console.log(obj)
@@ -130,7 +129,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
     hitBox.onCollide('enemy', (obj: GameObj) => {
         console.log(obj)
 
-        if(!obj.active || obj.hp <= 0) return
+        if(obj.defeat || obj.hp <= 0) return
 
         obj.waypoints?.splice(0)
 
