@@ -215,6 +215,29 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                         x: e.x,
                         y: e.y
                     },
+                    clearHitBox: (anim: string) => {
+                        const hitBoxes = enemy.get('hitBox')
+
+                        hitBoxes.forEach(hitBox => {
+                            if(hitBox.anim === anim)
+                                hitBox.destroy()
+                        })
+                    },
+                    checkDistanceToPlayer: (player: GameObj) => {
+                        const distance = enemy.pos.dist(player.pos)
+
+                        console.log('distance', distance)
+
+                        if(distance < 50){
+                            console.log('eneter by checkDistanceToPlayer')
+                            enemy.enterState('attack', player)
+                        }else
+                        if(distance < 200){
+                            enemy.enterState('chase', player)
+                        }else{
+                            enemy.enterState('idle')
+                        }
+                    },
                     steering: (ObjectInSight: GameObj) => {
                         if(enemy.waypoints?.length){
                             const dist = {
@@ -364,6 +387,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                     enemy.waypoints?.splice(0)
                     // Direction to player
                     setDirection(enemy, player.pos)
+                    console.log('enter from chase')
                     enemy.enterState('attack', player)
                 }
                 
@@ -386,26 +410,10 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                         enemy.frame = 0
 
                         // Destory hitBoxes
-                        const hitBoxes = enemy.get('hitBox')
-
-                        hitBoxes.forEach(hitBox => {
-                            if(hitBox.anim === 'attack')
-                                hitBox.destroy()
-                        })
+                        enemy.clearHitBox('attack')
 
                         // And more
-                        const distance = enemy.pos.dist(player.pos)
-
-                        console.log('distance', distance)
-
-                        if(distance < 50){
-                            enemy.enterState('attack', player)
-                        }else
-                        if(distance < 200){
-                            enemy.enterState('chase', player)
-                        }else{
-                            enemy.enterState('idle')
-                        }
+                        enemy.checkDistanceToPlayer(player)
                     }
                 })
             })      
@@ -439,15 +447,18 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                 const currentAnim = enemy.getCurAnim()
 
                 switch(currentAnim?.name){
-                    case 'attack':
-                        if(!enemy.get('attack').length && currentAnim.frameIndex === 3) 
+                    case 'attack':{
+                        const hitBox = enemy.get('hitBox')
+                        
+                        if(!hitBox.find(box => box.anim === 'attack') && currentAnim.frameIndex === 3) 
                             createHitBox(
                                 enemy, 
                                 enemy.facing,
                                 currentAnim, 
                                 'collide', 
                                 ['enemy', 'pot', 'chest', "item"]
-                            ) 
+                            )                         
+                    }
                     break;
                     case 'walk':{
                         // Update direction
