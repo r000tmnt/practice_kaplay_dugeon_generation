@@ -50,7 +50,7 @@ export default function initGame(){
         // })
 
         // loadSpriteAtlas('player/demo_player_spritesheet.png', 'player/demo_player_spritesheet.json')
-        loadSpriteAtlas('player/demo_player_68x68.png', 'player/demo_player_spritesheet.json')
+        loadSpriteAtlas('player/demo_player_68x68_alter.png', 'player/demo_player_spritesheet.json')
         loadSpriteAtlas('enemy/demo_enemy_spritesheet.png', 'enemy/demo_enemy_spritesheet.json')
 
         loadSprite('pot', 'map/demo_pot_16x16.png', {
@@ -148,23 +148,17 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, name: st
         for(let i=0; i < level.length; i++){
             const row = level[i]
             for(let block=0; block < row.length; block++){
-                switch(row[block]){
-                    case 0:
-                    break;
-                    case 1: case 2:
-                        ctx?.drawImage(
-                            spriteSheet, 
-                            (row[block] % 2) === 0? 0 : tileWidth, 
-                            row[block] > 1? (row[block] / 2) * tileWidth : 0, 
-                            tileWidth, 
-                            tileWidth, 
-                            block * tileWidth, 
-                            i * tileWidth, 
-                            tileWidth, 
-                            tileWidth
-                        )
-                    break;
-                }
+                ctx?.drawImage(
+                    spriteSheet, 
+                    (row[block] % 2) === 0? 0 : tileWidth, 
+                    row[block] > 1? (row[block] / 2) * tileWidth : 0, 
+                    tileWidth, 
+                    tileWidth, 
+                    block * tileWidth, 
+                    i * tileWidth, 
+                    tileWidth, 
+                    tileWidth
+                )
             }
         }
 
@@ -173,18 +167,48 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, name: st
         console.log(tempImg)
         // Draw the image with kaplay
         loadSprite(name, tempImg)
-        map.add([
-            sprite(name),
-            layer('bg'),
-            pos(0, 0)
-        ])
+        // map.add([
+        //     sprite(name),
+        //     layer('bg'),
+        //     pos(0, 0)
+        // ])
+
+        map.onDraw(() => {
+            const { props, enemies } = getGameStoreValue()
+
+            drawSprite({
+                sprite: name,
+                pos: vec2(0, 0)
+            })
+
+            props.filter(prop => prop.type === 'pot').forEach(prop => {
+                if(prop.broken){
+                    drawSprite({
+                        sprite: 'pot',
+                        pos: vec2(prop.x * map.tileWidth, prop.y * map.tileWidth),
+                        frame: 2
+                    })
+                }
+            })
+
+            enemies.forEach(enemy => {
+                if(enemy.defeat){
+                    drawSprite({
+                        sprite: 'enemy',
+                        pos: vec2(enemy.x, enemy.y),
+                        frame: 13,
+                        flipX: enemy.flipX
+                    })
+                }
+            })                 
+        })
 
         tempCanvas.remove()
         spriteSheet.remove()
 
         // Set rects for collision around the rooms
         // Refernce: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Left_shift#using_left_shift
-        await getWallEdges(level, tileWidth)   
+        // await getWallEdges(level, tileWidth)   
         await setChunks()          
         initPlayer(level, entrance, tileWidth)
     }
@@ -333,28 +357,6 @@ const setChunks = async() => {
         ...prev,
         chunks: copyChunks
     }))  
-    
-    map.onUpdate(() => {
-        props.filter(prop => prop.type === 'pot').forEach(prop => {
-            if(prop.broken){
-                drawSprite({
-                    sprite: 'pot',
-                    pos: vec2(prop.x * map.tileWidth, prop.y * map.tileWidth),
-                    frame: 2
-                })
-            }
-        })
-
-        props.filter(prop => prop.type === 'enemy').forEach(prop => {
-            if(prop.defeat){
-                drawSprite({
-                    sprite: 'enemy',
-                    pos: vec2(prop.x * map.tileWidth, prop.y * map.tileWidth),
-                    frame: 13
-                })
-            }
-        })        
-    })    
 }
 
 // const removeDuplicateEdges = (edgeList: {x: number, y: number}[], listToCheck: {x: number, y: number}[], listDirection: string, checkDirection: string) => {
