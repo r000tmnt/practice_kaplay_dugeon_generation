@@ -1034,6 +1034,8 @@ const setPorps = async(grid: number[][], rooms: room[]) => {
         placeChest(index, tiles)
     })
 
+    placeDecoration(grid)
+
     gameStore.set(gameState, prev => ({
         ...prev,
         props: PROP
@@ -1078,6 +1080,25 @@ const placeChest = (roomId: number, tiles: {x: number, y: number}[]) => {
                 open: false
             }            
         )
+    }
+}
+
+const placeDecoration = (grid: number[][]) => {
+    const { propRules } = getOptionValue()    
+    const area = grid[0].length * grid.length
+    const expected = area * propRules.pot.density 
+    const possibleCount = expected + (Math.random() * (1 - -1) + -1)
+    const allFloorTiles = []
+
+    for(let y=0; y < grid.length; y++){
+        for(let x=0; x < grid[y].length; x++){
+            if(grid[y][x] === 0) allFloorTiles.push({ x, y })
+        }
+    }
+
+    for(let count=0; count < possibleCount; count++){
+        const rng = allFloorTiles[Math.floor(Math.random() * (allFloorTiles.length - 1))]
+        grid[rng.y][rng.x] = 3
     }
 }
 
