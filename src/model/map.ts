@@ -27,10 +27,11 @@ interface prop {
     x: number,
     y: number,
     roomId: number,
+    flipX?: boolean    
     broken?: boolean
     open?: boolean
     defeat?: boolean
-    active?: boolean
+    active?: boolean,
 }
 
 interface chunk {
