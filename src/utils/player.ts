@@ -70,9 +70,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
     player.onCollide('enemy', (enemy: GameObj) => {
         // Set both player and enemy body to be static for awhile
-        if(enemy.getCurAnim()?.name === 'attack'){
-            enemy.isStatic = true
-        }
+        enemy.isStatic = true
 
         if(enemy.getCurAnim()?.name === 'walk' && player.getCurAnim()?.name !== 'walk'){
             player.isStatic = true
@@ -97,6 +95,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         // console.log(currentAnim)
 
         if(!isKeyDown() && currentAnim?.name === 'walk'){
+            player.stop()
             player.frame = 0
         }
 
