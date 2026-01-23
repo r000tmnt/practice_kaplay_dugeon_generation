@@ -21,6 +21,10 @@ export const setting = atom({
         },
         shrine: {
             perFloorChance: 0.1,
+        },
+        decoration: {
+            perRoomChance: 0.75,
+            density: 0.03,
         }
     }
 })
