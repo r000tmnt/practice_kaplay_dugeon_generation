@@ -162,7 +162,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
                 console.log('enemy hp', obj.hp)
                 if(obj.state === 'attack'){
                     obj.clearHitBox('attack')
-                    obj.checkDistanceToPlayer(get('player')[0])
+                    wait(0.5, () => obj.checkDistanceToPlayer(get('player')[0]))
                 }
             }
         }) 
