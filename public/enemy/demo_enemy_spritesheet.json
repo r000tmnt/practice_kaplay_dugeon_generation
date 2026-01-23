@@ -25,7 +25,7 @@
     "anims": {
       "walk": { "from": 0, "to": 2, "speed": 5, "loop": true },
       "attack": { "from": 3, "to": 7, "loop": false },
-      "hurt": { "frames": [8, 0], "loop": false},
+      "hurt": { "frames": [8, 8, 0], "loop": false},
       "lose": { "frames": [8, 9, 10, 11, 12, 13], "loop": false}
     }
   }
