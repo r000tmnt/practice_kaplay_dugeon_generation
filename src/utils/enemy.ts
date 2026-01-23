@@ -211,7 +211,10 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                     path: [],
                     speed: 75,
                     index: `${room.id}_${i}`,
-                    spawn,
+                    spawn: {
+                        x: e.x,
+                        y: e.y
+                    },
                     steering: (ObjectInSight: GameObj) => {
                         if(enemy.waypoints?.length){
                             const dist = {
@@ -300,6 +303,8 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
             ])
 
             enemy.onObjectsSpotted((objs) => {
+                if(enemy.defeat) return
+
                 const playerInSight = objs.find(o => o.is('player'))
                 const ObjectInSight = objs.find(o => o.is('pot') || o.is('chest'))
 
@@ -415,29 +420,10 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
             enemy.onDeath(() => {
                 enemy.defeat = true
                 enemy.unuse('body')
-                console.log('enemy dead')
-                console.log(enemy.getCurAnim())
-                // enemy.unuse('area')
-                // enemy.unuse('body')                
-
-                // Update props
-                const eIndex = enemies.findIndex(prop => prop.type === 'enemy' && prop.x === e.x && prop.y === e.y)
-                enemies[eIndex].defeat = true
-                enemies[eIndex].active = false
-                enemies[eIndex].x = Math.floor((enemy.pos.x - (tileWidth / 2)) / tileWidth)
-                enemies[eIndex].y = Math.floor((enemy.pos.y - (tileWidth / 2)) / tileWidth)
-
-                gameStore.set(gameState, prve => ({
-                    ...prve,
-                    enemies: [
-                        ...prve.enemies,
-                        { ...enemies[eIndex] }
-                    ]
-                }))
+                console.log('enemy dead')            
                 // Drop items         
 
-                // And more       
-                wait(1, () => enemy.destroy())         
+                // And more        
             })
 
             // enemy.onCollide('enemy', (isEnemy) => {
