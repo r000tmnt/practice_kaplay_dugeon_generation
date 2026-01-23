@@ -11,16 +11,20 @@ import { getOptionValue } from '../store/setting'
 
 const { 
     area,
+    // bezier,
     easings,
     get,
-    loop,
+    evaluateQuadratic,
+    // evaluateBezier,
+    // normalizedCurve,
+    // loop,
     pos,
     rect,
     sprite,
     text,
     tween,
     vec2,
-    wait,
+    // wait,
  } = k
 
 const continuousTween = (sequence: Vec2[]|number[], obj: GameObj, target: string, duration: number, count=0) => {
@@ -154,31 +158,34 @@ export const dropItem = (obj: GameObj, type: string) => {
                     "item"
                 ])
 
+                // Get control point between start and finish
+                const arcHeight = Math.floor(Math.random() * (60 - 20) + 20)
+                const lift = vec2((dropped.pos.x + x) / 2, Math.min(dropped.pos.y, y) - arcHeight)
+
                 console.log('dropped item', dropped)
 
-                const dist = {
-                    x: x - obj.pos.x,
-                    y: y - obj.pos.y
+                // Visual effect
+                const points = 25
+                const curvedPath = []
+
+                for(let i=0; i < points; i++){
+                    const t = i / points
+                    curvedPath.push(
+                        evaluateQuadratic(
+                            dropped.pos,
+                            lift,
+                            vec2(x, y),
+                            t
+                        )
+                    )
                 }
 
-                // Visual effect
-                const points = [
-                    vec2(
-                        (dist.x < 0)? obj.pos.x - Math.floor(Math.abs(dist.x) * 1/3) : obj.pos.x + Math.floor(dist.x * 1/3), 
-                        obj.pos.y + Math.floor(obj.y * 1/3)
-                    ), 
-                    vec2(
-                        (dist.x < 0)? obj.pos.x - Math.floor(Math.abs(dist.x) * 2/3) : obj.pos.x + Math.floor(dist.x * 2/3), 
-                        obj.pos.y + Math.floor(obj.y * 2/3) 
-                    ), 
-                    vec2(x, y)
-                ]
-                console.log('points', points)
+                console.log('curvedPath', curvedPath)
                 continuousTween(
-                    points,
+                    curvedPath,
                     dropped,
                     'pos',
-                    0.25,
+                    0.04,
                 )
 
             } catch (error) {
