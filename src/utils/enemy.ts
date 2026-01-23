@@ -224,6 +224,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                         })
                     },
                     checkDistanceToPlayer: (player: GameObj) => {
+                        if(enemy.defeat) return
                         const distance = enemy.pos.dist(player.pos)
 
                         console.log('distance', distance)
@@ -348,6 +349,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
             })
 
             enemy.onPatrolFinished(()=> {
+                if(enemy.defeat) return
                 if(enemy.path?.length) {
                     enemy.waypoints = [enemy.path[0]]
                     enemy.path.splice(0, 1)
@@ -413,7 +415,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                         enemy.clearHitBox('attack')
 
                         // And more
-                        enemy.checkDistanceToPlayer(player)
+                        wait(0.2, () => enemy.checkDistanceToPlayer(player))
                     }
                 })
             })      
