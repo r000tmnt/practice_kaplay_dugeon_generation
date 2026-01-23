@@ -143,17 +143,15 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
                     // Update props
                     const eIndex = enemies.findIndex(prop => prop.type === 'enemy' && prop.x === obj.spawn.x && prop.y === obj.spawn.y)
 
-                    wait(1, () => {
-                        enemies[eIndex].defeat = true
-                        enemies[eIndex].active = false
-                        enemies[eIndex].x = obj.pos.x - (tileWidth / 2)
-                        enemies[eIndex].y = obj.pos.y - (tileWidth / 2)
-                        enemies[eIndex].flipX = obj.flipX
+                    enemies[eIndex].defeat = true
+                    enemies[eIndex].active = false
+                    enemies[eIndex].x = obj.pos.x - (tileWidth / 2)
+                    enemies[eIndex].y = obj.pos.y - (tileWidth / 2)
+                    enemies[eIndex].flipX = obj.flipX
 
-                        gameStore.set(enemyAtom, enemies)   
+                    gameStore.set(enemyAtom, enemies)   
 
-                        obj.destroy()
-                    })           
+                    obj.destroy()
                 }
             })
             return
@@ -162,7 +160,10 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
         obj.play('hurt', {
             onEnd: () => {
                 console.log('enemy hp', obj.hp)
-                obj.enterState('idle')
+                if(obj.state === 'attack'){
+                    obj.clearHitBox('attack')
+                    obj.checkDistanceToPlayer(get('player')[0])
+                }
             }
         }) 
     })        
