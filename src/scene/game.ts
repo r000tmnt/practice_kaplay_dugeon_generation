@@ -211,7 +211,11 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, name: st
         getWallEdges(level, tileWidth).then(() => {
             setChunks().finally(() => {
                 console.log('init player')
-                initPlayer(level, entrance, tileWidth)
+                try {
+                    initPlayer(level, entrance, tileWidth)
+                } catch (error) {
+                    console.warn('init player error', error)   
+                }
             })  
         })          
     }
