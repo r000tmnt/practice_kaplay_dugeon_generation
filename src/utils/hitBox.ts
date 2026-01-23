@@ -1,6 +1,6 @@
 import type { GameObj, SpriteCurAnim } from "kaplay";
 import k  from '../lib/kaplay'
-import { gameState, gameStore, getGameStoreValue } from '../store/game';
+import { gameState, gameStore, getGameStoreValue, enemyAtom } from '../store/game';
 import { setting, getOptionValue } from '../store/setting';
 import { dropItem } from './item'
 
@@ -78,7 +78,7 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
  * @param anim - {string} Name of the current animation
  */
 const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
-    const { props } = getGameStoreValue()
+    const { props, enemies } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
 
     hitBox.onCollide('pot', (obj: GameObj) => {
@@ -139,6 +139,21 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
             obj.play('lose', {
                 onEnd: () => {
                     console.log('lose animation ended')
+
+                    // Update props
+                    const eIndex = enemies.findIndex(prop => prop.type === 'enemy' && prop.x === obj.spawn.x && prop.y === obj.spawn.y)
+
+                    wait(1, () => {
+                        enemies[eIndex].defeat = true
+                        enemies[eIndex].active = false
+                        enemies[eIndex].x = obj.pos.x - (tileWidth / 2)
+                        enemies[eIndex].y = obj.pos.y - (tileWidth / 2)
+                        enemies[eIndex].flipX = obj.flipX
+
+                        gameStore.set(enemyAtom, enemies)   
+
+                        obj.destroy()
+                    })           
                 }
             })
             return
