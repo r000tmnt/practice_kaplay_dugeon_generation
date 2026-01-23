@@ -208,9 +208,12 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, name: st
 
         // Set rects for collision around the rooms
         // Refernce: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Left_shift#using_left_shift
-        // await getWallEdges(level, tileWidth)   
-        await setChunks()          
-        initPlayer(level, entrance, tileWidth)
+        getWallEdges(level, tileWidth).then(() => {
+            setChunks().finally(() => {
+                console.log('init player')
+                initPlayer(level, entrance, tileWidth)
+            })  
+        })          
     }
 }  
 
