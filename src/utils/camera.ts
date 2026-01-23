@@ -238,6 +238,7 @@ const activateChunk = (x: number, y:number) => {
     const { chunks } = getGameStoreValue()
     const { tileWidth, chunkSize } = getOptionValue()
     const enemies = get('enemy')
+    const items = get('map')[0].get('item')
     const copyChunks = JSON.parse(JSON.stringify(chunks))
     const chunk = copyChunks[`${x},${y}`]
 
@@ -283,6 +284,18 @@ const activateChunk = (x: number, y:number) => {
             }
         })
 
+        items.forEach(item => {
+            const chunk = {
+                x: Math.floor((item.pos.x / tileWidth) / chunkSize ),
+                y: Math.floor((item.pos.y / tileWidth) / chunkSize )
+            }   
+            
+            if(Number(x) === chunk.x && Number(y) === chunk.y){
+                // Activate item
+                item.hidden = false
+            }                
+        })        
+
         return true        
     }
 }
@@ -292,6 +305,7 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
     const { chunks } = getGameStoreValue()
     const { tileWidth, chunkSize }= getOptionValue()
     const enemies = get('enemy')
+    const items = get('map')[0].get('item')
     const copyChunks = JSON.parse(JSON.stringify(chunks))
 
     // const activatedChunks: string[] = []
@@ -314,7 +328,7 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
             })
             chunksOutSide[key].objects.splice(0)    
             
-            enemies.find(enemy => {
+            enemies.forEach(enemy => {
                 // Get chunk position
                 const chunk = {
                     x: Math.floor((enemy.pos.x / tileWidth) / chunkSize ),
@@ -325,7 +339,19 @@ const deactivateChunk = (top: number, down:number, left: number, right: number) 
                     // Deactivate enemy
                     enemy.enterState('pause')
                 }
-            })              
+            }) 
+            
+            items.forEach(item => {
+                const chunk = {
+                    x: Math.floor((item.pos.x / tileWidth) / chunkSize ),
+                    y: Math.floor((item.pos.y / tileWidth) / chunkSize )
+                }   
+                
+                if(Number(x) === chunk.x && Number(y) === chunk.y){
+                    // Deactivate item
+                    item.hidden = true
+                }                
+            })
         }     
     })
 
