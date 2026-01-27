@@ -68,6 +68,10 @@ export default function initGame(){
             }
         })
 
+        loadSprite('shrine', 'map/shrine.png', {
+            sliceX: 2,
+        })        
+
         setData('ready', false)
         setMap()
     })
