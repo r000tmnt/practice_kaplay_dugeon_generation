@@ -56,19 +56,25 @@ export const spawnObject = (prop: prop, tileWidth: number, shape = {} as Rect) =
                     body({ isStatic: true }),
                     {
                         open: prop.open,
-                        // item: {
-                        //         credit: {
-                        //             min: 1,
-                        //             max: 10
-                        //         },
-
-                        //     }
                     },
                     // Tags
                     "chest"
                 ])
             }
             break;
+        case 'shrine':
+            obj = map[0].add([
+                sprite('shrine', { frame: prop.active? 1 : 0 }),
+                pos(prop.x * tileWidth, prop.y * tileWidth),
+                area({ collisionIgnore: ["item"] }),
+                body({ isStatic: true }),
+                {
+                    active: prop.active,
+                },
+                // Tags
+                "shrine"
+            ])  
+        break;            
         case 'wall':
             obj = map[0].add([
                 pos(prop.x, prop.y),
