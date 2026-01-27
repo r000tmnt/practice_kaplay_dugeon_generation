@@ -246,15 +246,15 @@ const activateChunk = (x: number, y:number) => {
         return false
     }else{
         chunk.active = true
+        const map = get('map')[0]
 
         for(const prop of chunk.props){
             // Check if object exist
-            const map = get('map')[0]
-            const pot = map.get('pot').find(pot => {
-                            return (pot.pos.x / tileWidth) === prop.x && (pot.pos.y / tileWidth) === prop.y
-                        })
-            console.log('pot created', pot)
-            if(!pot){
+            const spawned = map.get(prop.type).find(item => {
+                                return (item.pos.x / tileWidth) === prop.x && (item.pos.y / tileWidth) === prop.y
+                            })   
+
+            if(!spawned){
                 const obj = spawnObject(prop, tileWidth)
                 if(obj) chunk.objects.push(obj.pos)            
             }
