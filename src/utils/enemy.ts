@@ -415,7 +415,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                         enemy.clearHitBox('attack')
 
                         // And more
-                        wait(0.2, () => enemy.checkDistanceToPlayer(player))
+                        wait(0.1, () => enemy.checkDistanceToPlayer(player))
                     }
                 })
             })      

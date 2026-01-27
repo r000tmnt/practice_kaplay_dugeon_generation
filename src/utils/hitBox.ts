@@ -7,8 +7,8 @@ import { dropItem } from './item'
 const { 
     area,
     anchor,
-    Asset,
-    canvas,
+    // Asset,
+    // canvas,
     get,
     Rect,
     pos,
@@ -162,7 +162,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
                 console.log('enemy hp', obj.hp)
                 if(obj.state === 'attack'){
                     obj.clearHitBox('attack')
-                    wait(0.5, () => obj.checkDistanceToPlayer(get('player')[0]))
+                    wait(0.2, () => obj.checkDistanceToPlayer(get('player')[0]))
                 }
             }
         }) 
