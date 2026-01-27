@@ -1,17 +1,21 @@
 import k from "../lib/kaplay"
-import type { GameObj, Rect } from "kaplay";
+import { type GameObj } from "kaplay";
 import type { prop } from "../model/map"
-import { setting, getOptionValue } from '../store/setting';
+// import { setting, getOptionValue } from '../store/setting';
 
 const { 
     area,
+    anchor,
     body,
     get,
+    layer,
+    Rect,
     sprite,
-    pos
+    pos,
+    vec2,
  } = k
 
-export const spawnObject = (prop: prop, tileWidth: number, shape = {} as Rect) => {
+export const spawnObject = (prop: prop, tileWidth: number, shape = {} as typeof Rect) => {
     const map = get('map')
     let obj;
     switch(prop.type){
@@ -65,8 +69,14 @@ export const spawnObject = (prop: prop, tileWidth: number, shape = {} as Rect) =
         case 'shrine':
             obj = map[0].add([
                 sprite('shrine', { frame: prop.active? 1 : 0 }),
-                pos(prop.x * tileWidth, prop.y * tileWidth),
-                area({ collisionIgnore: ["item"] }),
+                pos((prop.x * tileWidth) + (tileWidth / 2), (prop.y * tileWidth) + (tileWidth / 2)),
+                layer('fg'),
+                area({ shape: new Rect(
+                    vec2(0),
+                    tileWidth,
+                     tileWidth
+                ), collisionIgnore: ["item"] }),
+                anchor('center'),
                 body({ isStatic: true }),
                 {
                     active: prop.active,
@@ -105,10 +115,14 @@ const setObjectEvents = (obj: GameObj, prop: prop) => {
     })
 
 
-    // switch(prop.type){
-    //     case 'pot':
-    //     break;
-    //     case 'chest':
-    //     break;
-    // }
+    obj.onCollide('player', (player: GameObj) => {
+        if(obj.sprite === 'shrine'){
+            console.log('shrine', obj)
+            if(player.pos.y >= obj.pos.y){
+                obj.layer = 'game'
+            }else{
+                obj.layer = 'fg'
+            }
+        }
+    })
 }
