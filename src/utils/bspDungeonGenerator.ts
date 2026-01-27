@@ -1032,6 +1032,7 @@ const setPorps = async(grid: number[][], rooms: room[]) => {
 
         placePot(innerSpace, index, tiles)
         placeChest(index, tiles)
+        placeShirne(index, tiles)
     })
 
     placeDecoration(grid)
@@ -1100,6 +1101,26 @@ const placeDecoration = (grid: number[][]) => {
         const rng = allFloorTiles[Math.floor(Math.random() * (allFloorTiles.length - 1))]
         grid[rng.y][rng.x] = 3
     }
+}
+
+const placeShirne = (roomId: number, tiles: {x: number, y: number}[]) => {
+    const { propRules } = getOptionValue()
+    const canSpawn = Math.random() <= propRules.shrine.perFloorChance
+    const count = canSpawn? propRules.chest.maxPerRoom : 0
+
+    for(let i=0; i < count; i++){
+        console.log('set shrine prop')
+        const rng = tiles[Math.floor(Math.random() * (tiles.length - 1))]
+        PROP.push(
+            {
+                type: "shrine",
+                x: rng.x,
+                y: rng.y,
+                roomId,
+                active: false
+            }            
+        )
+    }    
 }
 
 const getFloorTiles = (grid: number[][], room: room) => {
