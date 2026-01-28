@@ -1,5 +1,5 @@
 import k from "../lib/kaplay"
-import { type GameObj } from "kaplay";
+import { type GameObj, type Rect } from "kaplay";
 import type { prop } from "../model/map"
 // import { setting, getOptionValue } from '../store/setting';
 
@@ -9,13 +9,12 @@ const {
     body,
     get,
     layer,
-    Rect,
     sprite,
     pos,
     vec2,
  } = k
 
-export const spawnObject = (prop: prop, tileWidth: number, shape = {} as typeof Rect) => {
+export const spawnObject = (prop: prop, tileWidth: number, shape: Rect) => {
     const map = get('map')
     let obj;
     switch(prop.type){
@@ -71,7 +70,7 @@ export const spawnObject = (prop: prop, tileWidth: number, shape = {} as typeof 
                 sprite('shrine', { frame: prop.active? 1 : 0 }),
                 pos((prop.x * tileWidth) + (tileWidth / 2), (prop.y * tileWidth) + (tileWidth / 2)),
                 layer('fg'),
-                area({ shape: new Rect(
+                area({ shape: new k.Rect(
                     vec2(0),
                     tileWidth,
                      tileWidth
@@ -85,14 +84,14 @@ export const spawnObject = (prop: prop, tileWidth: number, shape = {} as typeof 
                 "shrine"
             ])  
         break;            
-        case 'wall':
+        case 'wall': case 'entrance': case 'exit':
             obj = map[0].add([
                 pos(prop.x, prop.y),
                 area({ shape, collisionIgnore: ["item"] }),
                 body({ isStatic: true }),
                 // opacity(0.5), // debug
                 // color(0, 0, 255),
-                "wall",                        
+                prop.type,                        
             ])
         break;  
     }
@@ -123,6 +122,14 @@ const setObjectEvents = (obj: GameObj, prop: prop) => {
             }else{
                 obj.layer = 'fg'
             }
+        }
+
+        if(obj.is('entrance')){
+            return
+        }
+
+        if(obj.is('exit')){
+            // And More
         }
     })
 }
