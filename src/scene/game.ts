@@ -1,5 +1,5 @@
 import k from '../lib/kaplay'
-import { type GameObj, type Vec2 } from 'kaplay';
+import { type GameObj } from 'kaplay';
 import { generateBSPDungeon } from '../utils/bspDungeonGenerator';
 import { createPlayerSprite } from '../utils/player';
 import { spawnObject } from '../utils/staticObject';
@@ -18,12 +18,9 @@ store.sub(gameState, () => {
 
 const { 
     add,
-    // area,
-    // body,
     drawSprite,
     go,
     getLayers,
-    layer,
     loadSprite,
     loadSpriteAtlas,
     opacity,
@@ -32,7 +29,6 @@ const {
     setLayers,
     setData,
     scene,
-    sprite,
     vec2,
 } = k
 
@@ -129,12 +125,12 @@ const setMap = async(name = 'testMap') => {
             );
 
             const {level} = getGameStoreValue()
-            drawMap(level, entrance as { x: number, y: number }, name, tileWidth)            
+            drawMap(level, entrance as { x: number, y: number }, exit as { x: number, y: number }, name, tileWidth)            
         }
     }
 }
 
-const drawMap = (level: number[][], entrance: { x: number, y: number }, name: string, tileWidth: number) => {
+const drawMap = (level: number[][], entrance: { x: number, y: number }, exit: { x:number, y: number }, name: string, tileWidth: number) => {
     // const { width, height } = store.get(setting)
 
     // Create an invisible canvas
@@ -210,6 +206,19 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, name: st
         tempCanvas.remove()
         spriteSheet.remove()
 
+        // set collision for entrance and exit
+        spawnObject(
+            { x: entrance.x * tileWidth, y: entrance.y * tileWidth, type: 'entrance', roomId: -1 }, 
+            tileWidth,
+            new Rect(vec2(0), tileWidth, tileWidth),
+        )
+
+        spawnObject(
+            { x: exit.x * tileWidth, y: exit.y * tileWidth, type: 'exit', roomId: -1 }, 
+            tileWidth,
+            new Rect(vec2(0), tileWidth, tileWidth),
+        )
+
         // Set rects for collision around the rooms
         // Refernce: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Left_shift#using_left_shift
         getWallEdges(level, tileWidth).then(() => {
@@ -235,10 +244,12 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
     const h = grid.length
     const w = grid[0].length
 
+    const walkable = [0, 3]
+
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
             // If the tile is a floor
-            if (grid[y][x] === 0) {
+            if (walkable.find(t => t === grid[y][x]) !== undefined) {
                 // Check the 4 neighboring tiles
                 // Top
                 if(grid[y - 1] && grid[y - 1][x] === 1) topEdges.push({x, y: y -1})
@@ -391,16 +402,16 @@ const setChunks = async() => {
 
 const initPlayer = (grid: number[][], entrance: { x: number, y: number }, tileWidth: number) => {
     // Set Player starting position by examing entrance
-    if(entrance && grid[entrance.y][entrance.x - 1] === 0) {
+    if(entrance && grid[entrance.y][entrance.x - 1] !== 1) {
         createPlayerSprite(map, entrance.x - 1, entrance.y, grid[0].length * tileWidth, grid.length * tileWidth)    
     }else
-    if(entrance && grid[entrance.y][entrance.x + 1] === 0) {
+    if(entrance && grid[entrance.y][entrance.x + 1] !== 1) {
         createPlayerSprite(map, entrance.x + 1, entrance.y, grid[0].length * tileWidth, grid.length * tileWidth)    
     }else
-    if(entrance && grid[entrance.y - 1][entrance.x] === 0) {
+    if(entrance && grid[entrance.y - 1][entrance.x] !== 1) {
         createPlayerSprite(map, entrance.x, entrance.y - 1, grid[0].length * tileWidth, grid.length * tileWidth)    
     }else
-    if(entrance && grid[entrance.y + 1][entrance.x] === 0) {
+    if(entrance && grid[entrance.y + 1][entrance.x] !== 1) {
         createPlayerSprite(map, entrance.x, entrance.y + 1, grid[0].length * tileWidth, grid.length * tileWidth)    
     }
 }
