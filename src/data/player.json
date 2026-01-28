@@ -1,0 +1,31 @@
+{
+    "attribute": {
+        "hp": 20,
+        "mp": 5,
+        "physique": 10,
+        "mentality": 5,
+        "agility": 7
+    },
+    "secondary": {
+        "attack_speed": 10,
+        "move_speed": 100,
+        "cast_speed": 50
+    },
+    "resist": {
+        "electric": 0,
+        "spirit": 0,
+        "brute": 0,
+        "confusion": 0,
+        "numb": 0,
+        "bleeding": 0
+    },
+    "max": {
+        "hp": 20,
+        "mp": 5,
+        "exp": 100,
+        "level": 100
+    },
+    "lv": 1,
+    "pt": 0,
+    "exp": 0
+}
