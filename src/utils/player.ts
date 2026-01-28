@@ -68,22 +68,19 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
     console.log('player', player)
     setCameraPosition(player, mapWidth, mapHeight)
 
-    player.onCollide('enemy', (enemy: GameObj) => {
-        // Set both player and enemy body to be static for awhile
-        enemy.isStatic = true
+    player.onCollideUpdate('enemy', (enemy: GameObj) => {
+        const enemyAnim = enemy.getCurAnim()
+        
+        enemy.isStatic = enemyAnim?.name === 'attack'
 
-        if(enemy.getCurAnim()?.name === 'walk' && player.getCurAnim()?.name !== 'walk'){
-            player.isStatic = true
+        if(enemyAnim?.name === 'walk'){
+            player.speed = 75
         }
     })
 
     player.onCollideEnd('enemy', (enemy: GameObj) => {
-    //     // player.isStatic = false
-    //     if(enemy.getCurAnim()?.name === 'walk'){
-            player.isStatic = false
-    //     }else{
-            enemy.isStatic = false
-    //     }
+        enemy.isStatic = false
+        player.speed = 100
     })    
 
     // #region Player control

@@ -436,14 +436,15 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                 // And more        
             })
 
-            // enemy.onCollide('enemy', (isEnemy) => {
-            //     // Set enemy body to be static for awhile
-            //     isEnemy.isStatic = true
-            // })
+            enemy.onCollideUpdate('player', (player: GameObj) => {
+                if(player.getCurAnim()?.name === 'attack'){
+                    player.isStatic = true
+                }
+            })
 
-            // enemy.onCollideEnd('enemy', (isEnemy) => {
-            //     isEnemy.isStatic = false
-            // })                
+            enemy.onCollideEnd('player', (player: GameObj) => {
+                player.isStatic = false
+            })    
 
             enemy.onUpdate(() => {
                 const currentAnim = enemy.getCurAnim()
