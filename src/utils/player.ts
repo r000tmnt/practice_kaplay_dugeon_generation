@@ -80,6 +80,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
     player.onCollideEnd('enemy', (enemy: GameObj) => {
         enemy.isStatic = false
+        player.isStatic = false
         player.speed = 100
     })    
 
