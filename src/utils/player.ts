@@ -1,18 +1,14 @@
 import k from '../lib/kaplay'
-import type { GameObj, TimerController } from "kaplay";
-import type { prop, roomNode } from '../model/map'
+import type { GameObj } from "kaplay";
+import type { roomNode } from '../model/map'
 
 import { setCameraPosition } from './camera';
 import { createHitBox } from './hitBox'
-import { gameState, gameStore, getGameStoreValue } from '../store/game';
+import { getGameStoreValue } from '../store/game';
 import { RoomState } from '../model/map'
-import { getOptionValue } from '../store/setting';
+// import { getOptionValue } from '../store/setting';
 import { spawnEnemiesForRoom } from './enemy';
-
-// Store
-// import { createStore } from 'jotai'
-// import { setting } from '../store/setting';
-// const store = createStore()
+import playerData from '../data/player.json'
 
 const {
     add,
@@ -21,18 +17,21 @@ const {
     body,
     getData,
     get,
-    // health,
+    health,
     isKeyDown,
     layer,
-    loop,
     pos,
     Rect,
     // rotate,
-    // setData,
+    setData,
     // state,
     sprite,
-    vec2
+    text,
+    vec2,
+    wait
 } = k
+
+const GROWTH = [0, 1, 3]
 
 // Utils
 const onEnterRoom = (room: roomNode) => {
@@ -48,8 +47,8 @@ export const getPlayers = () => {
     return get('player')
 }
 
-export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth: number, mapHeight: number,) => {
-    // console.log(x, y)
+export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth: number, mapHeight: number, data: typeof playerData | null = null) => {
+    if(!data) data = playerData
     const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
     const player = add([
         sprite("player"), 
@@ -57,14 +56,60 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         area({ shape: new Rect(vec2(0), map.tileWidth, map.tileWidth) }),
         body(),
         layer('game'),
+        health(data.attribute.hp, data.max.hp),
         pos((x * map.tileWidth) + (sizeWithPadding / 2), (y * map.tileWidth) + (sizeWithPadding / 2)),
         {
-            speed: 100,
             direction: 'left',
+            ...data,
+            gainExp: (exp: number) => {
+                player.exp += player.lv === player.max.level? 0 : exp
+                // Check if player need to levelup
+                player.levelUp()
+            },
+            levelUp: () => {
+                if(player.exp >= player.max.exp && player.lv < player.max.level){
+                    // Level up
+                    player.lv += 1
+                    player.pt += 3
+
+                    // Random growth
+                    Object.entries(player.attribute).forEach(attr => {
+                        const rng = Math.floor(Math.random() * (GROWTH.length - 1))
+                        switch(attr[0]){
+                            case 'hp':
+                                player.max.hp += GROWTH[rng]
+                            break;
+                            case 'mp':
+                                player.max.mp += GROWTH[rng]
+                            break;
+                            default:
+                                attr[1] += GROWTH[rng]
+                            break;
+                        }
+                    })
+
+                    // Increase required exp for next lv
+                    player.max.exp += player.max.exp * 1.5 
+                    // Incase if exp is much higer
+                    player.levelUp() 
+                }                
+            }
         },
         // tags
         "player"
     ]);
+
+    player.add([
+        text('', {
+            size: 10,
+            transform: {
+                scale: 1
+            } 
+        }),
+        pos(0, -map.tileWidth),
+        'text'
+    ])
+
     console.log('player', player)
     setCameraPosition(player, mapWidth, mapHeight)
 
@@ -74,15 +119,28 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         enemy.isStatic = enemyAnim?.name === 'attack'
 
         if(enemyAnim?.name === 'walk'){
-            player.speed = 75
+            player.secondary.move_speed = 75
         }
     })
 
     player.onCollideEnd('enemy', (enemy: GameObj) => {
         enemy.isStatic = false
         player.isStatic = false
-        player.speed = 100
+        player.secondary.move_speed = 100
     })    
+
+    player.onHurt(() => {
+        player.play('hurt')
+        setData('ready', false)
+        wait(0.1, () => setData('ready', true))
+    })
+
+    player.onDeath(() => {
+        player.play('lose')
+        setData('ready', false)
+
+        // And more...
+    })
 
     // #region Player control
     player.onUpdate(() => {
@@ -149,7 +207,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                 }     
 
                 const unitVector = diagonalFactor.unit()
-                player.move(unitVector.scale(player.speed))
+                player.move(unitVector.scale(player.secondary.move_speed))
 
                 // Get current room
                 const { roomNodes } = getGameStoreValue()
