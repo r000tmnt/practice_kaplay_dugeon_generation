@@ -106,25 +106,39 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
     hitBox.onCollide('chest', (obj: GameObj) => {
         console.log(obj)
         
-        try {
-            if(!obj.open){
-                obj.open = true
-                obj.play('open') 
-                // Update props
-                const chest = props.findIndex(prop => prop.type === 'chest' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
-                props[chest].open = true
-                gameStore.set(gameState, prve => ({
-                    ...prve,
-                    props: props
-                }))
-                // Drop items         
-                dropItem(obj, 'chest')
-                // And more            
-            }            
-        } catch (error) {
-            console.warn('hitbox collision error', error)
-        }
-    })          
+        if(!obj.open){
+            obj.open = true
+            obj.play('open') 
+            // Update props
+            const chest = props.findIndex(prop => prop.type === 'chest' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
+            props[chest].open = true
+            gameStore.set(gameState, prve => ({
+                ...prve,
+                props: props
+            }))
+            // Drop items         
+            dropItem(obj, 'chest')
+            // And more            
+        }           
+    })    
+    
+    hitBox.onCollide('shrine', (obj: GameObj) => {
+        console.log(obj)
+        
+        if(!obj.active){
+            obj.active = true
+            obj.frame = 1
+            // Update props
+            const shrine = props.findIndex(prop => prop.type === 'shrine' && prop.x === ((obj.pos.x - (tileWidth /2)) / tileWidth) && prop.y === ((obj.pos.y - (tileWidth / 2)) / tileWidth))
+            props[shrine].active = true
+            gameStore.set(gameState, prve => ({
+                ...prve,
+                props: props
+            }))
+
+            // And more            
+        }        
+    })        
 
     hitBox.onCollide('enemy', (obj: GameObj) => {
         console.log(obj)
