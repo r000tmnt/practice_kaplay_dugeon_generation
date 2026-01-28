@@ -1,18 +1,21 @@
 import type { GameObj, SpriteCurAnim } from "kaplay";
 import k  from '../lib/kaplay'
-import { gameState, gameStore, getGameStoreValue, enemyAtom } from '../store/game';
+import { gameState, gameStore, getGameStoreValue } from '../store/game';
 import { setting, getOptionValue } from '../store/setting';
 import { dropItem } from './item'
+import { getPlayers } from "./player";
+import { calculateDamage } from './battle'
 
 const { 
     area,
     anchor,
     // Asset,
     // canvas,
-    get,
-    Rect,
+    // get,
     pos,
+    Rect,
     rotate,
+    tween,
     vec2,
     wait
  } = k
@@ -78,7 +81,7 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
  * @param anim - {string} Name of the current animation
  */
 const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
-    const { props, enemies } = getGameStoreValue()
+    const { props } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
 
     hitBox.onCollide('pot', (obj: GameObj) => {
@@ -144,65 +147,55 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
         console.log(obj)
 
         if(obj.defeat || obj.hp <= 0) return
-
+        
         obj.waypoints?.splice(0)
 
-        obj.hp -= 2;
+        const player = getPlayers()[0]
 
-        if(obj.hp <= 0){
-            obj.play('lose', {
-                onEnd: () => {
-                    console.log('lose animation ended')
+        // Calculate damage
+        if(hitBox.anim === 'attack'){
+            const { hit, dmg } = calculateDamage(player, obj)
+            const textHolder = obj.get('text')[0]
 
-                    // Update props
-                    const eIndex = enemies.findIndex(prop => prop.type === 'enemy' && prop.x === obj.spawn.x && prop.y === obj.spawn.y)
-
-                    enemies[eIndex].defeat = true
-                    enemies[eIndex].active = false
-                    enemies[eIndex].x = obj.pos.x - (tileWidth / 2)
-                    enemies[eIndex].y = obj.pos.y - (tileWidth / 2)
-                    enemies[eIndex].flipX = obj.flipX
-
-                    gameStore.set(enemyAtom, enemies)   
-
-                    obj.destroy()
-                }
-            })
-            return
-        }
-
-        obj.play('hurt', {
-            onEnd: () => {
-                console.log('enemy hp', obj.hp)
-                if(obj.state === 'attack'){
-                    obj.clearHitBox('attack')
-                    wait(0.2, () => obj.checkDistanceToPlayer(get('player')[0]))
-                }
+            if(textHolder){
+                if(hit){
+                    obj.hp -= dmg
+                    // Display dmg number
+                    textHolder.text = String(dmg)
+                }else{
+                    textHolder.text = "MISS"
+                }                 
+                
+                // Animate text scale number
+                tween(
+                    textHolder.textTransform.scale,
+                    textHolder.textTransform.scale + 1,
+                    1,
+                    (scale) => textHolder.textTransform.scale = scale
+                ).onEnd(() => {
+                    textHolder.textTransform.scale -= 1
+                    textHolder.text= ''
+                })                    
             }
-        }) 
+        }
     })        
     
     hitBox.onCollide('player', (obj: GameObj) => {
         console.log('player get hit', obj)
+        console.log('enemy', hitBox.parent)
 
-        if(!obj.active || obj.hp <= 0) return
+        if(obj.hp <= 0) return
 
-        obj.hp -= 2;
+        // Calculate damage
+        // if(hitBox.anim === 'attack'){
+        //     const { hit, dmg } = calculateDamage(player, obj)
 
-        if(obj.hp <= 0){
-            obj.play('lose', {
-                onEnd: () => {
-                    console.log('lose animation ended')
-                }
-            })
-            return
-        }
-
-        obj.play('hurt', {
-            onEnd: () => {
-                console.log('enemy hp', obj.hp)
-            }
-        }) 
+        //     if(hit){
+        //         obj.hp -= dmg
+        //     }else{
+        //         // TODO: Display text "Miss"
+        //     }
+        // }
     })            
 }
 
