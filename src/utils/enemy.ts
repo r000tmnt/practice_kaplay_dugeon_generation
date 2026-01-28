@@ -3,9 +3,10 @@ import type { GameObj, Vec2 } from "kaplay";
 import type { prop, roomNode } from '../model/map'
 
 import { createHitBox } from './hitBox'
-import { gameState, gameStore, getGameStoreValue } from '../store/game';
+import { gameState, gameStore, getGameStoreValue, enemyAtom } from '../store/game';
 import { getOptionValue } from '../store/setting';
 import { getPlayers } from './player'
+import enemyData from '../data/enemy.json'
 
 const {
     area,
@@ -25,6 +26,7 @@ const {
     state,
     sentry,
     sprite,
+    text,
     vec2,
     wait,
 } = k
@@ -153,9 +155,10 @@ const rotateXY = (center: Vec2, point: Vec2, angle: number) => {
     return vec2(nx, ny);
 }
 
-export const spawnEnemiesForRoom = async(room: roomNode) => {
+export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData | null = null) => {
+    if(!data) data = enemyData
     const { enemies, level } = getGameStoreValue()
-    const { chunkSize, tileWidth } = getOptionValue()
+    const { tileWidth } = getOptionValue()
     const count = enemies.filter((e: prop) => {
         if(e.roomId === room.id && !e.defeat){
             return e
@@ -179,7 +182,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
 
             const enemy = add([
                 sprite('enemy'),
-                health(10, 10),
+                health(data.attribute.hp, data.max.hp),
                 anchor('center'),
                 area({ shape: new Rect(vec2(0), tileWidth, tileWidth), collisionIgnore: ["item"] }),
                 body(),
@@ -198,7 +201,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                     }
                 ),                
                 // Patrol can make the enemy follow a computed path
-                patrol({ speed: 75 }),                
+                patrol({ speed: data.secondary.move_speed }),                
                 pathfinder({
                     graph: nav,
                 }),
@@ -209,12 +212,15 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                     active: !e.active,
                     facing: 'left',
                     path: [],
-                    speed: 75,
                     index: `${room.id}_${i}`,
                     spawn: {
                         x: e.x,
                         y: e.y
                     },
+                    ...data,
+                    exp: Math.floor(
+                        Object.values(data.attribute).reduce((prev, curr) => curr + prev, 0) / Object.entries(data.attribute).length
+                    ),
                     clearHitBox: (anim: string) => {
                         const hitBoxes = enemy.get('hitBox')
 
@@ -326,6 +332,17 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                 "enemy"
             ])
 
+            enemy.add([
+                text('', {
+                    size: 10,
+                    transform: {
+                        scale: 1
+                    } 
+                }),
+                pos(0, -tileWidth),
+                'text'
+            ])
+
             enemy.onObjectsSpotted((objs) => {
                 if(enemy.defeat) return
 
@@ -427,7 +444,40 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                 enemy.hidden = true
             })
 
+            enemy.onHurt(() => {
+                enemy.play('hurt', {
+                    onEnd: () => {
+                        console.log('enemy hp', enemy.hp)
+                        if(enemy.state === 'attack'){
+                            enemy.clearHitBox('attack')
+                            wait(0.2, () => enemy.checkDistanceToPlayer(getPlayers()[0]))
+                        }
+                    }
+                })                 
+            })
+
             enemy.onDeath(() => {
+                enemy.play('lose', {
+                    onEnd: () => {
+                        console.log('lose animation ended')
+
+                        // Update props
+                        const eIndex = enemies.findIndex(prop => prop.type === 'enemy' && prop.x === enemy.spawn.x && prop.y === enemy.spawn.y)
+
+                        enemies[eIndex].defeat = true
+                        enemies[eIndex].active = false
+                        enemies[eIndex].x = enemy.pos.x - (tileWidth / 2)
+                        enemies[eIndex].y = enemy.pos.y - (tileWidth / 2)
+                        enemies[eIndex].flipX = enemy.flipX
+
+                        gameStore.set(enemyAtom, enemies)   
+
+                        enemy.destroy()
+
+                        // Player gain exp
+                    }
+                })
+
                 enemy.defeat = true
                 enemy.unuse('body')
                 console.log('enemy dead')            
