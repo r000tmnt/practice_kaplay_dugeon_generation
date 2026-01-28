@@ -459,7 +459,7 @@ export const spawnEnemiesForRoom = async(room: roomNode) => {
                                 enemy.facing,
                                 currentAnim, 
                                 'collide', 
-                                ['enemy', 'pot', 'chest', "item"]
+                                ['enemy', 'pot', 'chest', 'shrine', 'item']
                             )                         
                     }
                     break;
