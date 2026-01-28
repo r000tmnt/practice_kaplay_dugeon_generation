@@ -38,24 +38,35 @@ export const calculateDamage = (attacker: GameObj, defender: GameObj) => {
         toCrit: toCrit / total
     }
 
-    console.log('chance', chance)
+    // Sort to ascending order
+    const sorted = Object.fromEntries(
+        Object.entries(chance).sort(([, a], [, b]) => a-b)
+    )
 
-    if(rate <= chance.toCrit){
-        return {
-            hit: true,
-            dmg: Math.round(finalNumber * 1.5),
+    console.log('chance', sorted)
+
+    // Default to avoid
+    const result = {
+        hit: false,
+        crit: false,
+        dmg: 0,
+    }
+
+    for(let i=0, chances=Object.entries(sorted); i < chances.length; i++){
+        if(rate <= chances[i][1]){
+            if(chances[i][0] === 'toHit'){
+                result.hit = true
+                result.dmg = finalNumber
+            }
+
+            if(chances[i][0] === 'toCrit'){
+                result.hit = true
+                result.crit = true
+                result.dmg = Math.round(finalNumber * 1.5)
+            }            
+            break
         }
     }
 
-    if(rate <= chance.toHit){
-        return {
-            hit: true,
-            dmg: finalNumber,
-        }
-    }else{
-        return {
-            hit: false,
-            dmg: 0
-        }
-    }
+    return result
 }
