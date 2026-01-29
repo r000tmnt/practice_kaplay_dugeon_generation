@@ -21,7 +21,7 @@ export const calculateDamage = (attacker: GameObj, defender: GameObj) => {
     // Calculate defence
     const baseDef = Math.floor(defender.attribute.physique * 1/10)
 
-    const finalNumber = baseDef > dmg? 1 : Math.floor(dmg - baseDef)
+    const finalNumber = baseDef >= dmg? 1 : Math.floor(dmg - baseDef)
 
     // Calculate chance to hit and avoid
     const baseHithance = attribute.agility * 7/10
