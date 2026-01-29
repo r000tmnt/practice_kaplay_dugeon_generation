@@ -1,25 +1,30 @@
 import type { GameObj } from "kaplay";
 import k from "../lib/kaplay";
+import { getOptionValue } from "../store/setting";
 
 const {
     // area,
     anchor,
     // circle,
-    color,
+    // color,
     // drawCurve,
     drawCircle,
     drawPolygon,
     drawText,
+    drawRect,
+    // easings,
     // evaluateBezier,
     fixed,
     // Line,
     layer,
     // polygon,
     pos,
-    rect,
+    // Rect,
+    // rect,
     rgb,
     // stay,
     // text,
+    // tween,
     vec2,
 } = k
 
@@ -32,62 +37,127 @@ const arcPoint = (t: number, radius: number) => {
 // #endregion
 
 export const setUIElements = (player: GameObj, map: GameObj) => {
+    const { tileWidth } = getOptionValue()
+
     const ui = map.add([
         pos(0, 0),
         fixed(),
-        layer('fg')
-        // stay()
+        layer('fg'),
+        // stay(),
+        'UI'
     ])
 
-    const hpBar = ui.add([
-        rect(k.width() / 4, k.height() / 10, {
-            fill: true,
-            radius: 4
-        }),
-        color(0, 0 ,0),
-        pos(k.width() * 0.2, k.height() * 5/6)
-    ])
+    const barWidth = k.width() / 4
+    const barHeight = k.height() / 20  
 
-    const mpBar = ui.add([
-        rect(k.width() / 4, k.height() / 10, {
-            fill: true,
-            radius: 4
-        }),
-        color(0, 0 ,0),
-        pos(k.width() * 0.55, k.height() * 5/6)
-    ])    
+    // const hpBar = ui.add([
+    //     rect(barWidth, barHeight, {
+    //         fill: true,
+    //         radius: 4
+    //     }),
+    //     area(),
+    //     color(150, 0 ,0),
+    //     pos(k.width() * 0.2, k.height() * 5/6),
+    // ])
 
-    hpBar.add([
-        rect(k.width() / 4, k.height() / 10),
-        color(150, 0, 0)
-    ])
+    // const mpBar = ui.add([
+    //     rect(barWidth, barHeight, {
+    //         fill: true,
+    //         radius: 4
+    //     }),
+    //     area(),
+    //     color(50, 50, 50),
+    //     pos(k.width() * 0.55, k.height() * 5/6),
+    // ])    
 
-    mpBar.add([
-        rect(k.width() / 4, k.height() / 10),
-        color(0, 0, 150)
-    ])    
+    // hpBar.add([
+    //     rect(0, barHeight),
+    //     color(50, 50, 50),
+    //     'HP'
+    // ])
+
+    // mpBar.add([
+    //     rect(barWidth, barHeight),
+    //     color(0, 0, 150),
+    //     'MP'
+    // ])      
+    
+    // let lastHp = player.hp
+    // let lastMp = player.attribute.mp
+    // let drawHpSteps: number[] = []
+
+    ui.onDraw(() => {
+        const hpPercentage = player.hp / player.maxHP
+        const mpPercentage = player.attribute.mp / player.max.mp
+
+        // if(lastHp !== player.hp){
+        //     const dist = lastHp - player.hp
+        //     const each = dist / 60
+        //     drawHpSteps = Array.from({ length: 60 }, (_, i) => i + 1).map(v => each * v)
+            
+        // }
+        
+        // HP outter bar
+        // Color in reverse order
+        drawRect({
+            width: barWidth,
+            height: barHeight,
+            pos: vec2(k.width() * 0.2, k.height() * 5/6),
+            color: rgb(50, 50 ,50)
+        })
+
+        // HP inner bar
+        drawRect({
+            width: barWidth * hpPercentage,
+            height: barHeight,
+            pos: vec2((k.width() * 0.2) + barWidth, k.height() * 5/6),
+            color: rgb(150, 0 ,0),
+            anchor: 'topright'
+        })        
+
+        // MP outter bar
+        drawRect({
+            width: barWidth,
+            height: barHeight,
+            pos: vec2(k.width() * 0.55, k.height() * 5/6),
+            color: rgb(50, 50 ,50)
+        })    
+        
+        // MP inner bar
+        drawRect({
+            width: barWidth * mpPercentage,
+            height: barHeight,
+            pos: vec2(k.width() * 0.55, k.height() * 5/6),
+            color: rgb(0, 0 ,150)
+        })   
+        
+        // HP text
+        drawText({
+            text: `${player.hp}/${player.maxHP}`,
+            pos: vec2(k.width() * 0.2, k.height() * 5/6 + ((barHeight - (tileWidth / 2)) / 2)),
+            align: 'center',
+            width: barWidth,
+            size: tileWidth / 2
+        })
+
+        // MP text
+        drawText({
+            text: `${player.attribute.mp}/${player.max.mp}`,
+            pos: vec2(k.width() * 0.55, k.height() * 5/6 + ((barHeight - (tileWidth / 2)) / 2)),
+            align: 'center',
+            width: barWidth,
+            size: tileWidth / 2
+        })        
+    })
 
     const expRing = ui.add([
         anchor('center'),
         pos(k.width() / 2, k.height() * 5/6)
     ])
 
-    // expRing.add([ 
-    //     text(`[black]${player.lv}[/black]`, { 
-    //         align: 'center', 
-    //         size: 48, 
-    //         width: Math.floor(k.width() / 20) * 2,
-    //         styles: { 
-    //             "black": {
-    //                 color: rgb(255, 255, 255)
-    //             }
-    //         } 
-    //     }), 
-    //     pos(0, 0) ])
-
     expRing.onDraw(() => {
         const progress = player.exp / player.max.exp
-        const radius = Math.floor(k.width() / 20)
+        const radius = Math.floor(k.width() / 40)
         const steps = 60
         const thickness = 10
 
@@ -155,4 +225,33 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
             // color: rgb(255, 0, 255)
         })
     })
+
+    // Place invisible area for both HP and MP bar.
+    // const hpBar = ui.add([
+    //     area({
+    //         shape: new Rect(vec2(0), barWidth, barHeight)
+    //     }),
+    //     pos(k.width() * 0.2, k.height() * 5/6),
+    //     {
+    //         displayText: false
+    //     }
+    // ])
+
+    // const mpBar = ui.add([
+    //     area({
+    //         shape: new Rect(vec2(0), barWidth, barHeight)
+    //     }),
+    //     pos(k.width() * 0.55, k.height() * 5/6),
+    //     {
+    //         displayText: false
+    //     }        
+    // ])
+
+    // hpBar.onClick(() => {
+    //     console.log('hp')
+    // }, 'left')
+
+    // mpBar.onClick(() => {
+    //     console.log('mp')
+    // }, 'left')      
 }
