@@ -93,7 +93,7 @@ const setMap = async(name = 'testMap') => {
         if(exit) level[exit.y][exit.x] = 2
 
         // Draw map
-        drawMap(level, entrance, name, tileWidth)
+        drawMap(level, entrance, exit, name, tileWidth)
 
         initPlayer(level, entrance as { x: number, y: number }, tileWidth)        
     }else{
