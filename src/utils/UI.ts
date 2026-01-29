@@ -3,10 +3,11 @@ import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 
 const {
-    // area,
+    area,
     anchor,
     // circle,
-    // color,
+    color,
+    debug,
     // drawCurve,
     drawCircle,
     drawPolygon,
@@ -17,13 +18,14 @@ const {
     fixed,
     // Line,
     layer,
+    outline,
     // polygon,
     pos,
     // Rect,
-    // rect,
+    rect,
     rgb,
     // stay,
-    // text,
+    text,
     // tween,
     vec2,
 } = k
@@ -225,6 +227,49 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
             // color: rgb(255, 0, 255)
         })
     })
+
+    const tool = ui.add([
+        rect(k.width()/ 2, barHeight, { fill: false }),
+        anchor('center'),
+        pos(k.width()/ 2, k.height() - barHeight),
+        outline(tileWidth / 4),
+        color(50, 50, 50),
+    ])
+
+    // 10 slots for key binding
+    // 6 slots for inventory, skill, character, quest, map, option
+
+    const slotWidth = tool.width / 16 
+    const shortCut = ['I', 'S', 'C', 'Q', 'M', 'O']
+
+    for(let i=0; i < 16; i++){
+        const slot = tool.add([
+            rect(slotWidth, barHeight),
+            pos((i >= 8)? 0 + ((i - 8) * slotWidth) : 0 - ((8 - i) * slotWidth), 0 - (barHeight / 2)),
+            area(),
+            color(50, 50, 50),
+        ])
+
+        if(i < 10){
+            slot.add([
+                text(String(i + 1), {
+                    size: tileWidth / 3,
+                })
+            ])            
+        }else{
+            slot.add([
+                text(shortCut[i - 10], {
+                    size: tileWidth / 3,
+                })
+            ])                 
+        }
+
+        // slot.onHoverUpdate(() => { console.log('slot hovered') })
+
+        slot.onClick(() => {
+            console.log('slot clicked')
+        })
+    }
 
     // Place invisible area for both HP and MP bar.
     // const hpBar = ui.add([
