@@ -63,7 +63,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
             direction: 'left',
             ...data,
             gainExp: (exp: number) => {
-                player.exp += player.lv === player.max.level? 0 : exp
+                player.exp += player.lv === player.max.level? player.max.exp : exp
                 // Check if player need to levelup
                 player.levelUp()
             },
@@ -117,7 +117,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
     player.onCollideUpdate('enemy', (enemy: GameObj) => {
         const enemyAnim = enemy.getCurAnim()
         
-        enemy.isStatic = enemyAnim?.name === 'attack'
+        enemy.isStatic = enemy.state === 'attack'
 
         if(enemyAnim?.name === 'walk'){
             player.secondary.move_speed = 75
