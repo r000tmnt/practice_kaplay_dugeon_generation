@@ -248,6 +248,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
             pos((i >= 8)? 0 + ((i - 8) * slotWidth) : 0 - ((8 - i) * slotWidth), 0 - (barHeight / 2)),
             area(),
             color(50, 50, 50),
+            fixed()
         ])
 
         if(i < 10){
