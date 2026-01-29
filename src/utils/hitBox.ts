@@ -20,6 +20,35 @@ const {
     wait
  } = k
 
+const onHitEvent = (hitBox: GameObj, attacker: GameObj, defender: GameObj) => {
+    // Calculate damage
+    if(hitBox.anim === 'attack'){
+        const { hit, dmg } = calculateDamage(attacker, defender)
+        const textHolder = defender.get('text')[0]
+
+        if(textHolder){
+            if(hit){
+                defender.hp -= dmg
+                // Display dmg number
+                textHolder.text = String(dmg)
+            }else{
+                textHolder.text = "MISS"
+            }                 
+            
+            // Animate text scale number
+            tween(
+                textHolder.textTransform.scale,
+                2,
+                1,
+                (scale) => textHolder.textTransform.scale = scale
+            ).onEnd(() => {
+                textHolder.textTransform.scale = 1
+                textHolder.text= ''
+            })                    
+        }
+    }    
+}
+
 export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAnim, type: string, ignore: string[] = []) => {
     const { tileWidth } = getOptionValue()
 
@@ -152,32 +181,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
 
         const player = getPlayers()[0]
 
-        // Calculate damage
-        if(hitBox.anim === 'attack'){
-            const { hit, dmg } = calculateDamage(player, obj)
-            const textHolder = obj.get('text')[0]
-
-            if(textHolder){
-                if(hit){
-                    obj.hp -= dmg
-                    // Display dmg number
-                    textHolder.text = String(dmg)
-                }else{
-                    textHolder.text = "MISS"
-                }                 
-                
-                // Animate text scale number
-                tween(
-                    textHolder.textTransform.scale,
-                    textHolder.textTransform.scale + 1,
-                    1,
-                    (scale) => textHolder.textTransform.scale = scale
-                ).onEnd(() => {
-                    textHolder.textTransform.scale -= 1
-                    textHolder.text= ''
-                })                    
-            }
-        }
+        onHitEvent(hitBox, player, obj)
     })        
     
     hitBox.onCollide('player', (obj: GameObj) => {
@@ -186,16 +190,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
 
         if(obj.hp <= 0) return
 
-        // Calculate damage
-        // if(hitBox.anim === 'attack'){
-        //     const { hit, dmg } = calculateDamage(player, obj)
-
-        //     if(hit){
-        //         obj.hp -= dmg
-        //     }else{
-        //         // TODO: Display text "Miss"
-        //     }
-        // }
+        if(hitBox.parent) onHitEvent(hitBox, hitBox.parent, obj)
     })            
 }
 
