@@ -97,7 +97,7 @@ const RoomType = {
     DeadEndReward: 4,    
 }
 
-const { NavMesh, vec2 } = k
+const { NavMesh, RNG, vec2, } = k
 
 export const nav = new NavMesh();
 
@@ -106,7 +106,7 @@ const randBetween = (a: number, b: number) => {
     return Math.floor(Math.random() * (b - a + 1)) + a;
 }
 
-const setCorridor = (leaf: Leaf, roomA: roomNode, roomB: roomNode) => {
+const setCorridor = (leaf: Leaf, roomA: roomNode, roomB: roomNode, grid: number[][]) => {
     const pointA = {
         x: randBetween(roomA.x, roomA.x + roomA.w - 1),
         y: randBetween(roomA.y, roomA.y + roomA.h - 1)
@@ -127,18 +127,28 @@ const setCorridor = (leaf: Leaf, roomA: roomNode, roomB: roomNode) => {
     }          
     roomA.connections.add(roomB.id)     
     roomB.connections.add(roomA.id)     
+
+    // Carve corridors
+    leaf.corridors.forEach(({x1, x2, y1, y2}) => {
+        if(x1 === x2){
+            carveVertical(grid, x1, y1, y2)
+        }else
+        if(y1 === y2){
+            carveHorizontal(grid, y1, x1, x2)
+        }
+    });
 }
 
-const createCorridors = (leaf: Leaf) => {
+const createCorridors = (leaf: Leaf, grid: number[][]) => {
     if (leaf.left && leaf.right) {
         const roomA = leaf.left.getRoom();
         const roomB = leaf.right.getRoom();
 
-        if(roomA && roomB) setCorridor(leaf, roomA, roomB)
+        if(roomA && roomB) setCorridor(leaf, roomA, roomB, grid)
     }
 
-    if (leaf.left) createCorridors(leaf.left);
-    if (leaf.right) createCorridors(leaf.right);    
+    if (leaf.left) createCorridors(leaf.left, grid);
+    if (leaf.right) createCorridors(leaf.right, grid);    
 }
 
 const carveHorizontal = (map: number[][], y: number, x1: number, x2: number) => {
@@ -536,12 +546,13 @@ const placeEnemies = (room: roomNode, count: number, tilemap: number[][]) => {
             active: false,
         })
 
-        candidates.pop()
+        // candidates.pop()
     }
 
-    return candidates;
+    // return candidates;
 }
 
+// Get points around the edges of the wall
 const marchingSquares = (grid: number[][]) => {
   const { tileWidth } = getOptionValue()
   const edges = [];
@@ -676,7 +687,7 @@ class Leaf{
     }
 
     // Randomly create a room within this leaf
-    createRoom() {
+    createRoom(grid: number[][]) {
         const roomW = randBetween(MIN_ROOM_SIZE, Math.min(MAX_ROOM_SIZE, this.w - 2));
         const roomH = randBetween(MIN_ROOM_SIZE, Math.min(MAX_ROOM_SIZE, this.h - 2));
 
@@ -698,6 +709,13 @@ class Leaf{
         };
 
         ROOMNODES.push(this.room)
+
+        // Carve out room
+        for (let y = this.room.y + 1; y < (this.room.y + this.room.h) - 1; y++) {
+            for (let x = this.room.x + 1; x < (this.room.x + this.room.w) - 1; x++) {
+                grid[y][x] = 0; // 0 = floor
+            }
+        }        
     }    
 
     // Get a room somewhere inside this leaf (going down tree if needed)
@@ -726,7 +744,10 @@ export const generateBSPDungeon = async() => {
 
     console.log(root)
 
-    // 1. Split until no more splitting possible
+    // 1. Build a rough tilemap
+    const grid = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(1)); // 1 = wall       
+
+    // 2. Split until no more splitting possible
     let didSplit = true;
     while (didSplit) {
         didSplit = false;
@@ -749,43 +770,27 @@ export const generateBSPDungeon = async() => {
 
     console.log(leaves)
 
-    // 2. Create rooms
+    // 3. Create rooms
     leaves.forEach(leaf => {
-        if (!leaf.left && !leaf.right) leaf.createRoom();
+        if (!leaf.left && !leaf.right) leaf.createRoom(grid);
     }); 
 
-    // 3. Collect all rooms
+    // 4. Collect all rooms
     const rooms = leaves
         .filter(l => l.room)
         .map(l => l.room as room);
     
-    // 4. Connect rooms with corridors
-    createCorridors(root)
+    // 5. Connect rooms with corridors
+    createCorridors(root, grid)
 
-    // 5. Build final tilemap
-    const grid = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(1)); // 1 = wall   
-    
-
-    // 6. Carve rooms
-    leaves.forEach(leaf => {
-        if (leaf.room) {
-            for (let y = leaf.room.y + 1; y < (leaf.room.y + leaf.room.h) - 1; y++) {
-                for (let x = leaf.room.x + 1; x < (leaf.room.x + leaf.room.w) - 1; x++) {
-                    grid[y][x] = 0; // 0 = floor
-                }
-            }
-        }
-    });  
-
-
-    // 7. Draw graph
+    // 6. Draw graph
     for (const room of ROOMNODES) {
         console.log(
             `Room ${room.id} → [${[...room.connections].join(", ")}]`
         );
     }
 
-    const randomRoomId = Math.floor(Math.random() * (rooms.length - 1));
+    const randomRoomId = Math.floor(Math.random() * rooms.length);
 
     const entranceSearch = findFarthestRoom(randomRoomId, ROOMNODES);
     const entranceId = entranceSearch.id;
@@ -836,11 +841,11 @@ export const generateBSPDungeon = async() => {
         });
     });
 
-    // 8. Assign room type
+    // 7. Assign room type
     graph.get(entranceId)!.type = RoomType.Entrance;
     graph.get(exitId)!.type = RoomType.Exit;
 
-    // 9. Mark critical path rooms
+    // 8. Mark critical path rooms
     for (const id of criticalPath) {
         if (
             id !== entranceId &&
@@ -850,7 +855,7 @@ export const generateBSPDungeon = async() => {
         }
     }    
 
-    // 10. Mark dead-end reward rooms
+    // 9. Mark dead-end reward rooms
     for (const [id, node] of graph) {
         if (
             node.neighbors.size === 1 &&
@@ -883,7 +888,7 @@ export const generateBSPDungeon = async() => {
                 const roomB = leaf.room
 
                 if(roomA && roomB){
-                    setCorridor(leaf, roomA, roomB)
+                    setCorridor(leaf, roomA, roomB, grid)
                                         
                     // Update graph          
                     graph.get(id)!.neighbors.add(roomB.id);
@@ -892,19 +897,7 @@ export const generateBSPDungeon = async() => {
                 }
             }
         }
-    })
-
-    // Carve corridors
-    leaves.forEach(leaf => {
-        leaf.corridors.forEach(({x1, x2, y1, y2}) => {
-            if(x1 === x2){
-                carveVertical(grid, x1, y1, y2)
-            }else
-            if(y1 === y2){
-                carveHorizontal(grid, y1, x1, x2)
-            }
-        });
-    });    
+    }) 
 
     // Final check
     const finalReachable = findConnectedRooms(entranceId, graph);
@@ -1026,16 +1019,17 @@ export const generateBSPDungeon = async() => {
 //#region Set props for chunks
 const setPorps = async(grid: number[][], rooms: room[]) => {
     // const allProps: prop[] = []
+    const { propRules } = getOptionValue()
 
     rooms.map((room, index) => {
         const { innerSpace, tiles } = getInnerSpaceAndTiles(grid, room)
 
-        placePot(innerSpace, index, tiles)
-        placeChest(index, tiles)
-        placeShirne(index, tiles)
+        placePot(innerSpace, index, tiles, propRules.pot)
+        placeChest(index, tiles, propRules.chest)
+        placeShirne(index, tiles, propRules.shrine)
     })
 
-    placeDecoration(grid)
+    placeDecoration(grid, propRules.decoration)
 
     gameStore.set(gameState, prev => ({
         ...prev,
@@ -1043,84 +1037,83 @@ const setPorps = async(grid: number[][], rooms: room[]) => {
     }))
 }
 
-const placePot = (innerSpace: { x: number, y:number, w: number, h: number }, roomId: number, tiles: {x: number, y: number}[]) => {
-    const { propRules } = getOptionValue()
+const placePot = (
+    innerSpace: { x: number, y:number, w: number, h: number }, 
+    roomId: number, 
+    tiles: {x: number, y: number}[], 
+    rule: { density: number, min:number, max: number }
+) => {
+    const { density, min, max } = rule
     const area = innerSpace.w * innerSpace.h
-    const expected = area * propRules.pot.density 
+    const expected = area * density 
     const possibleCount = expected + (Math.random() * (1 - -1) + -1)
-    const count = Math.min(Math.max(possibleCount, 0), propRules.pot.max)
-
-    for(let i=0; i < count; i++){
-        const rng = tiles[Math.floor(Math.random() * (tiles.length - 1))]
-        PROP.push(
-            {
-                type: "pot",
-                x: rng.x,
-                y: rng.y,
-                roomId,
-                broken: false
-            }            
-        )        
-    }
+    const count = Math.min(Math.max(possibleCount, min), max)
+    pushProp(roomId, count, 'pot', tiles)
 }
 
-const placeChest = (roomId: number, tiles: {x: number, y: number}[]) => {
-    const { propRules } = getOptionValue()
-    const canSpawn = Math.random() <= propRules.chest.perRoomChance
-    const count = canSpawn? propRules.chest.maxPerRoom : 0
-
-    for(let i=0; i < count; i++){
-        console.log('set chest prop')
-        const rng = tiles[Math.floor(Math.random() * (tiles.length - 1))]
-        PROP.push(
-            {
-                type: "chest",
-                x: rng.x,
-                y: rng.y,
-                roomId,
-                open: false
-            }            
-        )
-    }
+const placeChest = (
+    roomId: number, 
+    tiles: {x: number, y: number}[],
+    rule: { perRoomChance: number, maxPerRoom: number }
+) => {
+    const { perRoomChance, maxPerRoom } = rule
+    const canSpawn = Math.random() <= perRoomChance
+    const count = canSpawn? maxPerRoom : 0
+    pushProp(roomId, count, 'chest', tiles)
 }
 
-const placeDecoration = (grid: number[][]) => {
-    const { propRules } = getOptionValue()    
+const placeDecoration = (
+    grid: number[][], 
+    rule: { perRoomChance: number, density: number }
+) => {
+    const { density } = rule    
     const area = grid[0].length * grid.length
-    const expected = area * propRules.pot.density 
+    const expected = area * density 
     const possibleCount = expected + (Math.random() * (1 - -1) + -1)
-    const allFloorTiles = []
-
-    for(let y=0; y < grid.length; y++){
-        for(let x=0; x < grid[y].length; x++){
-            if(grid[y][x] === 0) allFloorTiles.push({ x, y })
-        }
-    }
+    const allFloorTiles = getFloorTiles(grid, { w: grid[0].length, h: grid.length, x:0, y: 0,  center: { x: 0, y: 0 } })
 
     for(let count=0; count < possibleCount; count++){
-        const rng = allFloorTiles[Math.floor(Math.random() * (allFloorTiles.length - 1))]
+        const rng = allFloorTiles[Math.floor(Math.random() * allFloorTiles.length)]
         grid[rng.y][rng.x] = 3
     }
 }
 
-const placeShirne = (roomId: number, tiles: {x: number, y: number}[]) => {
-    const { propRules } = getOptionValue()
-    const canSpawn = Math.random() <= propRules.shrine.perFloorChance
-    const count = canSpawn? propRules.chest.maxPerRoom : 0
+const placeShirne = (
+    roomId: number, 
+    tiles: {x: number, y: number}[], 
+    rule: { perFloorChance: number, maxPerRoom: number }
+) => {
+    const { perFloorChance, maxPerRoom } = rule
+    const canSpawn = Math.random() <= perFloorChance
+    const count = canSpawn? maxPerRoom : 0
+    pushProp(roomId, count, 'shrine', tiles)
+}
 
+const pushProp = (roomId: number, count: number, type: string, tiles: {x: number, y: number}[]) => {
     for(let i=0; i < count; i++){
-        console.log('set shrine prop')
-        const rng = tiles[Math.floor(Math.random() * (tiles.length - 1))]
-        PROP.push(
-            {
-                type: "shrine",
+        console.log(`set ${type} prop`)
+        const rng = tiles[Math.floor(Math.random() * tiles.length)]
+        const prop = {
+                type,
                 x: rng.x,
                 y: rng.y,
                 roomId,
-                active: false
-            }            
-        )
-    }    
+            } 
+
+        switch(type){
+            case 'pot':
+                Object.defineProperty(prop, 'broken', { value: false, writable: true })
+            break;
+            case 'chest':
+                Object.defineProperty(prop, 'open', { value: false, writable: true })
+            break;
+            case 'shrine':
+                Object.defineProperty(prop, 'active', { value: false, writable: true })
+            break;
+        }
+
+        PROP.push(prop)
+    }  
 }
 
 const getFloorTiles = (grid: number[][], room: room) => {
