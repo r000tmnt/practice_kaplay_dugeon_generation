@@ -9,6 +9,7 @@ import { RoomState } from '../model/map'
 // import { getOptionValue } from '../store/setting';
 import { spawnEnemiesForRoom } from './enemy';
 import playerData from '../data/player.json'
+import { setUIElements } from './UI';
 
 const {
     add,
@@ -238,5 +239,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
             break;
         }        
     })  
+
+    setUIElements(player, map)
     // #endregion  
 }
