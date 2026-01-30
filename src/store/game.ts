@@ -10,10 +10,15 @@ export const gameState = atom({
     chunks: {} as Record<string, chunk>,
     enemies: [] as prop[],
     roomNodes: [] as roomNode[],
-    polygon: [] as { x: number, y: number }[][]
+    polygon: [] as { x: number, y: number }[][],
+    inventory: {
+        open: false,
+        inProgress: false
+    }
 })
 
 export const enemyAtom = focusAtom(gameState, (optic) => optic.prop('enemies'))
+export const inventoryUI = focusAtom(gameState, (optic) => optic.prop('inventory'))
 
 export const gameStore = createStore()
 
