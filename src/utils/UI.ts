@@ -320,7 +320,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
 
     if(inventory.length){
         console.log('toggle inventory')
-        inventory[0].hidden = open
+        inventory[0].hidden = !open
         return
     }else
     if(open){
