@@ -12,10 +12,12 @@ const {
     drawPolygon,
     drawText,
     drawRect,
+    drawLine,
+    drawSprite,
     // easings,
     // evaluateBezier,
     fixed,
-    getData,
+    // getData,
     // Line,
     layer,
     outline,
@@ -335,11 +337,6 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             anchor('center'),
             'inventory'
         ])
-        
-
-        // const equipment = inventory.add([
-        //     rect(tileWidth, tileWidth)
-        // ])
 
         inventory.onDraw(() => {
             drawRect({
@@ -350,6 +347,18 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                 color: rgb(50, 50, 50),
                 radius: tileWidth / 4
             })
+
+            // Equipment
+
+            // Head
+            drawRect({
+                width: tileWidth * 12,
+                height: tileWidth * 6,
+                pos: vec2(0, inventoryHeight / 4),
+                anchor: 'center',
+                color: rgb(0, 0, 0),
+            })               
+            
             
             // Item section
             drawRect({
@@ -361,39 +370,97 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             })         
             
             // Draw item blocks
-            for(let row=0; row < itemRow; row++){
-                for(let col=0; col < itemCol; col++){
-                    drawRect({
-                        width: tileWidth,
-                        height: tileWidth,
-                        pos: vec2(
-                            // If index point to the center col
-                            (col + 1) >= (itemCol / 2)? 
-                            
-                            // (col - halfCol * tileWidth) - (halfTile)
-                            (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
+            for(let row=0; row < (itemRow + 1); row++){
+                // horizontal lines
 
-                            // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
-                            0 - (((itemCol / 2) - (col)) * tileWidth) + (tileWidth / 2),   
+                const py =
+                        // If index point to center row or deeper
+                        ((row + 1) >= (itemRow / 2))?
 
-                            // If index point to the center row
-                            ((row + 1) >= (itemRow / 2))?
+                        // Y + ((row - halfRow) * tileWidth) + halfTile
+                        (inventoryHeight / 4) + ((row - (itemRow / 2)) * tileWidth):
+                        
+                        // Y - ((halfRow - row) * tileWidth)
+                        (inventoryHeight / 4) - (((itemRow / 2) - row) * tileWidth)                 
 
-                            // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
-                            (inventoryHeight / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):                            
+                drawLine({
+                    // Start
+                    p1: vec2(
+                        // relativeX - (halfCol * tileWidth)
+                        0 - ((itemCol / 2) * tileWidth), 
+                        py
+                    ),
+                    // End
+                    p2: vec2(
+                        // halfCol * tileWidth
+                        (itemCol / 2) * tileWidth, 
+                        py
+                    ),
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                })
+            }       
+            
+            // Vertical lines            
+            for(let col=0; col < (itemCol + 1); col++){
+                const px = 
+                        // If index is point to center col or deeper
+                        (col + 1) >= (itemCol / 2)? 
+                        
+                        // relativeX + (col - halfCol) * tileWidth
+                        0 + (col - (itemCol / 2)) * tileWidth:
 
-                            // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
-                            (inventoryHeight / 4) - ((((itemRow / 2) - (row)) * tileWidth) - (tileWidth / 2)),
-                        ),
-                        anchor: 'center',
-                        color: rgb(0, 0, 0),
-                        outline: {
-                            width: tileWidth / 10,
-                            color: rgb(75, 75, 75)
-                        }
-                    })   
-                }
+                        // relativeX - (halfCol -col) * tileWidth
+                        0 - (((itemCol / 2) - col) * tileWidth)
+
+                drawLine({
+                    // start
+                    p1: vec2(
+                        px,
+                        // Y - (halfRow * tileWidth)
+                        (inventoryHeight / 4) - ((itemRow / 2) * tileWidth)
+                    ),
+                    p2: vec2(
+                        px,
+                        // Y + (halfRow * tileWidth)
+                        (inventoryHeight / 4) + ((itemRow / 2) * tileWidth)
+                    ),
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                })       
             }            
+
+            // TODO: Place items
+
+            // drawRect({
+            //     width: tileWidth,
+            //     height: tileWidth,
+            //     pos: vec2(
+            //         // If index point to the center col
+            //         (col + 1) >= (itemCol / 2)? 
+                    
+            //         // ((col - halfCol) * tileWidth) - (halfTile)
+            //         (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
+
+            //         // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
+            //         0 - (((itemCol / 2) - (col)) * tileWidth) + (tileWidth / 2),   
+
+            //         // If index point to the center row
+            //         ((row + 1) >= (itemRow / 2))?
+
+            //         // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
+            //         (inventoryHeight / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):                            
+
+            //         // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
+            //         (inventoryHeight / 4) - ((((itemRow / 2) - (row)) * tileWidth) - (tileWidth / 2)),
+            //     ),
+            //     anchor: 'center',
+            //     color: rgb(0, 0, 0),
+            //     outline: {
+            //         width: tileWidth / 10,
+            //         color: rgb(75, 75, 75)
+            //     }
+            // })              
         })
     }
 }
