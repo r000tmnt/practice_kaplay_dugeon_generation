@@ -17,6 +17,7 @@ const {
     // get,
     health,
     layer,
+    // opacity,
     patrol,
     pathfinder,
     pos,
@@ -475,6 +476,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                         enemy.destroy()
 
                         // Player gain exp
+                        getPlayers()[0].gainExp(enemy.exp)
                     }
                 })
 
