@@ -464,6 +464,8 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             // #endregion
 
             // #region Attribute
+            const padding = 10
+
             drawRect({
                 width: tileWidth * ((itemCol / 2) - 1),
                 height: tileWidth * itemRow,
@@ -473,7 +475,48 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                     width: tileWidth / 10,
                     color: rgb(75, 75, 75)
                 }                
-            })             
+            })       
+
+            // Player LV
+            drawText({
+                text: `LV ${player.lv}`,
+                size: tileWidth / 2,
+                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + padding)
+            })        
+            
+            // Player name
+            drawText({
+                text: `NAME`,
+                size: tileWidth / 2,
+                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding * 2) + (tileWidth / 2))
+            })              
+
+            // Player class
+            drawText({
+                text: `CLASS`,
+                size: tileWidth / 2,
+                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding * 3) + tileWidth)
+            })                 
+
+            Object.entries(player.attribute).forEach(([key, value], i) => {
+                const count = i + 4
+                const fontSize = i + 3
+
+                if(key === 'hp' || key === 'mp'){
+                    drawText({
+                        text: `${key.toUpperCase()}: ${value}/${key === 'hp'? player.maxHP : player.max.mp}`,
+                        size: tileWidth / 2,
+                        pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding * count) + ((tileWidth / 2) * fontSize))                        
+                    })                      
+                }else{
+                    drawText({
+                        text: `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`,
+                        size: tileWidth / 2,
+                        pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding * count) + ((tileWidth / 2) * fontSize))                             
+                    })   
+                }
+            })
+
             // #endregion
             
             // #region Items
