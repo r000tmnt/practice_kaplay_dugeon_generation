@@ -4,12 +4,13 @@ import type { roomNode } from '../model/map'
 
 import { setCameraPosition } from './camera';
 import { createHitBox } from './hitBox'
-import { getGameStoreValue } from '../store/game';
+import { gameStore, getGameStoreValue, inventoryUI } from '../store/game';
 import { RoomState } from '../model/map'
 // import { getOptionValue } from '../store/setting';
 import { spawnEnemiesForRoom } from './enemy';
 import playerData from '../data/player.json'
-import { setUIElements } from './UI';
+import { setUIElements, setInventoryUI } from './UI';
+import { getOptionValue } from '../store/setting';
 
 const {
     add,
@@ -20,7 +21,9 @@ const {
     get,
     health,
     isKeyDown,
+    isMousePressed,
     layer,
+    // onKeyRelease,
     pos,
     Rect,
     // rotate,
@@ -177,7 +180,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                 // Reference: https://jslegenddev.substack.com/p/how-to-fix-diagonal-movement-in-2d
                 const diagonalFactor = vec2(0, 0)
 
-                if (isKeyDown("left")){
+                if (isKeyDown("a")){
                     player.direction = 'left'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
@@ -185,7 +188,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                     diagonalFactor.x = -1
                 }
                 
-                if (isKeyDown("right")){
+                if (isKeyDown("d")){
                     player.direction = 'right'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
@@ -193,14 +196,14 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                     diagonalFactor.x = 1
                 }        
 
-                if (isKeyDown("up")){
+                if (isKeyDown("w")){
                     player.direction = 'top'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
                     diagonalFactor.y = -1
                 }     
                 
-                if (isKeyDown("down")){
+                if (isKeyDown("s")){
                     player.direction = 'down'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
@@ -219,7 +222,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
                 if(room) onEnterRoom(room)
 
-                if (isKeyDown('z')){
+                if (isKeyDown('z') || isMousePressed('left')){
                     if(currentAnim?.name !== 'attack') {
                         player.play("attack", {
                             onEnd: () => {
@@ -234,11 +237,29 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                             }
                         })
                     }
-                }                
+                }       
             }
             break;
         }        
     })  
+
+    player.onKeyRelease('i', async(key) => {
+        if(getData('ready') !== false){
+            console.log('release key', key)
+            const { inventory } = getGameStoreValue()
+            const { tileWidth } = getOptionValue()
+            if(!inventory.inProgress){
+                inventory.open = !inventory.open
+                inventory.inProgress = !inventory.inProgress
+                gameStore.set(inventoryUI, inventory)
+
+                await setInventoryUI(player, map, tileWidth, inventory.open).then(() => {
+                    inventory.inProgress = false
+                    gameStore.set(inventoryUI, inventory)              
+                })                
+            }
+        }
+    })
 
     setUIElements(player, map)
     // #endregion  
