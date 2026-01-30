@@ -7,7 +7,6 @@ const {
     anchor,
     // circle,
     color,
-    debug,
     // drawCurve,
     drawCircle,
     drawPolygon,
@@ -16,12 +15,13 @@ const {
     // easings,
     // evaluateBezier,
     fixed,
+    getData,
     // Line,
     layer,
     outline,
     // polygon,
     pos,
-    // Rect,
+    Rect,
     rect,
     rgb,
     // stay,
@@ -46,11 +46,45 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         fixed(),
         layer('fg'),
         // stay(),
-        'UI'
+        'ui'
     ])
 
     const barWidth = k.width() / 4
     const barHeight = k.height() / 20  
+
+    // #region HP, MP, LV UI
+    // Place invisible area for both HP and MP bar.
+    const hpBar = ui.add([
+        area({
+            shape: new Rect(vec2(0), barWidth, barHeight)
+        }),
+        pos(k.width() * 0.2, k.height() * 5/6),
+        fixed(),
+        {
+            displayText: false
+        }
+    ])
+
+    const mpBar = ui.add([
+        area({
+            shape: new Rect(vec2(0), barWidth, barHeight)
+        }),
+        pos(k.width() * 0.55, k.height() * 5/6),
+        fixed(),
+        {
+            displayText: false
+        }        
+    ])
+
+    hpBar.onClick(() => {
+        console.log('hp')
+        hpBar.displayText = !hpBar.displayText
+    }, 'left')
+
+    mpBar.onClick(() => {
+        console.log('mp')
+        mpBar.displayText = !mpBar.displayText
+    }, 'left')      
 
     // const hpBar = ui.add([
     //     rect(barWidth, barHeight, {
@@ -88,7 +122,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
     // let lastMp = player.attribute.mp
     // let drawHpSteps: number[] = []
 
-    ui.onDraw(() => {
+    ui.onDraw(async() => {
         const hpPercentage = player.hp / player.maxHP
         const mpPercentage = player.attribute.mp / player.max.mp
 
@@ -134,22 +168,26 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         })   
         
         // HP text
-        drawText({
-            text: `${player.hp}/${player.maxHP}`,
-            pos: vec2(k.width() * 0.2, k.height() * 5/6 + ((barHeight - (tileWidth / 2)) / 2)),
-            align: 'center',
-            width: barWidth,
-            size: tileWidth / 2
-        })
+        if(hpBar.displayText){
+            drawText({
+                text: `${player.hp}/${player.maxHP}`,
+                pos: vec2(k.width() * 0.2, k.height() * 5/6 + ((barHeight - (tileWidth / 2)) / 2)),
+                align: 'center',
+                width: barWidth,
+                size: tileWidth / 2
+            })            
+        }
 
         // MP text
-        drawText({
-            text: `${player.attribute.mp}/${player.max.mp}`,
-            pos: vec2(k.width() * 0.55, k.height() * 5/6 + ((barHeight - (tileWidth / 2)) / 2)),
-            align: 'center',
-            width: barWidth,
-            size: tileWidth / 2
-        })        
+        if(mpBar.displayText){
+            drawText({
+                text: `${player.attribute.mp}/${player.max.mp}`,
+                pos: vec2(k.width() * 0.55, k.height() * 5/6 + ((barHeight - (tileWidth / 2)) / 2)),
+                align: 'center',
+                width: barWidth,
+                size: tileWidth / 2
+            })             
+        }
     })
 
     const expRing = ui.add([
@@ -270,34 +308,93 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         slot.onClick(() => {
             console.log('slot clicked')
         })
-    }
-
-    // Place invisible area for both HP and MP bar.
-    // const hpBar = ui.add([
-    //     area({
-    //         shape: new Rect(vec2(0), barWidth, barHeight)
-    //     }),
-    //     pos(k.width() * 0.2, k.height() * 5/6),
-    //     {
-    //         displayText: false
-    //     }
-    // ])
-
-    // const mpBar = ui.add([
-    //     area({
-    //         shape: new Rect(vec2(0), barWidth, barHeight)
-    //     }),
-    //     pos(k.width() * 0.55, k.height() * 5/6),
-    //     {
-    //         displayText: false
-    //     }        
-    // ])
-
-    // hpBar.onClick(() => {
-    //     console.log('hp')
-    // }, 'left')
-
-    // mpBar.onClick(() => {
-    //     console.log('mp')
-    // }, 'left')      
+    }    
+    // #endregion 
 }
+
+// #region inventory UI
+export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: number, open = false) => {
+    // If UI created
+    const ui = map.get('ui')[0]
+    const inventory = ui.get('inventory')
+
+    if(inventory.length){
+        console.log('toggle inventory')
+        inventory[0].hidden = open
+        return
+    }else
+    if(open){
+        const inventoryWidth = k.width() / 2
+        const inventoryHeight = k.height() * 19/20
+        const itemRow = 6
+        const itemCol = 12
+
+        // Create ui
+        const inventory = ui.add([
+            pos(k.width() / 2, k.height() / 2),
+            anchor('center'),
+            'inventory'
+        ])
+        
+
+        // const equipment = inventory.add([
+        //     rect(tileWidth, tileWidth)
+        // ])
+
+        inventory.onDraw(() => {
+            drawRect({
+                width: inventoryWidth,
+                height: inventoryHeight,
+                pos: vec2(0, 0),
+                anchor: 'center',
+                color: rgb(50, 50, 50),
+                radius: tileWidth / 4
+            })
+            
+            // Item section
+            drawRect({
+                width: tileWidth * 12,
+                height: tileWidth * 6,
+                pos: vec2(0, inventoryHeight / 4),
+                anchor: 'center',
+                color: rgb(0, 0, 0),
+            })         
+            
+            // Draw item blocks
+            for(let row=0; row < itemRow; row++){
+                for(let col=0; col < itemCol; col++){
+                    drawRect({
+                        width: tileWidth,
+                        height: tileWidth,
+                        pos: vec2(
+                            // If index point to the center col
+                            (col + 1) >= (itemCol / 2)? 
+                            
+                            // (col - halfCol * tileWidth) - (halfTile)
+                            (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
+
+                            // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
+                            0 - (((itemCol / 2) - (col)) * tileWidth) + (tileWidth / 2),   
+
+                            // If index point to the center row
+                            ((row + 1) >= (itemRow / 2))?
+
+                            // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
+                            (inventoryHeight / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):                            
+
+                            // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
+                            (inventoryHeight / 4) - ((((itemRow / 2) - (row)) * tileWidth) - (tileWidth / 2)),
+                        ),
+                        anchor: 'center',
+                        color: rgb(0, 0, 0),
+                        outline: {
+                            width: tileWidth / 10,
+                            color: rgb(75, 75, 75)
+                        }
+                    })   
+                }
+            }            
+        })
+    }
+}
+// #endregion  
