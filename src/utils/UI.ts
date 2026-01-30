@@ -348,22 +348,138 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                 radius: tileWidth / 4
             })
 
-            // Equipment
+            // #region Equipment
+            drawSprite({
+                sprite: 'player',
+                pos: vec2(-((itemCol / 4) * tileWidth), -(inventoryHeight / 4)),
+                frame: 0,
+                anchor: 'center',
+                width: tileWidth * 4,
+                height: tileWidth * 4
+            })
 
             // Head
             drawRect({
-                width: tileWidth * 12,
-                height: tileWidth * 6,
-                pos: vec2(0, inventoryHeight / 4),
+                width: tileWidth,
+                height: tileWidth,
+                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 1) * tileWidth)),
                 anchor: 'center',
                 color: rgb(0, 0, 0),
-            })               
+                outline: {
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                }                
+            })
             
-            
-            // Item section
+            // Body
             drawRect({
-                width: tileWidth * 12,
-                height: tileWidth * 6,
+                width: tileWidth,
+                height: tileWidth,
+                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 2.5) * tileWidth)),
+                anchor: 'center',
+                color: rgb(0, 0, 0),
+                outline: {
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                }                
+            })    
+            
+            // Feet
+            drawRect({
+                width: tileWidth,
+                height: tileWidth,
+                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 4) * tileWidth)),
+                anchor: 'center',
+                color: rgb(0, 0, 0),
+                outline: {
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                }                
+            })   
+
+            // Accessory 1
+            drawRect({
+                width: tileWidth,
+                height: tileWidth,
+                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 5.5) * tileWidth)),
+                anchor: 'center',
+                color: rgb(0, 0, 0),
+                outline: {
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                }                
+            })               
+
+            // Right hand
+            drawRect({
+                width: tileWidth,
+                height: tileWidth,
+                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 1) * tileWidth)),
+                anchor: 'center',
+                color: rgb(0, 0, 0),
+                outline: {
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                }                
+            })     
+
+            // Left hand
+            drawRect({
+                width: tileWidth,
+                height: tileWidth,
+                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 2.5) * tileWidth)),
+                anchor: 'center',
+                color: rgb(0, 0, 0),
+                outline: {
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                }                
+            })              
+
+            // Accessory 2
+            drawRect({
+                width: tileWidth,
+                height: tileWidth,
+                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 4) * tileWidth)),
+                anchor: 'center',
+                color: rgb(0, 0, 0),
+                outline: {
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                }                
+            })              
+
+            // Ring
+            drawRect({
+                width: tileWidth,
+                height: tileWidth,
+                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 5.5) * tileWidth)),
+                anchor: 'center',
+                color: rgb(0, 0, 0),
+                outline: {
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                }                
+            }) 
+            // #endregion
+
+            // #region Attribute
+            drawRect({
+                width: tileWidth * ((itemCol / 2) - 1),
+                height: tileWidth * itemRow,
+                pos: vec2(tileWidth, -(itemRow * tileWidth)),
+                color: rgb(0, 0, 0),
+                outline: {
+                    width: tileWidth / 10,
+                    color: rgb(75, 75, 75)
+                }                
+            })             
+            // #endregion
+            
+            // #region Items
+            drawRect({
+                width: tileWidth * itemCol,
+                height: tileWidth * itemRow,
                 pos: vec2(0, inventoryHeight / 4),
                 anchor: 'center',
                 color: rgb(0, 0, 0),
@@ -460,7 +576,8 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             //         width: tileWidth / 10,
             //         color: rgb(75, 75, 75)
             //     }
-            // })              
+            // })  
+            // #endregion            
         })
     }
 }
