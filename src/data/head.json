@@ -1,0 +1,99 @@
+[
+    {
+        "id": "head_001",
+        "name": "Cap",
+        "desc": "",
+        "attribute": {
+            "physique": 1
+        },
+        "secondary": {
+            "armor": 1
+        },
+        "resist": null,
+        "requirement": null
+    },
+    {
+        "id": "head_002",
+        "name": "Hood",
+        "desc": "",
+        "attribute": {
+            "physique": 1
+        },
+        "secondary": {
+            "armor": 1
+        },
+        "resist": null,
+        "requirement": null
+    },
+    {
+        "id": "head_003",
+        "name": "Coif",
+        "desc": "",
+        "attribute": {
+            "physique": 1
+        },
+        "secondary": {
+            "armor": 1
+        },
+        "resist": null,
+        "requirement": null
+    },
+    {
+        "id": "head_004",
+        "name": "Beret",
+        "desc": "A durable all-purpose cap.",
+        "attribute": {
+            "physique": 1,
+            "mentality": 1
+        },
+        "secondary": {
+            "armor": 1
+        },
+        "resist": null,
+        "requirement": null
+    },
+    {
+        "id": "head_005",
+        "name": "Capuchon",
+        "desc": "A headgear in the form of hood with a hole to frame the face.",
+        "attribute": {
+            "physique": 2
+        },
+        "secondary": {
+            "armor": 3
+        },
+        "resist": {},
+        "requirement": null
+    },
+    {
+        "id": "head_006",
+        "name": "Strew hat",
+        "desc": "They keep rain and sun out of your face quite effectely.",
+        "attribute": {
+            "physique": 2,
+            "mentality": 1
+        },
+        "secondary": {
+            "armor": 3
+        },
+        "resist": {},
+        "requirement": null
+    },
+    {
+        "id": "head_007",
+        "name": "Square crown",
+        "desc": "For nobility only." ,
+        "attribute": {
+            "physique": 1,
+            "mentality": 3
+        },        
+        "secondary": {
+            "cast_speed": 0.03
+        },  
+        "resist": {},
+        "requirement": {
+            "lv": 8,
+            "mentality": 15
+        }        
+    }
+]

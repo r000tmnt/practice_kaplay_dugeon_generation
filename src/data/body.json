@@ -1,0 +1,105 @@
+[
+    {
+        "id": "body_001",
+        "name": "Cloak",
+        "desc": "",
+        "attribute": {
+            "physique": 1
+        },
+        "secondary": {
+            "armor": 1
+        },
+        "resist": {
+            "air": 0.5
+        },
+        "requirement": null
+    },
+    {
+        "id": "body_002",
+        "name": "Tunic",
+        "desc": "Simple style garment.",
+        "attribute": {
+            "physique": 1
+        },
+        "secondary": {
+            "armor": 1
+        },
+        "resist": null,
+        "requirement": null
+    },
+    {
+        "id": "body_003",
+        "name": "Jacket",
+        "desc": "Generally lighter and tighter-fitting.",
+        "attribute": {
+            "physique": 1
+        },
+        "secondary": {
+            "armor": 2
+        },
+        "resist": null,
+        "requirement": null
+    },
+    {
+        "id": "body_004",
+        "name": "Coat",
+        "desc": "The outermost layer for outdoor wear.",
+        "attribute": {
+            "physique": 2
+        },
+        "secondary": {
+            "armor": 3
+        },
+        "resist": null,
+        "requirement": null
+    },
+    {
+        "id": "body_005",
+        "name": "Chain mail",
+        "desc": "",
+        "attribute": {
+            "physique": 2,
+            "agility": -1
+        },
+        "secondary": {
+            "armor": 5
+        },       
+        "resist": {
+            "earth": 0.3
+        },
+        "requirement": null
+    },
+    {
+        "id": "body_006",
+        "name": "Vestment",
+        "desc": "",
+        "attribute": {
+            "mentality": 2
+        },
+        "secondary": {
+            "armor": 1
+        },       
+        "resist": null,
+        "requirement": {
+            "lv": 3,
+            "mentality": 10
+        }
+    },
+    {
+        "id": "body_007",
+        "name": "Stole",
+        "desc": "",
+        "attribute": {
+            "mentality": 5,
+            "agility": 1
+        },
+        "secondary": {
+            "armor": 2
+        },       
+        "resist": null,
+        "requirement": {
+            "lv": 10,
+            "mentality": 20
+        }
+    }       
+]
