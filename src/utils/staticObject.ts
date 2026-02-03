@@ -14,7 +14,7 @@ const {
     vec2,
  } = k
 
-export const spawnObject = (prop: prop, tileWidth: number, shape: Rect) => {
+export const spawnObject = (prop: prop, tileWidth: number, shape?: Rect) => {
     const map = get('map')
     let obj;
     switch(prop.type){
