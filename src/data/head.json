@@ -3,6 +3,7 @@
         "id": "head_001",
         "name": "Cap",
         "desc": "",
+        "stackable": false,
         "attribute": {
             "physique": 1
         },
@@ -16,6 +17,7 @@
         "id": "head_002",
         "name": "Hood",
         "desc": "",
+        "stackable": false,
         "attribute": {
             "physique": 1
         },
@@ -29,6 +31,7 @@
         "id": "head_003",
         "name": "Coif",
         "desc": "",
+        "stackable": false,
         "attribute": {
             "physique": 1
         },
@@ -42,6 +45,7 @@
         "id": "head_004",
         "name": "Beret",
         "desc": "A durable all-purpose cap.",
+        "stackable": false,
         "attribute": {
             "physique": 1,
             "mentality": 1
@@ -56,6 +60,7 @@
         "id": "head_005",
         "name": "Capuchon",
         "desc": "A headgear in the form of hood with a hole to frame the face.",
+        "stackable": false,
         "attribute": {
             "physique": 2
         },
@@ -69,6 +74,7 @@
         "id": "head_006",
         "name": "Strew hat",
         "desc": "They keep rain and sun out of your face quite effectely.",
+        "stackable": false,
         "attribute": {
             "physique": 2,
             "mentality": 1
@@ -82,7 +88,8 @@
     {
         "id": "head_007",
         "name": "Square crown",
-        "desc": "For nobility only." ,
+        "desc": "For nobility only.",
+        "stackable": false,
         "attribute": {
             "physique": 1,
             "mentality": 3

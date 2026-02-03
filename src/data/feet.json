@@ -1,0 +1,69 @@
+[
+    {
+        "id": "feet_001",
+        "name": "Sandle",
+        "desc": "A lighty footwear",
+        "stackable": false,
+        "attribute": {
+            "agility": 1
+        },
+        "secondary": null,
+        "resist": null,
+        "required": {
+            "lv": 1
+        },
+        "price": 10
+    },
+    {
+        "id": "feet_002",
+        "name": "Boots",
+        "desc": "A fully covered shoes for protection",
+        "stackable": false,
+        "attribute": {
+            "physique": 2,
+            "agility": 1
+        },
+        "secondary": {
+            "armor": 1
+        },
+        "resist": {
+            "water": 0.1
+        },
+        "required": {
+            "lv": 5
+        },
+        "price": 50
+    },    
+    {
+        "id": "feet_003",
+        "name": "Leather shose",
+        "desc": "",
+        "stackable": false,
+        "attribute": {
+            "physique": 1,
+            "agility": 1
+        },
+        "secondary": null,
+        "resist": null,
+        "required": {
+            "lv": 1
+        },
+        "price": 15
+    },
+    {
+        "id": "feet_004",
+        "name": "Poulaine",
+        "desc": "",
+        "stackable": false,
+        "attribute": {
+            "mentality": 1,
+            "agility": -1
+        },
+        "secondary": null,
+        "resist": null,
+        "required": {
+            "lv": 3
+        },
+        "price": 30        
+    }
+]

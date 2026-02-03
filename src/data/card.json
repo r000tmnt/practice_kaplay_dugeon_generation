@@ -2,8 +2,8 @@
     {
         "id": "card_001",
         "name": "Claustrophobia",
-        "type": 3, 
         "desc": "Reduce map size",
+        "stackable": true,
         "effect": {
             "size": -10,
             "enemy": 2,
@@ -13,8 +13,8 @@
     {
         "id": "card_002",
         "name": "Treasure Hunter",
-        "type": 3, 
         "desc": "Increase chance of finding treasure chests",
+        "stackable": true,
         "effect": {
             "treasure_find_rate": 0.15,
             "room": 1
@@ -23,8 +23,8 @@
     {
         "id": "card_003",
         "name": "Swift Feet",
-        "type": 3, 
         "desc": "Increase movement speed",
+        "stackable": true,
         "effect": {
             "move_speed": 1.2,
             "room": 1
@@ -33,8 +33,8 @@
     {
         "id": "card_004",
         "name": "Iron Skin",
-        "type": 3, 
         "desc": "Increase defense",
+        "stackable": true,
         "effect": {
             "defense": 5,
             "room": 1
@@ -43,8 +43,8 @@
     {
         "id": "card_005",
         "name": "Berserker's Rage",
-        "type": 3, 
         "desc": "Increase attack power but decrease defense",
+        "stackable": true,
         "effect": {
             "attack": 5,
             "defense": -3,
@@ -54,8 +54,8 @@
     {
         "id": "card_006",
         "name": "Lucky Charm",
-        "type": 3, 
         "desc": "Increase luck, improving critical hit chance and item find chance",
+        "stackable": true,
         "effect": {
             "crit_rate": 0.1,
             "item_find_rate": 0.1,
@@ -65,8 +65,8 @@
     {
         "id": "card_007",
         "name": "Mana Surge",
-        "type": 3, 
         "desc": "Increase maximum mana points",
+        "stackable": true,
         "effect": {
             "max_mp": 0.2,
             "room": 1
@@ -75,8 +75,8 @@
     {
         "id": "card_008",
         "name": "Health Boost",
-        "type": 3, 
         "desc": "Increase maximum health points for awhile",
+        "stackable": true,
         "effect": {
             "max_hp": 0.25,
             "room": 1
@@ -85,8 +85,8 @@
     {
         "id": "card_009",
         "name": "labyrinth",
-        "type": 3, 
         "desc": "Increase map size",
+        "stackable": true,
         "effect": {
             "size": 10,
             "enemy": 1,

@@ -1,0 +1,17 @@
+[
+    {
+        "id": "accessory_001",
+        "name": "Ring",
+        "stackable": false,
+        "desc": "A symbol of status.",
+        "attribute": {
+            "mentality": 1
+        },
+        "secondary": null,
+        "resist": null,
+        "required": {
+            "lv": 1
+        },
+        "price": 10
+    }
+]

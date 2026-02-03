@@ -2,7 +2,8 @@
     {
         "id": "other_001",
         "name": "Small Key",
-        "type": 2,
-        "desc": "A small key that can open a locked chest."
+        "desc": "A small key that can open a locked chest.",
+        "stackable": true,
+        "attribute": {}
     }
 ]

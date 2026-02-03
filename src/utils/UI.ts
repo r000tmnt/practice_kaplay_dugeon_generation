@@ -1,6 +1,7 @@
 import type { GameObj } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
+import { getGameStoreValue } from "../store/game";
 
 const {
     area,
@@ -26,6 +27,7 @@ const {
     Rect,
     rect,
     rgb,
+    sprite,
     // stay,
     text,
     // tween,
@@ -498,6 +500,8 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                 pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding * 3) + tileWidth)
             })                 
 
+            const buttons = inventory.get('button')
+
             Object.entries(player.attribute).forEach(([key, value], i) => {
                 const count = i + 4
                 const fontSize = i + 3
@@ -515,8 +519,30 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                         pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding * count) + ((tileWidth / 2) * fontSize))                             
                     })   
                 }
-            })
+                
+                // Display "PLUS" button or not
+                if(player.pt > 0 && !buttons.length){
+                    const button = inventory.add([
+                        rect(tileWidth, tileWidth),
+                        pos(tileWidth + padding, + (itemRow * tileWidth) + (padding * count) + ((tileWidth / 2) * fontSize)),
+                        area(),
+                        color(75, 75, 75),
+                        fixed(),
+                        {
+                            key
+                        },
+                        'button'
+                    ])
 
+                    button.onClick(() => {
+                        player.attribute[button.key] = Number(value) + 1
+                        player.pt -= 1
+                    })
+                }else
+                if(player.pt === 0 && buttons.length){
+                    buttons[i].hidden = false
+                }
+            })
             // #endregion
             
             // #region Items
@@ -590,6 +616,67 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             }            
 
             // TODO: Place items
+            // Get pages
+            // const page = Math.floor(getGameStoreValue().inventory.limit / (itemRow * itemCol))
+            const space = getGameStoreValue().inventory.space 
+            const spawnedItems = inventory.get('item')
+
+            for(let row=0; row < itemRow; row++){
+                for(let col=0; col < itemCol; col++){
+                    // If item exist
+                    const block = col + (itemCol * row)
+                    if(space[block] !== undefined){
+                        if(spawnedItems[block] !== undefined){
+                            // Change sprite
+                        }else{
+                            // add sprite
+                            const item = inventory.add([
+                                sprite("item", { frame: 0 }),
+                                area(),
+                                anchor('center'),
+                                pos(
+                                    // If index point to the center col
+                                    (col + 1) >= (itemCol / 2)?               
+                                    // ((col - halfCol) * tileWidth) - (halfTile)                  
+                                    (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
+                                    // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
+                                    0 - (((itemCol / 2) - (col)) * tileWidth) + (tileWidth / 2), 
+                                    // If index point to the center row
+                                    ((row + 1) >= (itemRow / 2))?
+                                    // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
+                                    (inventoryHeight / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
+                                    // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
+                                    (inventoryHeight / 4) - ((((itemRow / 2) - (row)) * tileWidth) - (tileWidth / 2)),                                    
+                                ),
+                                'itme'
+                            ])
+
+                            item.onClick(() => {
+                                console.log('hi')
+                            })                            
+                        }
+
+                        // drawSprite({
+                        //     sprite: "item",
+                        //     pos: vec2(
+                        //         // If index point to the center col
+                        //         (col + 1) >= (itemCol / 2)?               
+                        //         // ((col - halfCol) * tileWidth) - (halfTile)                  
+                        //         (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
+                        //         // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
+                        //         0 - (((itemCol / 2) - (col)) * tileWidth) + (tileWidth / 2), 
+                        //         // If index point to the center row
+                        //         ((row + 1) >= (itemRow / 2))?
+                        //         // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
+                        //         (inventoryHeight / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
+                        //         // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
+                        //         (inventoryHeight / 4) - ((((itemRow / 2) - (row)) * tileWidth) - (tileWidth / 2)),
+                        //     ),
+                        //     frame: 0
+                        // })
+                    }
+                }
+            }
 
             // drawRect({
             //     width: tileWidth,

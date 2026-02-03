@@ -1,0 +1,146 @@
+[
+    {
+        "id": "hand_001",
+        "name": "Wooden sword",
+        "desc": "For practice only.",
+        "stackable": false,
+        "attribute": {
+            "physique": 1
+        },
+        "secondary": null,
+        "dmg": {
+            "min": 1,
+            "max": 5
+        },
+        "resist": null,
+        "required": {
+            "lv": 1
+        },
+        "price": 5
+    },
+    {
+        "id": "hand_002",
+        "name": "Torch",
+        "desc": "",
+        "stackable": false,
+        "attribute": {
+            "physique": 1
+        },
+        "secondary": null,
+        "dmg": {
+            "min": 1,
+            "max": 5
+        },        
+        "element": {
+            "fire": 3
+        },
+        "resist": null,
+        "required": {
+            "lv": 3
+        },
+        "price": 7
+    },    
+    {
+        "id": "hand_003",
+        "name": "Falchion",
+        "desc": "One-handed sword",
+        "stackable": false,
+        "attribute": {
+            "physique": 3
+        },
+        "secondary": null,
+        "dmg": {
+            "min": 5,
+            "max": 15
+        },        
+        "resist": null,
+        "required": {
+            "lv": 3
+        },
+        "price": 100
+    },
+    {
+        "id": "hand_004",
+        "name": "Hammer",
+        "desc": "Two-handed weapon",
+        "stackable": false,
+        "attribute": {
+            "physique": 4
+        },
+        "secondary": {
+            "attack_speed": -0.01
+        },
+        "dmg": {
+            "min": 7,
+            "max": 15
+        },        
+        "resist": null,
+        "required": {
+            "lv": 3
+        },
+        "price": 130
+    },
+    {
+        "id": "hand_005",
+        "name": "Pickaxe",
+        "desc": "Two-handed weapon",
+        "stackable": false,
+        "attribute": {
+            "physique": 3
+        },
+        "secondary": {
+            "attack_speed": -0.01
+        },
+        "dmg": {
+            "min": 5,
+            "max": 10
+        },           
+        "resist": null,
+        "required": {
+            "lv": 3
+        },
+        "price": 130
+    },
+    {
+        "id": "hand_006",
+        "name": "Shavol",
+        "desc": "Two-handed weapon",
+        "stackable": false,
+        "attribute": {
+            "physique": 5
+        },
+        "secondary": {
+            "attack_speed": -0.01
+        },
+        "dmg": {
+            "min": 7,
+            "max": 13
+        },           
+        "resist": null,
+        "required": {
+            "lv": 3
+        },
+        "price": 130
+    },
+    {
+        "id": "hand_007",
+        "name": "Pistol",
+        "desc": "Gun",
+        "stackable": false,
+        "attribute": {
+            "physique": 3
+        },
+        "secondary": {
+            "attack_speed": 0.01
+        },
+        "dmg": {
+            "min": 3,
+            "max": 10
+        },           
+        "resist": null,
+        "required": {
+            "lv": 3
+        },
+        "price": 100
+    }
+]
