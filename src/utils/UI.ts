@@ -1,4 +1,4 @@
-import type { GameObj } from "kaplay";
+import type { GameObj, Vec2 } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 import { getGameStoreValue } from "../store/game";
@@ -21,6 +21,7 @@ const {
     // getData,
     // Line,
     layer,
+    mousePos,
     outline,
     // polygon,
     pos,
@@ -33,6 +34,8 @@ const {
     // tween,
     vec2,
 } = k
+
+let currentDragging : { id: number, pos: Vec2 } | null = null
 
 // #region Utils
 const arcPoint = (t: number, radius: number) => {
@@ -627,13 +630,18 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                     const block = col + (itemCol * row)
                     if(space[block] !== undefined){
                         if(spawnedItems[block] !== undefined){
-                            // Change sprite
+                            // Change sprite and item
+                            spawnedItems[block].sprite = "item"
+                            spawnedItems[block].frame = 0
+                            spawnedItems[block].item = space[block]
+                            spawnedItems[block].item.index = block
                         }else{
                             // add sprite
                             const item = inventory.add([
                                 sprite("item", { frame: 0 }),
                                 area(),
                                 anchor('center'),
+                                fixed(),
                                 pos(
                                     // If index point to the center col
                                     (col + 1) >= (itemCol / 2)?               
@@ -648,12 +656,61 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                                     // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
                                     (inventoryHeight / 4) - ((((itemRow / 2) - (row)) * tileWidth) - (tileWidth / 2)),                                    
                                 ),
+                                {
+                                    item: space[block],
+                                },
                                 'itme'
                             ])
 
-                            item.onClick(() => {
-                                console.log('hi')
-                            })                            
+                            // item.onClick(() => {
+                            //     console.log('item', item.item)
+                            // })   
+                            
+                            item.onMousePress(() => {
+                                if(currentDragging) return
+                                currentDragging = {
+                                    id: item.id,
+                                    pos: vec2(item.pos.x, item.pos.y)
+                                }
+                            })
+
+                            item.onMouseRelease(() => {
+                                if(currentDragging){
+                                    // Compare the original pos to mouse pos
+                                    const mouse = mousePos()
+
+                                    const dist = {
+                                        x: Math.floor((mouse.x - currentDragging.pos.x) / tileWidth),
+                                        y: Math.floor((mouse.y - currentDragging.pos.y) / tileWidth)
+                                    }
+
+                                    item.pos = vec2(currentDragging.pos.x + dist.x, currentDragging.pos.y + dist.y)
+
+                                    for(let row = 0; row < Math.abs(dist.y); row++){
+                                        if(dist.y < 0){
+                                            item.item.index -= itemCol  
+                                        }else{
+                                            item.item.index += itemCol  
+                                        }
+                                    }
+
+                                    for(let col=0; col < Math.abs(dist.x); col++){
+                                        if(dist.x < 0){
+                                            item.item.index -= 1  
+                                        }else{
+                                            item.item.index += 1  
+                                        }
+                                    }
+
+                                    currentDragging = null                                    
+                                }
+                            })
+
+                            item.onUpdate(() => {
+                                if(currentDragging && currentDragging.id === item.id){
+                                    item.pos = mousePos().sub(item.pos)
+                                }
+                            })
                         }
 
                         // drawSprite({
@@ -674,6 +731,11 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                         //     ),
                         //     frame: 0
                         // })
+                    }else{
+                        // Hide sprite is exist
+                        if(spawnedItems[block] !== undefined){
+                            spawnedItems[block].hidden = true
+                        }
                     }
                 }
             }
