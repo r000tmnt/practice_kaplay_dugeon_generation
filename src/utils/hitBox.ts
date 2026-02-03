@@ -5,6 +5,8 @@ import { setting, getOptionValue } from '../store/setting';
 import { dropItem } from './item'
 import { getPlayers } from "./player";
 import { calculateDamage } from './battle'
+import potData from '../data/pot.json'
+import chestData from '../data/chest.json'
 
 const { 
     area,
@@ -128,7 +130,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
                 props: props
             }))
             // Drop items  
-            dropItem(obj, 'pot')
+            dropItem(obj, potData.base)
 
             // And more     
             wait(1, () => obj.destroy())             
@@ -149,7 +151,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
                 props: props
             }))
             // Drop items         
-            dropItem(obj, 'chest')
+            dropItem(obj, chestData.base)
             // And more            
         }           
     })    
