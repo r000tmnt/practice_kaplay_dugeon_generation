@@ -32,8 +32,28 @@ interface base {
         max: number
     };
 }
+
+interface item {
+    id: string,
+    name: string,
+    stackable: boolean,
+    attribute?: object | null,
+    secondary?: object | null,
+    element?: object | null,
+    resist?: object | null,
+    required?: object | null
+    effect?: object | null
+    price?: number
+}
+
+interface note {
+    index: number
+    item: item
+}
+
 export type {
-    base
+    base,
+    note
 }
 
 export {
