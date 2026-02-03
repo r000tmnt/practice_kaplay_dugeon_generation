@@ -251,6 +251,8 @@ export const dropItem = (obj: GameObj, base: base = {
                             const { inventory } = getGameStoreValue()
                             inventory.gold += item.amount?? 0
 
+                            // Destory item on the map
+                            dropped.destroy()                            
                             gameStore.set(inventoryUI, inventory)
                         }
                     }else{
