@@ -7,6 +7,15 @@ import { gameState, gameStore, getGameStoreValue, enemyAtom } from '../store/gam
 import { getOptionValue } from '../store/setting';
 import { getPlayers } from './player'
 import enemyData from '../data/enemy.json'
+import { dropItem } from './item';
+import { 
+    setDirection, 
+    getPathAndFollow, 
+    rotateXY,
+    steering
+} from './pathFinding'; 
+
+const GROWTH = [0, 1, 3]
 
 const {
     area,
@@ -22,6 +31,7 @@ const {
     pathfinder,
     pos,
     Rect,
+    RNG,
     // rotate,
     // setData,
     state,
@@ -107,58 +117,9 @@ const stayOrNot = (enemy: GameObj) => {
     }
 }
 
-const setDirection = (enemy: GameObj, destination: Vec2) => {
-    const dist = {
-        x: destination.x - enemy.pos.x,
-        y: destination.y - enemy.pos.y
-    }
-
-    console.log('setDirection dist', dist)
-
-    enemy.facing = dist.x > 0? 'right' : 'left'
-
-    if(dist.y > (Math.abs(dist.x) * 2)) enemy.facing = 'down'
-    if(dist.y < 0 && Math.abs(dist.y) > (Math.abs(dist.x) * 2)) enemy.facing = 'top'
-
-    enemy.flipX = dist.x > 0    
-}
-
-const getPathAndFollow = (enemy: GameObj, destination: Vec2) => {
-    try {
-        // Get path
-        enemy.path = enemy.navigateTo(destination)
-        if(enemy.path?.length) {
-            enemy.waypoints = [enemy.path[0]]
-            enemy.path.splice(0, 1)
-            // Get direction relative to enemy position
-            setDirection(enemy, enemy.path[0])
-            // if(dist.y > 0 && dist.x > 0 ) enemy.facing = 'downRight'
-            // if(dist.y > 0 && dist.x < 0 ) enemy.facing = 'downleft'
-            // if(dist.y < 0 && dist.x > 0 ) enemy.facing = 'upRight'
-            // if(dist.y < 0 && dist.x < 0 ) enemy.facing = 'upleft'
-            enemy.play('walk')        
-        }           
-    } catch (error) {
-        console.warn('pathfinding error', error)
-        enemy.waypoints = [destination]
-        setDirection(enemy, destination)
-        enemy.play('walk')  
-    }
-}
-
-// Reference: https://stackoverflow.com/a/17411276/14173422
-const rotateXY = (center: Vec2, point: Vec2, angle: number) => {
-    const radians = (Math.PI / 180) * angle,
-        cos = Math.cos(radians),
-        sin = Math.sin(radians),
-        nx = (cos * (point.x - center.x)) + (sin * (point.y - center.y)) + center.x,
-        ny = (cos * (point.y - center.y)) - (sin * (point.x - center.x)) + center.y;
-    return vec2(nx, ny);
-}
-
 export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData | null = null) => {
     if(!data) data = enemyData
-    const { enemies, level } = getGameStoreValue()
+    const { enemies, level, danger } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
     const count = enemies.filter((e: prop) => {
         if(e.roomId === room.id && !e.defeat){
@@ -166,15 +127,24 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
         }
     })
 
+    // Alter enemy attributes based on danger level
+    for(let i=0; i < danger; i++){
+        console.log('times', i)
+        Object.entries(data.attribute).forEach(([key, value]) => {
+            data.attribute[key as keyof { hp: number, mp: number, physique: number, mentality: number, agility: number }] += Math.floor(Math.random() * GROWTH.length)
+            console.log(key, value)
+        })
+    }
+
     // Check if spawned
     // const map = get('map')[0]
     // const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
 
     if(count.length){
         const { nav } = await import('../utils/bspDungeonGenerator');
-        console.log('nav in enemy', nav)
+        // console.log('nav in enemy', nav)
         count.forEach((e: prop, i: number) => {
-            console.log('spawn enemy')
+            // console.log('spawn enemy')
 
             const spawn = {
                 x: (e.x * tileWidth) + (tileWidth / 2),
@@ -193,7 +163,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                 // Sentry makes it easy to check for visibility of the player
                 sentry(
                     { 
-                        include: ["player", "pot", "chest"], // Tags to check
+                        include: ["player", "pot", "chest", "shrine"], // Tags to check
                         includeOp: 'or' // Rule to checking tags (and/or)
                     }, 
                     {
@@ -246,92 +216,13 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                             enemy.enterState('idle')
                         }
                     },
-                    steering: (ObjectInSight: GameObj) => {
-                        if(enemy.waypoints?.length){
-                            const dist = {
-                                x: ObjectInSight.pos.x - enemy.pos.x,
-                                y: ObjectInSight.pos.y - enemy.pos.y
-                            }
-
-                            const currentPos = {
-                                x: Math.floor(enemy.pos.x / tileWidth),
-                                y: Math.floor(enemy.pos.y / tileWidth)
-                            }                    
-
-                            const distanceToTiles = Math.floor(200/tileWidth)
-
-                            console.log('dist to object', dist)
-
-                            if(dist.x <= tileWidth && dist.y <= tileWidth){
-                                switch(enemy.facing){
-                                    case 'top': case 'down':{
-                                        // Check left and right
-                                        let blockLeft = 0
-                                        let blockRight = 0
-
-                                        for(let i=1; i <= distanceToTiles; i++){
-                                            if(level[currentPos.y][currentPos.x - i] !== undefined && level[currentPos.y][currentPos.x - i] === 1) {
-                                                blockLeft++
-                                            }
-
-                                            if(level[currentPos.y][currentPos.x + i] !== undefined && level[currentPos.y][currentPos.x + i] === 1) {
-                                                blockRight++
-                                            }
-                                        }
-
-                                        if(blockLeft < blockRight){
-                                            // Go left
-                                            const newPoint = rotateXY(vec2(enemy.pos.x, enemy.pos.y), vec2(ObjectInSight.pos.x, ObjectInSight.pos.y), (enemy.facing === 'top')? 90 : -90)
-                                            console.log('newPoint left', newPoint)
-                                            enemy.waypoints = [vec2(newPoint.x, newPoint.y)]
-                                            setDirection(enemy, ObjectInSight.pos)
-                                        }else{
-                                            // Go right
-                                            const newPoint = rotateXY(vec2(enemy.pos.x, enemy.pos.y), vec2(ObjectInSight.pos.x, ObjectInSight.pos.y), (enemy.facing === 'top')? -90 : 90)
-                                            console.log('newPoint right', newPoint)
-                                            enemy.waypoints = [vec2(newPoint.x, newPoint.y)]
-                                            setDirection(enemy, ObjectInSight.pos)
-                                        }
-                                    }
-                                    break;
-                                    case 'left': case 'right':{
-                                        // Check top and down
-                                        let blockTop = 0
-                                        let blockDown = 0
-
-                                        for(let i=1; i <= distanceToTiles; i++){
-                                            if(level[currentPos.y - i] && level[currentPos.y - i][currentPos.x] !== undefined && level[currentPos.y - i][currentPos.x] === 1) {
-                                                blockTop++
-                                            }
-
-                                            if(level[currentPos.y + i] && level[currentPos.y + i][currentPos.x] !== undefined && level[currentPos.y + i][currentPos.x] === 1) {
-                                                blockDown++
-                                            }
-                                        }
-
-                                        if(blockTop < blockDown){
-                                            // Go top
-                                            const newPoint = rotateXY(vec2(enemy.pos.x, enemy.pos.y), vec2(ObjectInSight.pos.x, ObjectInSight.pos.y), (enemy.facing === 'left')? -90 : 90)
-                                            console.log('newPoint top', newPoint)
-                                            enemy.waypoints = [vec2(newPoint.x, newPoint.y)]
-                                            setDirection(enemy, ObjectInSight.pos)
-                                        }else{
-                                            // Go down
-                                            const newPoint = rotateXY(vec2(enemy.pos.x, enemy.pos.y), vec2(ObjectInSight.pos.x, ObjectInSight.pos.y), (enemy.facing === 'left')? 90 : -90)
-                                            console.log('newPoint down', newPoint)
-                                            enemy.waypoints = [vec2(newPoint.x, newPoint.y)]
-                                            setDirection(enemy, ObjectInSight.pos)
-                                        }
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    } 
+                    steering: (ObjectInSight: GameObj) => steering(enemy, ObjectInSight, tileWidth, level)
                 },
                 // tags
                 "enemy"
             ])
+
+            console.log('spawned enemy', enemy)
 
             enemy.add([
                 text('', {
@@ -477,6 +368,33 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
 
                         // Player gain exp
                         getPlayers()[0].gainExp(enemy.exp)
+
+                        // Drop item
+                        const rng = new RNG(Date.now())
+                        const rate = rng.gen() + danger                        
+                        const base = {
+                            count: {
+                                min: 1,
+                                max: rng.genNumber(1, Math.floor(3 * rate))
+                            },
+                            item: {
+                                gold: 0.5,
+                                head: 0.2,
+                                hand: 0.2,
+                                body: 0.2,
+                                feet: 0.2,
+                                accessory: 0.2,
+                                potion: 0.2,
+                                card: 0.1,
+                                other: 0.2
+                            },
+                            gold: {
+                                min: 1,
+                                max: rng.genNumber(1, Math.floor(5 * rate))
+                            }
+                        }
+
+                        dropItem(enemy, base)
                     }
                 })
 
