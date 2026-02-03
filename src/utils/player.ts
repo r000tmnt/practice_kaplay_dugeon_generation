@@ -11,6 +11,10 @@ import { spawnEnemiesForRoom } from './enemy';
 import playerData from '../data/player.json'
 import { setUIElements, setInventoryUI } from './UI';
 import { getOptionValue } from '../store/setting';
+import { 
+    setDirection, 
+    steering 
+} from './pathFinding'; 
 
 const {
     add,
@@ -24,6 +28,8 @@ const {
     isMousePressed,
     layer,
     // onKeyRelease,
+    pathfinder,
+    patrol,
     pos,
     Rect,
     // rotate,
@@ -51,8 +57,9 @@ export const getPlayers = () => {
     return get('player')
 }
 
-export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth: number, mapHeight: number, data: typeof playerData | null = null) => {
+export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapWidth: number, mapHeight: number, data: typeof playerData | null = null) => {
     if(!data) data = playerData
+    const { nav } = await import('../utils/bspDungeonGenerator');
     const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
     const player = add([
         sprite("player"), 
@@ -61,9 +68,14 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
         body(),
         layer('game'),
         health(data.attribute.hp, data.max.hp),
+        patrol({ speed: data.secondary.move_speed }),   
+        pathfinder({
+            graph: nav
+        }),
         pos((x * map.tileWidth) + (sizeWithPadding / 2), (y * map.tileWidth) + (sizeWithPadding / 2)),
         {
-            direction: 'left',
+            facing: 'left',
+            path: [],
             ...data,
             gainExp: (exp: number) => {
                 player.exp += player.lv === player.max.level? player.max.exp : exp
@@ -117,6 +129,17 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
     console.log('player', player)
     setCameraPosition(player, mapWidth, mapHeight)
 
+    player.onCollide((obj: GameObj) => {
+        // If player is moving alone side the path
+        if(player.waypoints?.length){
+          if(obj.is('pot') || obj.is('chest') || obj.is('shrine')){
+            const { tileWidth } = getOptionValue()
+            const { level } = getGameStoreValue()
+            steering(player, obj, tileWidth, level)
+          }
+        }
+    })
+
     player.onCollideUpdate('enemy', (enemy: GameObj) => {
         const enemyAnim = enemy.getCurAnim()
         
@@ -169,7 +192,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
 
                     createHitBox(
                         player, 
-                        player.direction,
+                        player.facing,
                         currentAnim, 
                         'collide', 
                         ['player', 'item']
@@ -181,7 +204,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                 const diagonalFactor = vec2(0, 0)
 
                 if (isKeyDown("a")){
-                    player.direction = 'left'
+                    player.facing = 'left'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
                     player.flipX = false
@@ -189,7 +212,7 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                 }
                 
                 if (isKeyDown("d")){
-                    player.direction = 'right'
+                    player.facing = 'right'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
                     player.flipX = true
@@ -197,14 +220,14 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
                 }        
 
                 if (isKeyDown("w")){
-                    player.direction = 'top'
+                    player.facing = 'top'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
                     diagonalFactor.y = -1
                 }     
                 
                 if (isKeyDown("s")){
-                    player.direction = 'down'
+                    player.facing = 'down'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
                     diagonalFactor.y = 1
@@ -260,6 +283,18 @@ export const createPlayerSprite = (map: GameObj, x: number, y: number, mapWidth:
             }
         }
     })
+
+    player.onPatrolFinished(()=> {
+        if(player.hp === 0) return
+        if(player.path?.length) {
+            player.waypoints = [player.path[0]]
+            player.path.splice(0, 1)
+            setDirection(player, player.waypoints[0])
+        }else{
+            player.stop()
+            player.frame = 0 
+        }
+    })    
 
     setUIElements(player, map)
     // #endregion  
