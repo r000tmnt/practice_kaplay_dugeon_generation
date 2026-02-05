@@ -543,6 +543,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
 
     const expRing = ui.add([
         anchor('center'),
+        fixed(),
         pos(k.width() / 2, k.height() * 5/6)
     ])
 
@@ -720,7 +721,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             drawRect({
                 width: tileWidth,
                 height: tileWidth,
-                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 1) * tileWidth)),
+                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 0.5) * tileWidth)),
                 anchor: 'center',
                 color: rgb(0, 0, 0),
                 outline: {
@@ -733,7 +734,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             drawRect({
                 width: tileWidth,
                 height: tileWidth,
-                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 2.5) * tileWidth)),
+                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 2) * tileWidth)),
                 anchor: 'center',
                 color: rgb(0, 0, 0),
                 outline: {
@@ -746,7 +747,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             drawRect({
                 width: tileWidth,
                 height: tileWidth,
-                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 4) * tileWidth)),
+                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 3.5) * tileWidth)),
                 anchor: 'center',
                 color: rgb(0, 0, 0),
                 outline: {
@@ -759,7 +760,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             drawRect({
                 width: tileWidth,
                 height: tileWidth,
-                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 5.5) * tileWidth)),
+                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 5) * tileWidth)),
                 anchor: 'center',
                 color: rgb(0, 0, 0),
                 outline: {
@@ -772,7 +773,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             drawRect({
                 width: tileWidth,
                 height: tileWidth,
-                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 1) * tileWidth)),
+                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 0.5) * tileWidth)),
                 anchor: 'center',
                 color: rgb(0, 0, 0),
                 outline: {
@@ -785,7 +786,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             drawRect({
                 width: tileWidth,
                 height: tileWidth,
-                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 2.5) * tileWidth)),
+                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 2) * tileWidth)),
                 anchor: 'center',
                 color: rgb(0, 0, 0),
                 outline: {
@@ -798,7 +799,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             drawRect({
                 width: tileWidth,
                 height: tileWidth,
-                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 4) * tileWidth)),
+                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 3.5) * tileWidth)),
                 anchor: 'center',
                 color: rgb(0, 0, 0),
                 outline: {
@@ -811,7 +812,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             drawRect({
                 width: tileWidth,
                 height: tileWidth,
-                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 5.5) * tileWidth)),
+                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 5) * tileWidth)),
                 anchor: 'center',
                 color: rgb(0, 0, 0),
                 outline: {
@@ -821,8 +822,17 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             }) 
             // #endregion
 
-            // #region Attribute
             const padding = 10
+
+            // Gold
+            drawText({
+                text: `$ ${getGameStoreValue().inventory.gold}`,
+                size: tileWidth / 3,
+                anchor: 'topright',
+                pos: vec2(0 + (inventoryWidth / 2) - padding, 0 - (inventoryHeight / 2) + padding)
+            })
+
+            // #region Attribute
 
             drawRect({
                 width: tileWidth * ((itemCol / 2) - 1),
@@ -838,22 +848,22 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             // Player LV
             drawText({
                 text: `LV ${player.lv}`,
-                size: tileWidth / 2,
+                size: tileWidth / 3,
                 pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + padding)
             })        
             
             // Player name
             drawText({
                 text: `NAME`,
-                size: tileWidth / 2,
-                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding * 2) + (tileWidth / 2))
+                size: tileWidth / 3,
+                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + ((padding / 2) * 2) + (tileWidth / 2))
             })              
 
             // Player class
             drawText({
                 text: `CLASS`,
-                size: tileWidth / 2,
-                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding * 3) + tileWidth)
+                size: tileWidth / 3,
+                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + ((padding / 2) * 3) + tileWidth)
             })                 
 
             const buttons = inventory.get('button')
@@ -865,14 +875,14 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                 if(key === 'hp' || key === 'mp'){
                     drawText({
                         text: `${key.toUpperCase()}: ${value}/${key === 'hp'? player.maxHP : player.max.mp}`,
-                        size: tileWidth / 2,
-                        pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding * count) + ((tileWidth / 2) * fontSize))                        
+                        size: tileWidth / 3,
+                        pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + ((padding / 2) * count) + ((tileWidth / 2) * fontSize))                        
                     })                      
                 }else{
                     drawText({
                         text: `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`,
-                        size: tileWidth / 2,
-                        pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding * count) + ((tileWidth / 2) * fontSize))                             
+                        size: tileWidth / 3,
+                        pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + ((padding / 2) * count) + ((tileWidth / 2) * fontSize))                             
                     })   
                 }
                 
@@ -880,7 +890,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                 if(player.pt > 0 && !buttons.length){
                     const button = inventory.add([
                         rect(tileWidth, tileWidth),
-                        pos(tileWidth + padding, + (itemRow * tileWidth) + (padding * count) + ((tileWidth / 2) * fontSize)),
+                        pos(tileWidth + padding, + (itemRow * tileWidth) + ((padding / 2) * count) + ((tileWidth / 2) * fontSize)),
                         area(),
                         color(75, 75, 75),
                         fixed(),
@@ -899,6 +909,13 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                     buttons[i].hidden = false
                 }
             })
+
+            // EXP
+            drawText({
+                text: `EXP: ${player.exp}/${player.max.exp}`,
+                size: tileWidth / 3,
+                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + ((padding / 2) * 9) + ((tileWidth / 2) * 8))
+            })              
             // #endregion
             
             // #region Items
