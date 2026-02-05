@@ -2,7 +2,7 @@ import type { GameObj, SpriteCurAnim } from "kaplay";
 import k  from '../lib/kaplay'
 import { gameState, gameStore, getGameStoreValue } from '../store/game';
 import { setting, getOptionValue } from '../store/setting';
-import { dropItem } from './item'
+import { prepareItemsToDrop } from './item'
 import { getPlayers } from "./player";
 import { calculateDamage } from './battle'
 import potData from '../data/pot.json'
@@ -130,7 +130,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
                 props: props
             }))
             // Drop items  
-            dropItem(obj, potData.base)
+            prepareItemsToDrop(obj, potData.base)
 
             // And more     
             wait(1, () => obj.destroy())             
@@ -151,7 +151,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
                 props: props
             }))
             // Drop items         
-            dropItem(obj, chestData.base)
+            prepareItemsToDrop(obj, chestData.base)
             // And more            
         }           
     })    
