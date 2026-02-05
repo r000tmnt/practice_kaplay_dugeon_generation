@@ -1,3 +1,5 @@
+import type { KEventController } from "kaplay";
+
 type ItemTypes =
   | 'head'
   | 'body'
@@ -36,6 +38,7 @@ interface base {
 interface item {
     id: string,
     name: string,
+    desc: string,
     stackable: boolean,
     attribute?: object | null,
     secondary?: object | null,
@@ -43,17 +46,31 @@ interface item {
     resist?: object | null,
     required?: object | null
     effect?: object | null
+    quantity?: number
     price?: number
+}
+
+interface pickableItem {
+    id: string,
+    required: string[],
+    pick: () => void,
+    onDrag: (action: () => void) => KEventController,
+    onDragUpdate: (action: () => void) => KEventController,
+    onDragEnd: (action: () => void) => KEventController,
+    update: () => void,
 }
 
 interface note {
     index: number
-    item: item
+    item: item,
+    frame: number
 }
 
 export type {
     base,
-    note
+    note,
+    item,
+    pickableItem
 }
 
 export {
