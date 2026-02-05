@@ -11,7 +11,8 @@ import type { GameObj, Vec2 } from 'kaplay'
 import k from '../lib/kaplay'
 import { gameStore, getGameStoreValue, inventoryUI } from '../store/game'
 import { getOptionValue } from '../store/setting'
-import type { base, note } from '../model/item'
+import type { base, item } from '../model/item'
+import { displayItemsInGrid } from './UI'
 
 const { 
     area,
@@ -55,12 +56,12 @@ const continuousTween = (sequence: Vec2[]|number[], obj: GameObj, target: string
     })
 }
 
-export const dropItem = (obj: GameObj, base: base = { 
+export const prepareItemsToDrop = (obj: GameObj, base: base = { 
     count: { min: 1, max: 1 }, 
     item: { gold: 0.5 }, 
     gold: { min: 0, max: 0 } 
 }) => {
-    const items = []
+    const items: { name: string, item: item, frame: number }[] = []
     
     // Decide how many items to drop
     const count = Math.floor(Math.random() * (base.count.max - base.count.min + 1)) + base.count.min
@@ -73,7 +74,13 @@ export const dropItem = (obj: GameObj, base: base = {
             switch(key){
                 case 'gold':{
                     const goldAmount = Math.floor(rng * (base.gold.max - base.gold.min + 1)) + base.gold.min
-                    items.push({ name: 'gold', amount: goldAmount, frame: 0 })
+                    items.push({ name: 'gold', item: {
+                        id: 'gold',
+                        name: 'gold',
+                        desc: "",
+                        stackable: true,
+                        quantity: goldAmount
+                    }, frame: 0 })
                 }
                 break;
                 case 'potion':{
@@ -114,7 +121,7 @@ export const dropItem = (obj: GameObj, base: base = {
                     }
                     // TODO: Modify item     
                     
-                    items.push({ name: key, item: equipment, frame: 0 })
+                    if(equipment) items.push({ name: key, item: equipment, frame: 0 })
                 }              
                 break;
                 // case 'card':{
@@ -128,6 +135,10 @@ export const dropItem = (obj: GameObj, base: base = {
         }
     }
 
+    dropItem(obj, items)
+}
+
+export const dropItem = (obj: GameObj, items: { name: string, item: item, frame: number }[]) => {
     const { level } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
     const map = get('map')[0]
@@ -233,8 +244,20 @@ export const dropItem = (obj: GameObj, base: base = {
                                     availableIndex = i
                                     inventory.space.push({
                                         index: i,
-                                        item: item.item
+                                        item: item.item,
+                                        frame: item.frame
                                     })
+
+                                    // Sort by index
+                                    inventory.space.sort((a, b) => a.index - b.index)
+
+                                    // If inventory is opened
+                                    if(inventory.open){
+                                        // Display pushed item
+                                        const inventoruUI = map.get('ui')[0].get('inventory')[0]
+                                        displayItemsInGrid(inventoruUI, tileWidth)
+                                    }
+
                                     break
                                 }
                             }
@@ -249,7 +272,7 @@ export const dropItem = (obj: GameObj, base: base = {
                         }else{
                             // Increase number of gold
                             const { inventory } = getGameStoreValue()
-                            inventory.gold += item.amount?? 0
+                            inventory.gold += item.item.quantity?? 0
 
                             // Destory item on the map
                             dropped.destroy()                            
@@ -257,7 +280,11 @@ export const dropItem = (obj: GameObj, base: base = {
                         }
                     }else{
                         // Find a path to the item
-                        player.path = player.navigateTo(dropped.pos)
+                        try {
+                            player.path = player.navigateTo(dropped.pos)   
+                        } catch (error) {
+                            console.warn('player pathfinding error', error)
+                        }
                     }
                 })
 
