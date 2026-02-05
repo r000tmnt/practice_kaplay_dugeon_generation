@@ -3,21 +3,21 @@ import type { GameObj } from "kaplay";
 
 // Store
 import { gameState, gameStore, getGameStoreValue } from '../store/game';
-import { setting, getOptionValue } from '../store/setting';
-import type { chunk, prop } from '../model/map';
+import { getOptionValue } from '../store/setting';
+import type { chunk } from '../model/map';
 import { spawnObject } from './staticObject';
 
 const {
-    area,
-    body,
+    // area,
+    // body,
     get,
     // getData,
     getCamPos,
     // isKeyDown,
-    pos,
+    // pos,
     // Rect,
     setData,
-    sprite,
+    // sprite,
     setCamPos,
     // vec2
 } = k
@@ -32,23 +32,15 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
     const middleY = height / 2 
 
     const wPos = player.worldPos
-    let inX = false, inY = false;
+    const inX = (wPos.x + middleX) <= mapWidth && (wPos.x - middleX) >= 0 
+    const inY = (wPos.y - middleY) >= 0 && (wPos.y + middleY) <= mapHeight
 
-    // console.log(wPos)
-
-    // Player pos relative to the game world
-    if((wPos.x + middleX) <= mapWidth && (wPos.x - middleX) >= 0){ 
-        inX = true
-    }
-
-    if((wPos.y - middleY) >= 0 && (wPos.y + middleY) <= mapHeight){ 
-        inY = true
-    }
+    setCamPos(player.pos)
     
     // Camera follows player
     if(inX && inY){
         // console.log('camera follows player')
-        setCamPos(player.pos)
+        // setCamPos(player.pos)
         getCameraEdges('middle', mapWidth, mapHeight)
     }
         
@@ -56,14 +48,14 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
         // Reached top?
         if((wPos.y - middleY) <= 0){
             // console.log('camera top')
-            setCamPos(wPos.x, middleY)
+            // setCamPos(wPos.x, middleY)
             getCameraEdges('top', mapWidth, mapHeight)
         }
 
         // Reached down?
         if((wPos.y + middleY) >= mapHeight){
             // console.log('camera down')
-            setCamPos(wPos.x, mapHeight - middleY)
+            // setCamPos(wPos.x, mapHeight - middleY)
             getCameraEdges('down', mapWidth, mapHeight)
         }
     }
@@ -72,14 +64,14 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
         // Reached right?
         if((wPos.x + middleX) >= mapWidth){
             // console.log('camera right')
-            setCamPos(mapWidth - middleX, wPos.y)
+            // setCamPos(mapWidth - middleX, wPos.y)
             getCameraEdges('right', mapWidth, mapHeight)
         }
 
         // Reached left?
         if((wPos.x - middleX) <= 0){
             // console.log('camera left')
-            setCamPos(middleX, wPos.y)
+            // setCamPos(middleX, wPos.y)
             getCameraEdges('left', mapWidth, mapHeight)
         }
     }
@@ -88,28 +80,28 @@ export const setCameraPosition = (player: GameObj, mapWidth: number, mapHeight: 
         // Reached top right?
         if((wPos.y - middleY) <= 0 && (wPos.x + middleX) >= mapWidth){
             // console.log('camera top right')
-            setCamPos(mapWidth - middleX, middleY)
+            // setCamPos(mapWidth - middleX, middleY)
             getCameraEdges('topRight', mapWidth, mapHeight)
         }
 
         // Reached down right?
         if((wPos.y + middleY) >= mapHeight && (wPos.x + middleX) >= mapWidth){
             // console.log('camera down right')
-            setCamPos(mapWidth - middleX, mapHeight - middleY)
+            // setCamPos(mapWidth - middleX, mapHeight - middleY)
             getCameraEdges('downRight', mapWidth, mapHeight)
         }
 
         // Reached down left?
         if((wPos.y + middleY) >= mapHeight && (wPos.x - middleX) <= 0){
             // console.log('camera down left')
-            setCamPos(middleX, mapHeight - middleY)
+            // setCamPos(middleX, mapHeight - middleY)
             getCameraEdges('downLeft', mapWidth, mapHeight)
         }
         
         // Reached top left?
         if((wPos.y - middleY) <= 0 && (wPos.x - middleX) <= 0){
             // console.log('camera top left')
-            setCamPos(middleX, middleY)
+            // setCamPos(middleX, middleY)
             getCameraEdges('topLeft', mapWidth, mapHeight)
         }
     }
