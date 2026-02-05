@@ -1,17 +1,16 @@
 import k from '../lib/kaplay'
-import type { GameObj, Vec2 } from "kaplay";
+import type { GameObj } from "kaplay";
 import type { prop, roomNode } from '../model/map'
 
 import { createHitBox } from './hitBox'
-import { gameState, gameStore, getGameStoreValue, enemyAtom } from '../store/game';
+import { gameStore, getGameStoreValue, enemyAtom } from '../store/game';
 import { getOptionValue } from '../store/setting';
 import { getPlayers } from './player'
 import enemyData from '../data/enemy.json'
-import { dropItem } from './item';
+import { prepareItemsToDrop } from './item';
 import { 
     setDirection, 
-    getPathAndFollow, 
-    rotateXY,
+    getPathAndFollow,
     steering
 } from './pathFinding'; 
 
@@ -394,7 +393,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                             }
                         }
 
-                        dropItem(enemy, base)
+                        prepareItemsToDrop(enemy, base)
                     }
                 })
 
