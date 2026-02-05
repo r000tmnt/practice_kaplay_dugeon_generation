@@ -1,7 +1,9 @@
 import type { GameObj, Vec2 } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
-import { getGameStoreValue } from "../store/game";
+import { gameStore, getGameStoreValue, inventoryUI } from "../store/game";
+import type { pickableItem, note } from '../model/item'
+import { dropItem } from "./item";
 
 const {
     area,
@@ -18,6 +20,7 @@ const {
     // easings,
     // evaluateBezier,
     fixed,
+    get,
     // getData,
     // Line,
     layer,
@@ -27,6 +30,7 @@ const {
     pos,
     Rect,
     rect,
+    readd,
     rgb,
     sprite,
     // stay,
@@ -35,14 +39,354 @@ const {
     vec2,
 } = k
 
-let currentDragging : { id: number, pos: Vec2 } | null = null
-
+let curDraggin : GameObj |null = null
 // #region Utils
 const arcPoint = (t: number, radius: number) => {
     const angle = t * Math.PI * 2
 
     return vec2(Math.cos(angle) * radius, Math.sin(angle) * radius)    
 }
+
+// Custom drag component
+// Reference: https://play.kaplayjs.com/?example=drag
+const drag = (self: GameObj) => {
+    let offset = vec2(0)
+
+    return {
+        // Name of the component
+        id: "drag",
+        // This component requires the "pos" and "area" component to work
+        require: ["pos", "area"],
+        pick() {
+            // Set the current global dragged object to this
+            curDraggin = self;
+            offset = mousePos().sub(self.pos);
+            self.trigger("drag");
+        },
+        // "update" is a lifecycle method gets called every frame the obj is in scene
+        update() {
+            if (curDraggin === self) {
+                self.pos = mousePos().sub(offset);
+                self.trigger("dragUpdate");
+            }
+        },
+        onDrag(action: () => void) {
+            return self.on("drag", action);
+        },
+        onDragUpdate(action: () => void) {
+            return self.on("dragUpdate", action);
+        },
+        onDragEnd(action: () => void) {
+            return self.on("dragEnd", action);
+        },
+    }
+}
+
+const isPickable = (obj: unknown): obj is pickableItem => {
+    const result = 
+        typeof obj === 'object' && 
+        obj !== null && 
+        'pick' in obj && 
+        typeof (obj as any).pick === 'function' && 
+        'onDrag' in obj &&
+        typeof (obj as any).onDrag === 'function' &&
+        'onDragUpdate' in obj &&
+        typeof (obj as any).onDragUpdate === 'function';  
+        
+    return result
+}
+
+export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
+    // Get pages
+    // const page = Math.floor(getGameStoreValue().inventory.limit / (itemRow * itemCol))
+    const space = getGameStoreValue().inventory.space 
+    const spawnedItems = inventory.get('item')
+    const { width, height, itemRow, itemCol } = inventory
+    const itemWindowCenter = vec2(inventory.pos.x, inventory.pos.y + (height / 4))
+    const range = {
+        top: inventory.pos.y - (height / 2),
+        down: inventory.pos.y + (height / 2),
+        left: inventory.pos.x - (width / 2),
+        right: inventory.pos.x + (width / 2),
+        items: {
+            top: itemWindowCenter.y - ((itemRow / 2) * tileWidth) - (tileWidth / 2),
+            down: itemWindowCenter.y + ((itemRow / 2) * tileWidth) + (tileWidth / 2),
+            left: itemWindowCenter.x - ((itemCol / 2) * tileWidth) - (tileWidth / 2),
+            right: itemWindowCenter.x + ((itemCol / 2) * tileWidth) + (tileWidth / 2),
+        }
+    }
+
+    for(let row=0; row < itemRow; row++){
+        for(let col=0; col < itemCol; col++){
+            // If item exist
+            const block = col + (itemCol * row)
+            if(space[block] !== undefined){
+                // if(spawnedItems[block] !== undefined){
+                //     // Change sprite and item
+                //     spawnedItems[block].sprite = "item"
+                //     spawnedItems[block].frame = space[block].frame
+                //     spawnedItems[block].item = space[block].item
+                //     spawnedItems[block].item.index = block
+                // }else
+
+                // TODO: If item took the space alreay
+                const placedItem = spawnedItems.find(item => item.index === block)
+                if(placedItem){
+                    if(
+                        placedItem.item.id !== space[block].item.id ||
+                        !placedItem.item.stackable
+                    ){
+                        // Find the available block
+                        for(let i=0; i < (itemCol * itemRow); i++){
+                            if(spawnedItems.find(item => item.index === i) === undefined){
+                                const newRow = i / itemRow
+                                const newCol = i % itemRow
+                                
+
+                                const spawn = {
+                                    x: // If index point to the center col
+                                        (newCol + 1) >= (itemCol / 2)?
+                                        // ((col - halfCol) * tileWidth) - (halfTile)                  
+                                        (((newCol + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
+                                        // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
+                                        0 - (((itemCol / 2) - newCol) * tileWidth) + (tileWidth / 2),
+                                    y: // If index point to the center row
+                                        ((newRow + 1) >= (itemRow / 2))?
+                                        // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
+                                        (height / 4) + (((newRow + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
+                                        // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
+                                        (height / 4) - ((((itemRow / 2) - newRow) * tileWidth) - (tileWidth / 2)),   
+                                }    
+
+                                space[block].index = i
+
+                                // Add sprite
+                                placeItemInGrid(
+                                    inventory,
+                                    i,
+                                    space[block],
+                                    spawn,
+                                    tileWidth,
+                                    range,
+                                    spawnedItems
+                                )                                
+                                                            
+                                break
+                            }
+                        }                        
+                    }
+
+                    if(spawnedItems[block].item.stackable && placedItem.item.id === space[block].item.id){
+                        spawnedItems[block].item.quantity += 1
+                        // Remove item in gameStore
+                        const storedInventory = getGameStoreValue().inventory
+                        storedInventory.space.splice(block, 1)
+                        // Update store
+                        gameStore.set(inventoryUI, storedInventory)
+                    }
+                }else{
+                    const spawn = {
+                        x: // If index point to the center col
+                            (col + 1) >= (itemCol / 2)?
+                            // ((col - halfCol) * tileWidth) - (halfTile)                  
+                            (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
+                            // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
+                            0 - (((itemCol / 2) - col) * tileWidth) + (tileWidth / 2),
+                        y: // If index point to the center row
+                            ((row + 1) >= (itemRow / 2))?
+                            // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
+                            (height / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
+                            // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
+                            (height / 4) - ((((itemRow / 2) - row) * tileWidth) - (tileWidth / 2)),   
+                    }
+
+                    // Add sprite
+                    placeItemInGrid(
+                        inventory,
+                        space[block].index,
+                        space[block],
+                        spawn,
+                        tileWidth,
+                        range,
+                        spawnedItems
+                    )
+                }
+
+                // drawSprite({
+                //     sprite: "item",
+                //     pos: vec2(
+                //         // If index point to the center col
+                //         (col + 1) >= (itemCol / 2)?               
+                //         // ((col - halfCol) * tileWidth) - (halfTile)                  
+                //         (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
+                //         // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
+                //         0 - (((itemCol / 2) - (col)) * tileWidth) + (tileWidth / 2), 
+                //         // If index point to the center row
+                //         ((row + 1) >= (itemRow / 2))?
+                //         // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
+                //         (inventoryHeight / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
+                //         // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
+                //         (inventoryHeight / 4) - ((((itemRow / 2) - (row)) * tileWidth) - (tileWidth / 2)),
+                //     ),
+                //     frame: 0
+                // })
+            }else{
+                // Hide sprite is exist
+                if(spawnedItems[block] !== undefined){
+                    spawnedItems[block].hidden = true
+                }
+            }
+        }
+    }        
+}
+
+const placeItemInGrid = (
+    inventory: GameObj, 
+    block: number,
+    data: note, 
+    spawn: { x: number, y: number },  
+    tileWidth: number,
+    range: {
+        top: number, down: number,
+        left: number, right: number,
+        items: {
+            top: number, down: number,
+            left: number, right: number,            
+        }
+    },
+    spawnedItems: GameObj[]
+) => {
+    const item = inventory.add([
+        sprite("item", { frame: data.frame }),
+        area(),
+        anchor('center'),
+        fixed(),
+        pos(spawn.x, spawn.y),
+        {
+            index: data.index,
+            item: { ...data.item },
+            spawn
+        },
+        'item'
+    ])
+
+    item.use(drag(item))
+
+    if(data.item.stackable){
+        item.add([
+            text(data.item.quantity && data.item.quantity > 1? String(data.item.quantity) : ""),
+            anchor('botright'),
+            pos(0, 0),
+            "text"
+        ])        
+    }
+
+    console.log('item placed', item)
+    
+    item.onMousePress(() => {
+        if(curDraggin) return
+        console.log('item on mouse press')
+        if(item.isHovering()){
+            if(isPickable(item)) item.pick()                              
+        }
+    })
+
+    item.onMouseRelease(() => {
+        if(curDraggin && curDraggin.id === item.id){
+            console.log('item on drag end')
+            curDraggin.trigger("dragEnd");
+            curDraggin = null                                    
+        }
+    })
+
+    if(isPickable(item)){
+        item.onDrag(() => {
+            if(curDraggin && curDraggin.id === item.id){
+                readd(item)
+            }
+        })      
+        
+        item.onDragEnd(() => {
+            const dist = {
+                x: Math.floor((item.pos.x - item.spawn.x) / tileWidth),
+                y: Math.floor((item.pos.y - item.spawn.y) / tileWidth)
+            }
+
+            // TODO: If mouse release outside of inventory window
+            if(
+                item.worldPos.x > range.right || item.worldPos.x < range.left ||
+                item.worldPos.y > range.down || item.worldPos.y < range.top
+            ){
+                // Drop item
+                const player = get('player')[0]
+                dropItem(
+                    player, 
+                    [{ name: item.item.name, item: JSON.parse(JSON.stringify(item.item)), frame: item.frame }]
+                )
+
+                // Remove item in gameStore
+                const storedInventory = getGameStoreValue().inventory
+                const storedIndex = storedInventory.space.findIndex(item => item.index === block)
+                storedInventory.space.splice(storedIndex, 1)
+                // Update gameStore
+                gameStore.set(inventoryUI, storedInventory)
+
+                // Destory dragging item
+                item.destroy()
+                
+                return
+            }
+
+            // TODO: If the mouse release inside inventory but outside of item grid
+            if(
+                item.worldPos.y > range.top && item.worldPos.y < range.items.top ||
+                item.worldPos.x < range.items.left || item.worldPos.x > range.items.right
+            ){
+                // Put the item back to the spawn postion
+                item.pos = vec2(item.spawn.x, item.spawn.y)
+                return
+            }
+
+
+            const targetBlock = block + (inventory.itemCol * dist.y) + dist.x
+
+            // TODO: If overlap with item
+            if(spawnedItems[targetBlock] !== undefined){
+                // TODO: If item is stackable
+                if(spawnedItems[targetBlock].item.id === item.item.id && item.item.stackable){
+                    // Stack up
+                    spawnedItems[targetBlock].item.item.quantity += 1
+
+                    spawnedItems[targetBlock].children[0].text = spawnedItems[targetBlock].item.item.quantity
+
+                    // Destory dragging item
+                    item.destroy()
+
+                    return
+                }else{
+                    // switch position
+                    spawnedItems[targetBlock].pos = vec2(item.spawn.x, item.spawn.y)
+                    spawnedItems[targetBlock].index = block
+                }
+            }
+            
+            item.pos = vec2(
+                dist.x < 0?
+                item.spawn.x - (tileWidth * Math.abs(dist.x)):
+                item.spawn.x + (tileWidth * dist.x),
+                dist.y < 0?
+                item.spawn.y - (tileWidth * Math.abs(dist.y)):
+                item.spawn.y + (tileWidth * dist.y)
+            )
+            
+            // Update spawn position
+            item.spawn.x = item.pos.x
+            item.spawn.y = item.pos.y       
+            item.index = targetBlock                     
+        })
+    }    
+}
+
 // #endregion
 
 export const setUIElements = (player: GameObj, map: GameObj) => {
@@ -324,21 +668,30 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
     // If UI created
     const ui = map.get('ui')[0]
     const inventory = ui.get('inventory')
+    const inventoryWidth = k.width() / 2
+    const inventoryHeight = k.height() * 19/20
+    const itemRow = 6
+    const itemCol = 12    
 
     if(inventory.length){
         console.log('toggle inventory')
         inventory[0].hidden = !open
+
+        // Place Items
+        displayItemsInGrid(inventory[0], tileWidth)
+
         return
     }else
     if(open){
-        const inventoryWidth = k.width() / 2
-        const inventoryHeight = k.height() * 19/20
-        const itemRow = 6
-        const itemCol = 12
-
         // Create ui
         const inventory = ui.add([
             pos(k.width() / 2, k.height() / 2),
+            {
+                width: inventoryWidth,
+                height: inventoryHeight,
+                itemRow,
+                itemCol
+            },
             anchor('center'),
             'inventory'
         ])
@@ -618,128 +971,6 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                 })       
             }            
 
-            // TODO: Place items
-            // Get pages
-            // const page = Math.floor(getGameStoreValue().inventory.limit / (itemRow * itemCol))
-            const space = getGameStoreValue().inventory.space 
-            const spawnedItems = inventory.get('item')
-
-            for(let row=0; row < itemRow; row++){
-                for(let col=0; col < itemCol; col++){
-                    // If item exist
-                    const block = col + (itemCol * row)
-                    if(space[block] !== undefined){
-                        if(spawnedItems[block] !== undefined){
-                            // Change sprite and item
-                            spawnedItems[block].sprite = "item"
-                            spawnedItems[block].frame = 0
-                            spawnedItems[block].item = space[block]
-                            spawnedItems[block].item.index = block
-                        }else{
-                            // add sprite
-                            const item = inventory.add([
-                                sprite("item", { frame: 0 }),
-                                area(),
-                                anchor('center'),
-                                fixed(),
-                                pos(
-                                    // If index point to the center col
-                                    (col + 1) >= (itemCol / 2)?               
-                                    // ((col - halfCol) * tileWidth) - (halfTile)                  
-                                    (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
-                                    // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
-                                    0 - (((itemCol / 2) - (col)) * tileWidth) + (tileWidth / 2), 
-                                    // If index point to the center row
-                                    ((row + 1) >= (itemRow / 2))?
-                                    // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
-                                    (inventoryHeight / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
-                                    // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
-                                    (inventoryHeight / 4) - ((((itemRow / 2) - (row)) * tileWidth) - (tileWidth / 2)),                                    
-                                ),
-                                {
-                                    item: space[block],
-                                },
-                                'itme'
-                            ])
-
-                            // item.onClick(() => {
-                            //     console.log('item', item.item)
-                            // })   
-                            
-                            item.onMousePress(() => {
-                                if(currentDragging) return
-                                currentDragging = {
-                                    id: item.id,
-                                    pos: vec2(item.pos.x, item.pos.y)
-                                }
-                            })
-
-                            item.onMouseRelease(() => {
-                                if(currentDragging){
-                                    // Compare the original pos to mouse pos
-                                    const mouse = mousePos()
-
-                                    const dist = {
-                                        x: Math.floor((mouse.x - currentDragging.pos.x) / tileWidth),
-                                        y: Math.floor((mouse.y - currentDragging.pos.y) / tileWidth)
-                                    }
-
-                                    item.pos = vec2(currentDragging.pos.x + dist.x, currentDragging.pos.y + dist.y)
-
-                                    for(let row = 0; row < Math.abs(dist.y); row++){
-                                        if(dist.y < 0){
-                                            item.item.index -= itemCol  
-                                        }else{
-                                            item.item.index += itemCol  
-                                        }
-                                    }
-
-                                    for(let col=0; col < Math.abs(dist.x); col++){
-                                        if(dist.x < 0){
-                                            item.item.index -= 1  
-                                        }else{
-                                            item.item.index += 1  
-                                        }
-                                    }
-
-                                    currentDragging = null                                    
-                                }
-                            })
-
-                            item.onUpdate(() => {
-                                if(currentDragging && currentDragging.id === item.id){
-                                    item.pos = mousePos().sub(item.pos)
-                                }
-                            })
-                        }
-
-                        // drawSprite({
-                        //     sprite: "item",
-                        //     pos: vec2(
-                        //         // If index point to the center col
-                        //         (col + 1) >= (itemCol / 2)?               
-                        //         // ((col - halfCol) * tileWidth) - (halfTile)                  
-                        //         (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
-                        //         // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
-                        //         0 - (((itemCol / 2) - (col)) * tileWidth) + (tileWidth / 2), 
-                        //         // If index point to the center row
-                        //         ((row + 1) >= (itemRow / 2))?
-                        //         // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
-                        //         (inventoryHeight / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
-                        //         // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
-                        //         (inventoryHeight / 4) - ((((itemRow / 2) - (row)) * tileWidth) - (tileWidth / 2)),
-                        //     ),
-                        //     frame: 0
-                        // })
-                    }else{
-                        // Hide sprite is exist
-                        if(spawnedItems[block] !== undefined){
-                            spawnedItems[block].hidden = true
-                        }
-                    }
-                }
-            }
-
             // drawRect({
             //     width: tileWidth,
             //     height: tileWidth,
@@ -771,6 +1002,9 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             // })  
             // #endregion            
         })
+
+        // TODO: Place items
+        displayItemsInGrid(inventory, tileWidth)
     }
 }
 // #endregion  
