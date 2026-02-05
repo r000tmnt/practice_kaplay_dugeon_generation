@@ -6,7 +6,8 @@
         "stackable": true,
         "attribute": {
             "hp": 10
-        }
+        },
+        "quantity": 1
     },
     {
         "id": "potion_002",
@@ -16,7 +17,8 @@
         "stackable": true,
         "attribute": {
             "mp": 15
-        }        
+        },
+        "quantity": 1    
     },
     {
         "id": "potion_003",
@@ -26,6 +28,7 @@
         "stackable": true,
         "attribute": {
             "crit": 10
-        }        
+        },
+        "quantity": 1   
     }
 ]
