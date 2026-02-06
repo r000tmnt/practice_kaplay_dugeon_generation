@@ -2,8 +2,10 @@ import type { GameObj, Vec2 } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 import { gameStore, getGameStoreValue, inventoryUI } from "../store/game";
-import type { pickableItem, note } from '../model/item'
+import type { pickableItem, note, EquipField } from '../model/item'
 import { dropItem } from "./item";
+import type { inventoryRange } from '../model/UI'
+import { equipItem } from './player'
 
 const {
     area,
@@ -40,6 +42,72 @@ const {
 } = k
 
 let curDraggin : GameObj |null = null
+
+const equipFields: EquipField[] = ['head', 'body', 'feet', 'accessory1', 'rightHand', 'leftHand', 'accessory2', 'ring' ]
+
+const range = {
+    top: 0,
+    down: 0,
+    left: 0,
+    right: 0,
+    equip: {
+        head: {
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,            
+        },
+        body: {
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        },
+        feet: {
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        },
+        accessory1: {
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        },
+        rightHand: {
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        },
+        leftHand: {
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        },
+        accessory2: {
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        },
+        ring: {
+            top: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+        },
+    },
+    items: {
+        top: 0,
+        down: 0,
+        left: 0,
+        right: 0,
+    }
+}
+
 // #region Utils
 const arcPoint = (t: number, radius: number) => {
     const angle = t * Math.PI * 2
@@ -96,25 +164,100 @@ const isPickable = (obj: unknown): obj is pickableItem => {
     return result
 }
 
+const setRangeData = (inventory: GameObj, tileWidth: number) => {
+    const { width, height, itemRow, itemCol } = inventory
+    const itemWindowCenter = vec2(inventory.pos.x, inventory.pos.y + (height / 4))    
+
+    range.top = inventory.pos.y - (height / 2)
+    range.down = inventory.pos.y + (height / 2)
+    range.left = inventory.pos.x - (width / 2)
+    range.right = inventory.pos.x + (width / 2)
+
+    equipFields.forEach((field, i) => {
+        const index = (i + 1) > (equipFields.length / 2)? i - (equipFields.length / 2) : i
+        const offset = -0.5 + (1.5 * index)
+        range.equip[field].top = inventory.pos.y + ((itemRow - offset) * tileWidth)
+        range.equip[field].down = inventory.pos.y - (itemRow - ((offset - 1) * tileWidth))
+        range.equip[field].left = inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth / 2))
+        range.equip[field].right = inventory.pos.x -(((itemCol / 2) * tileWidth) + (tileWidth * 1.5))
+    })
+
+    range.items.top = itemWindowCenter.y - ((itemRow / 2) * tileWidth) - (tileWidth / 2)
+    range.items.down = itemWindowCenter.y + ((itemRow / 2) * tileWidth) + (tileWidth / 2)
+    range.items.left = itemWindowCenter.x - ((itemCol / 2) * tileWidth) - (tileWidth / 2)
+    range.items.right = itemWindowCenter.x + ((itemCol / 2) * tileWidth) + (tileWidth / 2)
+
+    // const range = {
+    //     top: inventory.pos.y - (height / 2),
+    //     down: inventory.pos.y + (height / 2),
+    //     left: inventory.pos.x - (width / 2),
+    //     right: inventory.pos.x + (width / 2),
+    //     equip: {
+    //         head: {
+    //             top: inventory.pos.y - ((itemRow - 0.5) * tileWidth),
+    //             down: inventory.pos.y - ((itemRow - 1.5) * tileWidth),
+    //             left: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth / 2)),
+    //             right: inventory.pos.x -(((itemCol / 2) * tileWidth) + (tileWidth * 1.5))
+    //         },
+    //         body: {
+    //             top: inventory.pos.y - ((itemRow - 2) * tileWidth),
+    //             down: inventory.pos.y - ((itemRow - 1) * tileWidth),
+    //             left: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth / 2)),
+    //             right: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth * 1.5))
+    //         },
+    //         feet: {
+    //             top: inventory.pos.y - ((itemRow - 3.5) * tileWidth),
+    //             down: inventory.pos.y - ((itemRow - 2.5) * tileWidth),
+    //             left: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth / 2)),
+    //             right: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth * 1.5))
+    //         },
+    //         accessory1: {
+    //             top: inventory.pos.y - ((itemRow - 5) * tileWidth),
+    //             down: inventory.pos.y - ((itemRow - 4) * tileWidth),
+    //             left: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth / 2)),
+    //             right: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth * 1.5))
+    //         },
+    //         rightHand: {
+    //             top: inventory.pos.y - ((itemRow - 0.5) * tileWidth),
+    //             down: inventory.pos.y - ((itemRow - 1.5) * tileWidth),
+    //             left: inventory.pos.x - (tileWidth + (tileWidth / 2)),
+    //             right: inventory.pos.x - (tileWidth + (tileWidth * 1.5))
+    //         },
+    //         leftHand: {
+    //             top: inventory.pos.y - ((itemRow - 2) * tileWidth),
+    //             down: inventory.pos.y - ((itemRow - 1) * tileWidth),
+    //             left: inventory.pos.x - (tileWidth + (tileWidth / 2)),
+    //             right: inventory.pos.x - (tileWidth + (tileWidth * 1.5))
+    //         },
+    //         accessory2: {
+    //             top: inventory.pos.y - ((itemRow - 3.5) * tileWidth),
+    //             down: inventory.pos.y - ((itemRow - 2.5) * tileWidth),
+    //             left: inventory.pos.x - (tileWidth + (tileWidth / 2)),
+    //             right: inventory.pos.x - (tileWidth + (tileWidth * 1.5))
+    //         },
+    //         ring: {
+    //             top: inventory.pos.y - ((itemRow - 5) * tileWidth),
+    //             down: inventory.pos.y - ((itemRow - 4) * tileWidth),
+    //             left: inventory.pos.x - (tileWidth + (tileWidth / 2)),
+    //             right: inventory.pos.y - (tileWidth + (tileWidth * 1.5))
+    //         },
+    //     },
+    //     items: {
+    //         top: itemWindowCenter.y - ((itemRow / 2) * tileWidth) - (tileWidth / 2),
+    //         down: itemWindowCenter.y + ((itemRow / 2) * tileWidth) + (tileWidth / 2),
+    //         left: itemWindowCenter.x - ((itemCol / 2) * tileWidth) - (tileWidth / 2),
+    //         right: itemWindowCenter.x + ((itemCol / 2) * tileWidth) + (tileWidth / 2),
+    //     }
+    // }
+}
+
 export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
     // Get pages
     // const page = Math.floor(getGameStoreValue().inventory.limit / (itemRow * itemCol))
     const space = getGameStoreValue().inventory.space 
     const spawnedItems = inventory.get('item')
-    const { width, height, itemRow, itemCol } = inventory
-    const itemWindowCenter = vec2(inventory.pos.x, inventory.pos.y + (height / 4))
-    const range = {
-        top: inventory.pos.y - (height / 2),
-        down: inventory.pos.y + (height / 2),
-        left: inventory.pos.x - (width / 2),
-        right: inventory.pos.x + (width / 2),
-        items: {
-            top: itemWindowCenter.y - ((itemRow / 2) * tileWidth) - (tileWidth / 2),
-            down: itemWindowCenter.y + ((itemRow / 2) * tileWidth) + (tileWidth / 2),
-            left: itemWindowCenter.x - ((itemCol / 2) * tileWidth) - (tileWidth / 2),
-            right: itemWindowCenter.x + ((itemCol / 2) * tileWidth) + (tileWidth / 2),
-        }
-    }
+    const { height, itemRow, itemCol } = inventory
+    const player = get('player')[0]
 
     for(let row=0; row < itemRow; row++){
         for(let col=0; col < itemCol; col++){
@@ -141,7 +284,6 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                             if(spawnedItems.find(item => item.index === i) === undefined){
                                 const newRow = i / itemRow
                                 const newCol = i % itemRow
-                                
 
                                 const spawn = {
                                     x: // If index point to the center col
@@ -167,7 +309,6 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                                     space[block],
                                     spawn,
                                     tileWidth,
-                                    range,
                                     spawnedItems
                                 )                                
                                                             
@@ -207,7 +348,6 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                         space[block],
                         spawn,
                         tileWidth,
-                        range,
                         spawnedItems
                     )
                 }
@@ -237,7 +377,42 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                 }
             }
         }
-    }        
+    } 
+
+    equipFields.forEach((field, i) => {
+        let x = -((itemCol / 2) * tileWidth) + (tileWidth / 2)
+        let index = i
+        if((i + 1) > (equipFields.length / 2)){
+            x = -tileWidth + (tileWidth / 2)
+            index = i - (equipFields.length / 2)
+        }
+
+        const frame = (i === 3 || i === 6)? 4: 
+                    (i === 4)? 0:
+                    (i === 5)? 5:
+                    (i === (equipFields.length - 1))? 6:
+                    i + 1     
+                    
+        if(player.equip[field]?.id){
+            placeItemInGrid(
+                inventory,
+                -1,
+                {
+                    index: -1,
+                    item: player.equip[field],
+                    frame
+                },
+                {
+                    x,
+                    y: -((itemRow - (0.5 + (1.5 * index))) * tileWidth)
+                },
+                tileWidth,
+                player.equip[field],
+                'equipment',
+                field
+            )                 
+        }         
+    })
 }
 
 const placeItemInGrid = (
@@ -246,18 +421,12 @@ const placeItemInGrid = (
     data: note, 
     spawn: { x: number, y: number },  
     tileWidth: number,
-    range: {
-        top: number, down: number,
-        left: number, right: number,
-        items: {
-            top: number, down: number,
-            left: number, right: number,            
-        }
-    },
-    spawnedItems: GameObj[]
+    spawnedItems: GameObj[],
+    spriteName?: string,
+    tag?: string
 ) => {
     const item = inventory.add([
-        sprite("item", { frame: data.frame }),
+        sprite(spriteName?? "item", { frame: data.frame }),
         area(),
         anchor('center'),
         fixed(),
@@ -267,7 +436,7 @@ const placeItemInGrid = (
             item: { ...data.item },
             spawn
         },
-        'item'
+        tag?? 'item'
     ])
 
     item.use(drag(item))
@@ -307,6 +476,8 @@ const placeItemInGrid = (
         })      
         
         item.onDragEnd(() => {
+            const storedInventory = getGameStoreValue().inventory
+
             const dist = {
                 x: Math.floor((item.pos.x - item.spawn.x) / tileWidth),
                 y: Math.floor((item.pos.y - item.spawn.y) / tileWidth)
@@ -324,18 +495,66 @@ const placeItemInGrid = (
                     [{ name: item.item.name, item: JSON.parse(JSON.stringify(item.item)), frame: item.frame }]
                 )
 
-                // Remove item in gameStore
-                const storedInventory = getGameStoreValue().inventory
-                const storedIndex = storedInventory.space.findIndex(item => item.index === block)
-                storedInventory.space.splice(storedIndex, 1)
-                // Update gameStore
-                gameStore.set(inventoryUI, storedInventory)
+                if(block >= 0){
+                    // Remove item in gameStore
+                    const storedIndex = storedInventory.space.findIndex(item => item.index === block)
+                    storedInventory.space.splice(storedIndex, 1)
+                    // Update gameStore
+                    gameStore.set(inventoryUI, storedInventory)
 
-                // Destory dragging item
-                item.destroy()
+                    // Destory dragging item
+                    item.destroy()                    
+                }
                 
                 return
             }
+
+            // TODO: If the mouse release on equipment blocks
+            let equip = false
+            for(const [key, value] of Object.entries(range.equip)){
+                console.log('key', key)
+                const { top, down, left, right } = value
+
+                if(
+                    item.worldPos.y > top && item.worldPos.y < down &&
+                    item.worldPos.x > left && item.worldPos.x < right
+                ){
+                    //TODO: equip item
+                    const player = get('player')[0]
+                    // If the slot is taken
+                    if(player.equip[key]?.id){
+                        // switch block
+                        const gear = inventory.get(key)[0]
+                        gear.untag(key)
+                        gear.pos = vec2(item.spawn.x, item.spawn.y)
+                        gear.item.index = item.index
+                        gear.spawn = {
+                            x: item.spawn.x,
+                            y: item.spawn.y
+                        }
+                        // Push item to gameStore
+                        storedInventory.space.push({
+                            index: item.index,
+                            item: gear.item,
+                            frame: gear.frame
+                        })
+                    }
+
+                    item.worldPos = vec2(left + (tileWidth / 2), top + (tileWidth / 2)) 
+
+                    // Remove item in gameStore
+                    const storedIndex = storedInventory.space.findIndex(stored => stored.index === item.index)
+                    storedInventory.space.splice(storedIndex, 1)
+                    // Update gameStore
+                    gameStore.set(inventoryUI, storedInventory)
+
+                    equip = equipItem(player, key, item.item)
+
+                    break
+                }
+            }
+
+            if(equip) return
 
             // TODO: If the mouse release inside inventory but outside of item grid
             if(
@@ -346,7 +565,6 @@ const placeItemInGrid = (
                 item.pos = vec2(item.spawn.x, item.spawn.y)
                 return
             }
-
 
             const targetBlock = block + (inventory.itemCol * dist.y) + dist.x
 
@@ -697,6 +915,8 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             'inventory'
         ])
 
+        setRangeData(inventory, tileWidth)        
+
         inventory.onDraw(() => {
             drawRect({
                 width: inventoryWidth,
@@ -717,109 +937,40 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                 height: tileWidth * 4
             })
 
-            // Head
-            drawRect({
-                width: tileWidth,
-                height: tileWidth,
-                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 0.5) * tileWidth)),
-                anchor: 'center',
-                color: rgb(0, 0, 0),
-                outline: {
-                    width: tileWidth / 10,
-                    color: rgb(75, 75, 75)
-                }                
+            equipFields.forEach((_, i) => {
+                let x = -((itemCol / 2) * tileWidth) + (tileWidth / 2)
+                let index = i
+                if((i + 1) > (equipFields.length / 2)){
+                    x = -tileWidth + (tileWidth / 2)
+                    index = i - (equipFields.length / 2)
+                }
+
+                drawRect({
+                    width: tileWidth,
+                    height: tileWidth,
+                    pos: vec2(x, -((itemRow - (0.5 + (1.5 * index))) * tileWidth)),
+                    anchor: 'center',
+                    color: rgb(0, 0, 0),
+                    outline: {
+                        width: tileWidth / 10,
+                        color: rgb(75, 75, 75)
+                    }                
+                })
+
+                const frame = (i === 3 || i === 6)? 4: 
+                            (i === 4)? 0:
+                            (i === 5)? 5:
+                            (i === (equipFields.length - 1))? 6:
+                            i + 1
+ 
+                drawSprite({
+                    sprite: 'equipment',
+                    pos: vec2(x, -((itemRow - (0.5 + (1.5 * index))) * tileWidth)),
+                    anchor: 'center',
+                    frame,
+                    opacity: 0.5
+                })
             })
-            
-            // Body
-            drawRect({
-                width: tileWidth,
-                height: tileWidth,
-                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 2) * tileWidth)),
-                anchor: 'center',
-                color: rgb(0, 0, 0),
-                outline: {
-                    width: tileWidth / 10,
-                    color: rgb(75, 75, 75)
-                }                
-            })    
-            
-            // Feet
-            drawRect({
-                width: tileWidth,
-                height: tileWidth,
-                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 3.5) * tileWidth)),
-                anchor: 'center',
-                color: rgb(0, 0, 0),
-                outline: {
-                    width: tileWidth / 10,
-                    color: rgb(75, 75, 75)
-                }                
-            })   
-
-            // Accessory 1
-            drawRect({
-                width: tileWidth,
-                height: tileWidth,
-                pos: vec2(-((itemCol / 2) * tileWidth) + (tileWidth / 2), -((itemRow - 5) * tileWidth)),
-                anchor: 'center',
-                color: rgb(0, 0, 0),
-                outline: {
-                    width: tileWidth / 10,
-                    color: rgb(75, 75, 75)
-                }                
-            })               
-
-            // Right hand
-            drawRect({
-                width: tileWidth,
-                height: tileWidth,
-                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 0.5) * tileWidth)),
-                anchor: 'center',
-                color: rgb(0, 0, 0),
-                outline: {
-                    width: tileWidth / 10,
-                    color: rgb(75, 75, 75)
-                }                
-            })     
-
-            // Left hand
-            drawRect({
-                width: tileWidth,
-                height: tileWidth,
-                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 2) * tileWidth)),
-                anchor: 'center',
-                color: rgb(0, 0, 0),
-                outline: {
-                    width: tileWidth / 10,
-                    color: rgb(75, 75, 75)
-                }                
-            })              
-
-            // Accessory 2
-            drawRect({
-                width: tileWidth,
-                height: tileWidth,
-                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 3.5) * tileWidth)),
-                anchor: 'center',
-                color: rgb(0, 0, 0),
-                outline: {
-                    width: tileWidth / 10,
-                    color: rgb(75, 75, 75)
-                }                
-            })              
-
-            // Ring
-            drawRect({
-                width: tileWidth,
-                height: tileWidth,
-                pos: vec2(-tileWidth + (tileWidth / 2), -((itemRow - 5) * tileWidth)),
-                anchor: 'center',
-                color: rgb(0, 0, 0),
-                outline: {
-                    width: tileWidth / 10,
-                    color: rgb(75, 75, 75)
-                }                
-            }) 
             // #endregion
 
             const padding = 10
@@ -849,7 +1000,7 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
             drawText({
                 text: `LV ${player.lv}`,
                 size: tileWidth / 3,
-                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + padding)
+                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + (padding / 2))
             })        
             
             // Player name
@@ -906,6 +1057,8 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                     })
                 }else
                 if(player.pt === 0 && buttons.length){
+                    buttons[i].hidden = true
+                }else if(buttons[i] !== undefined){
                     buttons[i].hidden = false
                 }
             })
@@ -915,7 +1068,14 @@ export const setInventoryUI = async(player: GameObj, map: GameObj, tileWidth: nu
                 text: `EXP: ${player.exp}/${player.max.exp}`,
                 size: tileWidth / 3,
                 pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + ((padding / 2) * 9) + ((tileWidth / 2) * 8))
-            })              
+            })      
+            
+            // PT
+            drawText({
+                text: `Point: ${player.pt}`,
+                size: tileWidth / 3,
+                pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + ((padding / 2) * 10) + ((tileWidth / 2) * 9))
+            })                  
             // #endregion
             
             // #region Items
