@@ -11,6 +11,16 @@ type ItemTypes =
   | 'other'
   | 'gold'
 
+type EquipField =
+  | "head"
+  | "body"
+  | "feet"
+  | "accessory1"
+  | "rightHand"
+  | "leftHand"
+  | "accessory2"
+  | "ring";
+
 type RarityTypes = 'common' | 'advance' | 'rare' | 'unique' | 'legendary';
 
 type partialItem = Partial<Record<ItemTypes, number>>
@@ -40,10 +50,12 @@ interface item {
     name: string,
     desc: string,
     stackable: boolean,
+    oneHanded?: boolean,
     attribute?: object | null,
     secondary?: object | null,
     element?: object | null,
     resist?: object | null,
+    max?: object | null,
     required?: object | null
     effect?: object | null
     quantity?: number
@@ -70,7 +82,8 @@ export type {
     base,
     note,
     item,
-    pickableItem
+    pickableItem,
+    EquipField
 }
 
 export {
