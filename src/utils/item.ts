@@ -102,26 +102,35 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
                 break;
                 default:{
                     let equipment
+                    let frame = 0
                     switch(key){
                         case 'head':
                             equipment = headData[Math.floor(rng * headData.length)]
+                            frame = 1
                         break;
                         case 'body':
                             equipment = bodyData[Math.floor(rng * bodyData.length)]
+                            frame = 2
                         break;
                         case 'hand':
                             equipment = handData[Math.floor(rng * handData.length)]
                         break;
                         case 'feet':
                             equipment = feetData[Math.floor(rng * feetData.length)]
+                            frame = 3
                         break;
                         case 'accessory':
                             equipment = accessoryData[Math.floor(rng * accessoryData.length)]
+                            frame = 4
+                        break;
+                        case 'ring':
+                            equipment = accessoryData[Math.floor(rng * accessoryData.length)]
+                            frame = 6
                         break;
                     }
                     // TODO: Modify item     
                     
-                    if(equipment) items.push({ name: key, item: equipment, frame: 0 })
+                    if(equipment) items.push({ name: key, item: equipment, frame })
                 }              
                 break;
                 // case 'card':{
