@@ -64,6 +64,11 @@ export default function initGame(){
             }
         })
 
+        loadSprite('equipment', 'map/equipment.png', {
+            sliceX: 3,
+            sliceY: 3
+        })        
+
         loadSprite('shrine', 'map/shrine.png', {
             sliceX: 2,
         })        
