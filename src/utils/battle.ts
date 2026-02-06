@@ -6,17 +6,22 @@ const { RNG } = k
 export const calculateDamage = (attacker: GameObj, defender: GameObj) => {
     const { attribute } = attacker
 
-    // TODO: Add gear & skill bonus
     const baseDmg = Math.floor(attribute.physique * 1/5)
     const rng = new RNG(Date.now())
     const rate = rng.gen()
     const value = rate * baseDmg
-    const values = [ Math.floor(Math.random() * value), Math.floor(Math.random() * value) ]
+    const values = [ Math.floor(rng.gen() * value), Math.floor(rng.gen() * value) ]
     const scale = {
         min: baseDmg + Math.min(...values),
         max: baseDmg + Math.max(...values)
     }
-    const dmg = rng.genNumber(scale.min, scale.max)
+    let dmg = rng.genNumber(scale.min, scale.max)
+
+    // TODO: Add gear & skill bonus
+    if(attacker.equip.rightHand){
+        const { min, max } = attacker.equip.rightHand.dmg
+        dmg += rng.genNumber(min, max)
+    }
 
     // Calculate defence
     const baseDef = Math.floor(defender.attribute.physique * 1/10)
