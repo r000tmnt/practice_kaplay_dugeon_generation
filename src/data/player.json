@@ -12,6 +12,10 @@
         "cast_speed": 50
     },
     "resist": {
+        "fire": 0,
+        "water": 0,
+        "wind": 0,
+        "earth": 0,
         "electric": 0,
         "spirit": 0,
         "brute": 0,
@@ -22,8 +26,28 @@
     "max": {
         "hp": 20,
         "mp": 5,
+        "fire": 80,
+        "water": 80,
+        "wind": 80,
+        "earth": 80,        
+        "electric": 80,
+        "spirit": 80,
+        "brute": 80,
+        "confusion": 80,
+        "numb": 80,
+        "bleeding": 80,        
         "exp": 50,
         "level": 100
+    },
+    "equip": {
+        "head": {},
+        "body": {},
+        "feet": {},
+        "accessory1": {},
+        "rightHand": {},
+        "leftHand": {},
+        "accessory2": {},
+        "ring": {}
     },
     "lv": 1,
     "pt": 0,
