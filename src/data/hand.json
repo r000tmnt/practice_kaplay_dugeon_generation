@@ -4,6 +4,7 @@
         "name": "Wooden sword",
         "desc": "For practice only.",
         "stackable": false,
+        "oneHanded": true,
         "attribute": {
             "physique": 1
         },
@@ -23,6 +24,7 @@
         "name": "Torch",
         "desc": "",
         "stackable": false,
+        "oneHanded": true,
         "attribute": {
             "physique": 1
         },
@@ -44,6 +46,7 @@
         "id": "hand_003",
         "name": "Falchion",
         "desc": "One-handed sword",
+        "oneHanded": true,
         "stackable": false,
         "attribute": {
             "physique": 3
@@ -63,6 +66,7 @@
         "id": "hand_004",
         "name": "Hammer",
         "desc": "Two-handed weapon",
+        "oneHanded": false,
         "stackable": false,
         "attribute": {
             "physique": 4
@@ -84,6 +88,7 @@
         "id": "hand_005",
         "name": "Pickaxe",
         "desc": "Two-handed weapon",
+        "oneHanded": false,
         "stackable": false,
         "attribute": {
             "physique": 3
@@ -106,6 +111,7 @@
         "name": "Shavol",
         "desc": "Two-handed weapon",
         "stackable": false,
+        "oneHanded": false,
         "attribute": {
             "physique": 5
         },
@@ -127,6 +133,7 @@
         "name": "Pistol",
         "desc": "Gun",
         "stackable": false,
+        "oneHanded": true,
         "attribute": {
             "physique": 3
         },
