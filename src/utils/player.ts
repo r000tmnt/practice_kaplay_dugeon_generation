@@ -1,11 +1,12 @@
 import k from '../lib/kaplay'
 import type { GameObj } from "kaplay";
 import type { roomNode } from '../model/map'
-
+import handData from '../data/hand.json'
 import { setCameraPosition } from './camera';
 import { createHitBox } from './hitBox'
 import { gameStore, getGameStoreValue, inventoryUI } from '../store/game';
 import { RoomState } from '../model/map'
+import type { item } from '../model/item';
 // import { getOptionValue } from '../store/setting';
 import { spawnEnemiesForRoom } from './enemy';
 import playerData from '../data/player.json'
@@ -55,6 +56,89 @@ const onEnterRoom = (room: roomNode) => {
 
 export const getPlayers = () => {
     return get('player')
+}
+
+export const equipItem = (player: GameObj, key: string, item: item, ) => {
+    const { attribute, secondary, resist, max } = player
+
+    // Check item requirements
+    const { required } = item
+    let conditionMeet = true
+
+    if(required){
+        for(const [key, value] of Object.entries(required)){
+            if(
+                key === 'lv' && player.lv < Number(value) ||
+                player.attribute[key] && player.attribute[key] < Number(value)
+            ){
+                conditionMeet = false
+                break
+            }
+        }        
+    }
+    
+    if(!conditionMeet) return false
+
+    const gear = player.equip[key]
+
+    if(gear?.id){
+        // Take off gear
+        Object.entries(attribute).forEach(([key, value]) => {
+            if(gear.attribute && gear.attribute[key]){
+                player.attribute[key] -= Number(value)
+            }
+        })
+        Object.entries(secondary).forEach(([key, value]) => {
+            if(gear.secondary && gear.secondary[key]){
+                player.secondary[key] -= Number(value)
+            }
+        })    
+        Object.entries(resist).forEach(([key, value]) => {
+            if(gear.resist && gear.resist[key]){
+                player.resist[key] -= Number(value)
+            }
+        })                
+        Object.entries(max).forEach(([key, value]) => {
+            if(gear.max && gear.max[key]){
+                player.max[key] -= Number(value)
+                if(key.includes('hp')){
+                    player.maxHp -= Number(value)
+                }
+            }
+        })             
+    }
+
+    player.equip[key] = item
+
+    // Equip gear
+    if(item.attribute){
+        Object.entries(item.attribute).forEach(([key, value]) => {
+            player.attribute[key] += Number(value)
+        })        
+    }
+
+    if(item.secondary){
+        Object.entries(secondary).forEach(([key, value]) => {
+            player.secondary[key] += Number(value)
+        })           
+    }
+
+    if(item.resist){
+        Object.entries(resist).forEach(([key, value]) => {
+            player.resist[key] += Number(value)
+        })            
+    }
+
+    if(item.max){
+        Object.entries(max).forEach(([key, value]) => {
+            player.max[key] += Number(value)
+            if(key.includes('hp')){
+                player.maxHp += Number(value)
+            }
+        })        
+    }
+
+    return true
 }
 
 export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapWidth: number, mapHeight: number, data: typeof playerData | null = null) => {
@@ -114,6 +198,9 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         // tags
         "player"
     ]);
+
+    // Equip weapon
+    equipItem(player, 'rightHand', handData[0]) 
 
     player.add([
         text('', {
