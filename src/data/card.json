@@ -8,7 +8,8 @@
             "size": -10,
             "enemy": 2,
             "room": 1
-        }
+        },
+        "limit": 10
     },
     {
         "id": "card_002",
@@ -18,7 +19,8 @@
         "effect": {
             "treasure_find_rate": 0.15,
             "room": 1
-        }
+        },
+        "limit": 10
     },
     {
         "id": "card_003",
@@ -28,7 +30,8 @@
         "effect": {
             "move_speed": 1.2,
             "room": 1
-        }
+        },
+        "limit": 10
     },
     {
         "id": "card_004",
@@ -38,7 +41,8 @@
         "effect": {
             "defense": 5,
             "room": 1
-        }
+        },
+        "limit": 10
     },
     {
         "id": "card_005",
@@ -49,7 +53,8 @@
             "attack": 5,
             "defense": -3,
             "room": 1
-        }
+        },
+        "limit": 10
     },
     {
         "id": "card_006",
@@ -60,7 +65,8 @@
             "crit_rate": 0.1,
             "item_find_rate": 0.1,
             "room": 1
-        }
+        },
+        "limit": 10
     },
     {
         "id": "card_007",
@@ -70,7 +76,8 @@
         "effect": {
             "max_mp": 0.2,
             "room": 1
-        }
+        },
+        "limit": 10
     },
     {
         "id": "card_008",
@@ -80,7 +87,8 @@
         "effect": {
             "max_hp": 0.25,
             "room": 1
-        }
+        },
+        "limit": 10
     },
     {
         "id": "card_009",
@@ -91,6 +99,15 @@
             "size": 10,
             "enemy": 1,
             "room": 1
-        }
-    }    
+        },
+        "limit": 10
+    },
+    {
+        "id": "card_010",
+        "name": "Look at the mirror",
+        "desc": "Repeat the card used in the room.",
+        "stackable": true,
+        "effect": {},
+        "limit": 5
+    }        
 ]
