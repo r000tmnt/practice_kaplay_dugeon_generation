@@ -7,7 +7,8 @@
         "attribute": {
             "hp": 10
         },
-        "quantity": 1
+        "quantity": 1,
+        "limit": 99
     },
     {
         "id": "potion_002",
@@ -18,7 +19,8 @@
         "attribute": {
             "mp": 15
         },
-        "quantity": 1    
+        "quantity": 1,
+        "limit": 99
     },
     {
         "id": "potion_003",
@@ -29,6 +31,7 @@
         "attribute": {
             "crit": 10
         },
-        "quantity": 1   
+        "quantity": 1,
+        "limit": 99
     }
 ]

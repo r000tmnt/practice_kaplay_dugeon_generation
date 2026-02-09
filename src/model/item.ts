@@ -60,6 +60,7 @@ interface item {
     effect?: object | null
     quantity?: number
     price?: number
+    limit?: number
 }
 
 interface pickableItem {
