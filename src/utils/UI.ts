@@ -45,6 +45,8 @@ let curDraggin : GameObj |null = null
 
 const equipFields: EquipField[] = ['head', 'body', 'feet', 'accessory1', 'rightHand', 'leftHand', 'accessory2', 'ring' ]
 
+const shortCut = ['I', 'S', 'C', 'Q', 'M', 'O']
+
 const range = {
     top: 0,
     down: 0,
@@ -131,13 +133,15 @@ const drag = (self: GameObj) => {
             offset = mousePos().sub(self.pos);
 
             // If item is drag from equiptment slot
-            const equipment = isEquipment(self.item)
+            if('item' in self){
+                const equipment = isEquipment(self.item)
 
-            if(equipment){
-                const player = get('player')[0]
+                if(equipment){
+                    const player = get('player')[0]
 
-                // Deduct value
-                unequipItem(player, equipment)
+                    // Deduct value
+                    unequipItem(player, equipment)
+                }                
             }
 
             self.trigger("drag");
@@ -197,69 +201,6 @@ const setRangeData = (inventory: GameObj, tileWidth: number) => {
     range.items.down = itemWindowCenter.y + ((itemRow / 2) * tileWidth) + (tileWidth / 2)
     range.items.left = itemWindowCenter.x - ((itemCol / 2) * tileWidth) - (tileWidth / 2)
     range.items.right = itemWindowCenter.x + ((itemCol / 2) * tileWidth) + (tileWidth / 2)
-
-    // const range = {
-    //     top: inventory.pos.y - (height / 2),
-    //     down: inventory.pos.y + (height / 2),
-    //     left: inventory.pos.x - (width / 2),
-    //     right: inventory.pos.x + (width / 2),
-    //     equip: {
-    //         head: {
-    //             top: inventory.pos.y - ((itemRow - 0.5) * tileWidth),
-    //             down: inventory.pos.y - ((itemRow - 1.5) * tileWidth),
-    //             left: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth / 2)),
-    //             right: inventory.pos.x -(((itemCol / 2) * tileWidth) + (tileWidth * 1.5))
-    //         },
-    //         body: {
-    //             top: inventory.pos.y - ((itemRow - 2) * tileWidth),
-    //             down: inventory.pos.y - ((itemRow - 1) * tileWidth),
-    //             left: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth / 2)),
-    //             right: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth * 1.5))
-    //         },
-    //         feet: {
-    //             top: inventory.pos.y - ((itemRow - 3.5) * tileWidth),
-    //             down: inventory.pos.y - ((itemRow - 2.5) * tileWidth),
-    //             left: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth / 2)),
-    //             right: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth * 1.5))
-    //         },
-    //         accessory1: {
-    //             top: inventory.pos.y - ((itemRow - 5) * tileWidth),
-    //             down: inventory.pos.y - ((itemRow - 4) * tileWidth),
-    //             left: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth / 2)),
-    //             right: inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth * 1.5))
-    //         },
-    //         rightHand: {
-    //             top: inventory.pos.y - ((itemRow - 0.5) * tileWidth),
-    //             down: inventory.pos.y - ((itemRow - 1.5) * tileWidth),
-    //             left: inventory.pos.x - (tileWidth + (tileWidth / 2)),
-    //             right: inventory.pos.x - (tileWidth + (tileWidth * 1.5))
-    //         },
-    //         leftHand: {
-    //             top: inventory.pos.y - ((itemRow - 2) * tileWidth),
-    //             down: inventory.pos.y - ((itemRow - 1) * tileWidth),
-    //             left: inventory.pos.x - (tileWidth + (tileWidth / 2)),
-    //             right: inventory.pos.x - (tileWidth + (tileWidth * 1.5))
-    //         },
-    //         accessory2: {
-    //             top: inventory.pos.y - ((itemRow - 3.5) * tileWidth),
-    //             down: inventory.pos.y - ((itemRow - 2.5) * tileWidth),
-    //             left: inventory.pos.x - (tileWidth + (tileWidth / 2)),
-    //             right: inventory.pos.x - (tileWidth + (tileWidth * 1.5))
-    //         },
-    //         ring: {
-    //             top: inventory.pos.y - ((itemRow - 5) * tileWidth),
-    //             down: inventory.pos.y - ((itemRow - 4) * tileWidth),
-    //             left: inventory.pos.x - (tileWidth + (tileWidth / 2)),
-    //             right: inventory.pos.y - (tileWidth + (tileWidth * 1.5))
-    //         },
-    //     },
-    //     items: {
-    //         top: itemWindowCenter.y - ((itemRow / 2) * tileWidth) - (tileWidth / 2),
-    //         down: itemWindowCenter.y + ((itemRow / 2) * tileWidth) + (tileWidth / 2),
-    //         left: itemWindowCenter.x - ((itemCol / 2) * tileWidth) - (tileWidth / 2),
-    //         right: itemWindowCenter.x + ((itemCol / 2) * tileWidth) + (tileWidth / 2),
-    //     }
-    // }
 }
 
 const isEquipment = (item: item) => {
@@ -783,7 +724,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
                 width: barWidth,
                 size: tileWidth / 2
             })             
-        }
+        }   
     })
 
     const expRing = ui.add([
@@ -864,26 +805,33 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
     })
 
     const tool = ui.add([
-        rect(k.width()/ 2, barHeight, { fill: false }),
+        rect(k.width()/ 2, barHeight),
         anchor('center'),
         pos(k.width()/ 2, k.height() - barHeight),
         outline(tileWidth / 4),
         color(50, 50, 50),
+        outline(4, rgb(75, 75, 75)),
+        fixed(),
+        'tool'
     ])
 
     // 10 slots for key binding
     // 6 slots for inventory, skill, character, quest, map, option
-
     const slotWidth = tool.width / 16 
-    const shortCut = ['I', 'S', 'C', 'Q', 'M', 'O']
 
     for(let i=0; i < 16; i++){
+        const px = (i >= 8)? 0 + ((i - 8) * slotWidth) : 0 - ((8 - i) * slotWidth)
+        const py = 0 - (barHeight / 2)
+
         const slot = tool.add([
             rect(slotWidth, barHeight),
-            pos((i >= 8)? 0 + ((i - 8) * slotWidth) : 0 - ((8 - i) * slotWidth), 0 - (barHeight / 2)),
+            pos(px, py),
             area(),
             color(50, 50, 50),
-            fixed()
+            fixed(),
+            {
+                binded: {}
+            },            
         ])
 
         if(i < 10){
@@ -891,21 +839,145 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
                 text(String(i + 1), {
                     size: tileWidth / 3,
                 })
-            ])            
-        }else{
+            ])  
+            
+            slot.tag(String(i))
+        }else{                 
             slot.add([
                 text(shortCut[i - 10], {
                     size: tileWidth / 3,
                 })
-            ])                 
-        }
+            ])         
+            
+            slot.tag(shortCut[i - 10])
+        }              
 
         // slot.onHoverUpdate(() => { console.log('slot hovered') })
 
         slot.onClick(() => {
             console.log('slot clicked')
+            const key = slot.tags[1]
+
+            if(isNaN(Number(key))){
+                switch(key){
+                    case 'I': case 'C':{
+                        const { inventory } = getGameStoreValue()
+                        setInventoryUI(player, map, tileWidth, inventory.open)
+                    }
+                    break;
+                    case 'S':
+                        // SKILL
+                    break; 
+                    case 'Q':
+                        // QUEST
+                    break; 
+                    case 'M':
+                        // MAP
+                    break; 
+                    case 'O':
+                        // OPTION
+                    break;                                                                                                 
+                }
+            }else{
+                // number keys
+                const { inventory } = getGameStoreValue()
+
+                // TODO: Display avialable item and skill
+                const list = tool.get('list')
+
+                const potions = inventory.space.filter(stored => stored.item.id.includes('potion'))
+
+                // Skill list
+                const skill = [{ index: 0, skill: { id: 'skill_000', name: 'placeHolder' }, frame: 0 }]
+
+                const options = [ ...potions, ...skill, { index: -1, item: { id: 'clear' } } ]
+
+                let listHeight = 0
+
+                options.forEach(() => {
+                    listHeight += (tileWidth / 2)
+                })
+
+                if(list.length){
+                    list[0].hidden = false
+                    list[0].height = listHeight
+                    list[0].pos = vec2(slot.pos.x, slot.pos.y)
+                }else{
+                    const lx = 0 - (slotWidth * (9 - (Number(key) + 1)))
+
+                    const list = tool.add([
+                        rect(k.width() / 4, listHeight || 10),
+                        anchor('botleft'),
+                        pos(lx, 0 - (barHeight / 2)),
+                        fixed(),
+                        outline(4, rgb(75, 75, 75)),
+                        color(0, 0, 0),
+                        'list',
+                    ])
+
+                    options.forEach((opt, i) => {
+                        // const type = 'item' in opt? 'potion' : 'skill'
+
+                        if('item' in opt && opt.item.id.includes('clear')){
+                            const clear = list.add([
+                                text("CLEAR", { size: tileWidth / 3 }),
+                                area(),
+                                anchor('botleft'),
+                                pos(0 + 10, 0 - (tileWidth / 2) * (options.length - (i + 1))),
+                                fixed()                                
+                            ])
+
+                            clear.onClick(() => {  slot.binded = {} })
+                        }else{
+                            const option = list.add([
+                                sprite('item', { frame: 0 }),
+                                area(),
+                                anchor('botleft'),
+                                pos(0 + 10, 0 - (tileWidth / 2) * (options.length - (i + 1))),
+                                fixed()
+                            ])
+
+                            // Assign options to slot
+                            option.onClick(() => {
+                                list.hidden = true
+
+                                if('item' in opt){
+                                    slot.binded = opt.item
+                                }
+
+                                if('skill' in opt){
+                                    slot.binded = opt.skill
+                                }
+                            })                            
+                        }
+
+
+                    })                    
+                }
+            }             
         })
-    }    
+
+        slot.onDraw(() => {
+            if(Object.entries(slot.binded).length){
+                drawSprite({
+                    sprite: 'item', // TODO: Need another sprite
+                    frame: 0,
+                    anchor: 'center',
+                    pos: vec2(slotWidth / 2, barHeight / 2)
+                })
+
+                if('quantity' in slot.binded){
+                    drawText({
+                        text: String(slot.binded.quantity),
+                        size: tileWidth / 3,
+                        anchor: 'botright',
+                        pos: vec2(slotWidth, barHeight)
+                    })
+                }
+            }
+        })
+        // slot.isOverlapping()
+    } 
     // #endregion 
 }
 
