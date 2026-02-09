@@ -2,10 +2,10 @@ import type { GameObj, Vec2 } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 import { gameStore, getGameStoreValue, inventoryUI } from "../store/game";
-import type { pickableItem, note, EquipField } from '../model/item'
+import type { pickableItem, note, EquipField, item } from '../model/item'
 import { dropItem } from "./item";
-import type { inventoryRange } from '../model/UI'
-import { equipItem } from './player'
+// import type { inventoyRange } from '../model/UI'
+import { equipItem, unequipItem } from './player'
 
 const {
     area,
@@ -129,6 +129,17 @@ const drag = (self: GameObj) => {
             // Set the current global dragged object to this
             curDraggin = self;
             offset = mousePos().sub(self.pos);
+
+            // If item is drag from equiptment slot
+            const equipment = isEquipment(self.item)
+
+            if(equipment){
+                const player = get('player')[0]
+
+                // Deduct value
+                unequipItem(player, equipment)
+            }
+
             self.trigger("drag");
         },
         // "update" is a lifecycle method gets called every frame the obj is in scene
@@ -249,6 +260,14 @@ const setRangeData = (inventory: GameObj, tileWidth: number) => {
     //         right: itemWindowCenter.x + ((itemCol / 2) * tileWidth) + (tileWidth / 2),
     //     }
     // }
+}
+
+const isEquipment = (item: item) => {
+    return equipFields.find(field => {
+        const key = item.id.split('_')[0]
+        // console.log(field, field.toLowerCase().includes(key))
+        return field.toLowerCase().includes(key)
+    })
 }
 
 export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
@@ -483,31 +502,7 @@ const placeItemInGrid = (
                 y: Math.floor((item.pos.y - item.spawn.y) / tileWidth)
             }
 
-            // TODO: If mouse release outside of inventory window
-            if(
-                item.worldPos.x > range.right || item.worldPos.x < range.left ||
-                item.worldPos.y > range.down || item.worldPos.y < range.top
-            ){
-                // Drop item
-                const player = get('player')[0]
-                dropItem(
-                    player, 
-                    [{ name: item.item.name, item: JSON.parse(JSON.stringify(item.item)), frame: item.frame }]
-                )
-
-                if(block >= 0){
-                    // Remove item in gameStore
-                    const storedIndex = storedInventory.space.findIndex(item => item.index === block)
-                    storedInventory.space.splice(storedIndex, 1)
-                    // Update gameStore
-                    gameStore.set(inventoryUI, storedInventory)
-
-                    // Destory dragging item
-                    item.destroy()                    
-                }
-                
-                return
-            }
+            const equipment = isEquipment(item.item)
 
             // TODO: If the mouse release on equipment blocks
             let equip = false
@@ -515,7 +510,9 @@ const placeItemInGrid = (
                 console.log('key', key)
                 const { top, down, left, right } = value
 
+                // TODO: If item is an equipment
                 if(
+                    equipment && equipment === key &&
                     item.worldPos.y > top && item.worldPos.y < down &&
                     item.worldPos.x > left && item.worldPos.x < right
                 ){
@@ -549,12 +546,35 @@ const placeItemInGrid = (
                     gameStore.set(inventoryUI, storedInventory)
 
                     equip = equipItem(player, key, item.item)
-
                     break
                 }
-            }
+            }            
 
-            if(equip) return
+            // TODO: If mouse release outside of inventory window
+            if(
+                item.worldPos.x > range.right || item.worldPos.x < range.left ||
+                item.worldPos.y > range.down || item.worldPos.y < range.top
+            ){
+                // Drop item
+                const player = get('player')[0]
+                dropItem(
+                    player, 
+                    [{ name: item.item.name, item: JSON.parse(JSON.stringify(item.item)), frame: item.frame }]
+                )
+
+                if(block >= 0){
+                    // Remove item in gameStore
+                    const storedIndex = storedInventory.space.findIndex(item => item.index === block)
+                    storedInventory.space.splice(storedIndex, 1)
+                    // Update gameStore
+                    gameStore.set(inventoryUI, storedInventory)
+
+                    // Destory dragging item
+                    item.destroy()                    
+                }
+                
+                return
+            }
 
             // TODO: If the mouse release inside inventory but outside of item grid
             if(
@@ -563,8 +583,15 @@ const placeItemInGrid = (
             ){
                 // Put the item back to the spawn postion
                 item.pos = vec2(item.spawn.x, item.spawn.y)
-                return
+
+                if(equipment){
+                    const player = get('player')[0]
+                    const key = equipFields.find(field => item.item.id.includes(field))
+                    equip =  equipItem(player, key?? '', item.item)
+                }
             }
+
+            if(equip) return            
 
             const targetBlock = block + (inventory.itemCol * dist.y) + dist.x
 
