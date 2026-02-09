@@ -313,7 +313,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, frame:
                     }else{
                         // Find a path to the item
                         try {
-                            player.path = player.navigateTo(dropped.pos)   
+                            player.path = player.navigateTo(dropped.worldPos)   
                         } catch (error) {
                             console.warn('player pathfinding error', error)
                         }
