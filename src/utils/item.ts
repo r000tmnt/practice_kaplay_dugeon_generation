@@ -247,6 +247,29 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, frame:
                         if(item.name !== 'gold' && item.item !== undefined){
                             const { inventory } = getGameStoreValue()
                             let availableIndex = -1
+                            let stacked = false
+
+                            // If item is stackable
+                            // Find the same item first
+                            if(item.item.stackable){
+                                const sameItem = inventory.space.findIndex(stored => stored.item.id === item.item.id)
+
+                               if(sameItem >= 0){
+                                    const { quantity, limit } = inventory.space[sameItem].item
+                                    if(quantity && limit){
+                                        if(quantity < limit){
+                                            inventory.space[sameItem].item.quantity = quantity + 1
+                                            stacked = true
+
+                                            // Destory item on the map
+                                            dropped.destroy()
+                                            gameStore.set(inventoryUI, inventory)                                            
+                                        }
+                                    }
+                               }
+                            }
+
+                            if(stacked) return
 
                             for(let i=0; i < inventory.limit; i++){
                                 if(inventory.space[i] === undefined){
