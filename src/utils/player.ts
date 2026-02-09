@@ -59,7 +59,7 @@ export const getPlayers = () => {
 }
 
 export const equipItem = (player: GameObj, key: string, item: item, ) => {
-    const { attribute, secondary, resist, max } = player
+    const { secondary, resist, max } = player
 
     // Check item requirements
     const { required } = item
@@ -79,34 +79,8 @@ export const equipItem = (player: GameObj, key: string, item: item, ) => {
     
     if(!conditionMeet) return false
 
-    const gear = player.equip[key]
-
-    if(gear?.id){
-        // Take off gear
-        Object.entries(attribute).forEach(([key, value]) => {
-            if(gear.attribute && gear.attribute[key]){
-                player.attribute[key] -= Number(value)
-            }
-        })
-        Object.entries(secondary).forEach(([key, value]) => {
-            if(gear.secondary && gear.secondary[key]){
-                player.secondary[key] -= Number(value)
-            }
-        })    
-        Object.entries(resist).forEach(([key, value]) => {
-            if(gear.resist && gear.resist[key]){
-                player.resist[key] -= Number(value)
-            }
-        })                
-        Object.entries(max).forEach(([key, value]) => {
-            if(gear.max && gear.max[key]){
-                player.max[key] -= Number(value)
-                if(key.includes('hp')){
-                    player.maxHp -= Number(value)
-                }
-            }
-        })             
-    }
+    // If slot is taken
+    unequipItem(player, key)
 
     player.equip[key] = item
 
@@ -139,6 +113,42 @@ export const equipItem = (player: GameObj, key: string, item: item, ) => {
     }
 
     return true
+}
+
+export const unequipItem = (player: GameObj, key: string) => {
+    const gear = player.equip[key]
+
+    if(gear?.id){
+        // Take off gear
+        if(gear.attribute){
+            Object.entries(gear.attribute).forEach(([key, value]) => {
+                player.attribute[key] -= Number(value)
+            })            
+        }
+
+        if(gear.secondary){
+            Object.entries(gear.secondary).forEach(([key, value]) => {
+                player.secondary[key] -= Number(value)
+            })               
+        }
+ 
+        if(gear.resist){
+            Object.entries(gear.resist).forEach(([key, value]) => {
+                player.resist[key] -= Number(value)
+            })    
+        }
+            
+        if(gear.max){
+            Object.entries(gear.max).forEach(([key, value]) => {
+                player.max[key] -= Number(value)
+                if(key.includes('hp')){
+                    player.maxHp -= Number(value)
+                }
+            })              
+        }
+
+        player.equip[key] = {}
+    }
 }
 
 export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapWidth: number, mapHeight: number, data: typeof playerData | null = null) => {
