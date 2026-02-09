@@ -18,7 +18,7 @@ export const calculateDamage = (attacker: GameObj, defender: GameObj) => {
     let dmg = rng.genNumber(scale.min, scale.max)
 
     // TODO: Add gear & skill bonus
-    if(attacker.equip.rightHand){
+    if(attacker.equip.rightHand?.id){
         const { min, max } = attacker.equip.rightHand.dmg
         dmg += rng.genNumber(min, max)
     }
