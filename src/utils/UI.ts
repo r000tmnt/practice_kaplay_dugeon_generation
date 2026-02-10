@@ -28,6 +28,8 @@ const {
     layer,
     mousePos,
     outline,
+    onHover,
+    onHoverEnd,
     // polygon,
     pos,
     Rect,
@@ -35,6 +37,7 @@ const {
     readd,
     rgb,
     sprite,
+    setData,
     // stay,
     text,
     // tween,
@@ -579,6 +582,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
     const { tileWidth } = getOptionValue()
 
     const ui = map.add([
+        area({ shape: new Rect(vec2(0), k.width(), k.height()) }),
         pos(0, 0),
         fixed(),
         layer('fg'),
@@ -588,6 +592,12 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
 
     const barWidth = k.width() / 4
     const barHeight = k.height() / 20  
+
+    ui.onClick(() => {
+        console.log('ui wrapper clicked')
+        const list = ui.get('tool')[0].get('list')
+        if(list[0]?.hidden === false) list[0].hidden = true
+    })
 
     // #region HP, MP, LV UI
     // Place invisible area for both HP and MP bar.
@@ -614,11 +624,17 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
     ])
 
     hpBar.onClick(() => {
+        const list = ui.get('tool')[0].get('list')
+        if(list[0]?.hidden === false) return
+
         console.log('hp')
         hpBar.displayText = !hpBar.displayText
     }, 'left')
 
     mpBar.onClick(() => {
+        const list = ui.get('tool')[0].get('list')
+        if(list[0]?.hidden === false) return
+                
         console.log('mp')
         mpBar.displayText = !mpBar.displayText
     }, 'left')      
@@ -805,11 +821,10 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
     })
 
     const tool = ui.add([
-        rect(k.width()/ 2, barHeight),
+        rect(k.width()/ 2, barHeight, { fill: false }),
         anchor('center'),
         pos(k.width()/ 2, k.height() - barHeight),
         outline(tileWidth / 4),
-        color(50, 50, 50),
         outline(4, rgb(75, 75, 75)),
         fixed(),
         'tool'
@@ -831,8 +846,13 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
             fixed(),
             {
                 binded: {}
-            },            
+            }, 
+            'slot'           
         ])
+
+        onHover('slot', () => { setData('hovering', true) })
+
+        onHoverEnd('slot', () => { setData('hovering', false) })
 
         if(i < 10){
             slot.add([
@@ -856,7 +876,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
 
         slot.onClick(() => {
             console.log('slot clicked')
-            const key = slot.tags[1]
+            const key = slot.tags[2]
 
             if(isNaN(Number(key))){
                 switch(key){
@@ -894,9 +914,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
 
                 let listHeight = 0
 
-                options.forEach(() => {
-                    listHeight += (tileWidth / 2)
-                })
+                listHeight = ((options.length / 2) + (options.length % 2)) * tileWidth
 
                 if(list.length){
                     list[0].hidden = false
@@ -906,7 +924,8 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
                     const lx = 0 - (slotWidth * (9 - (Number(key) + 1)))
 
                     const list = tool.add([
-                        rect(k.width() / 4, listHeight || 10),
+                        area(),
+                        rect(tileWidth * 2, listHeight || 10),
                         anchor('botleft'),
                         pos(lx, 0 - (barHeight / 2)),
                         fixed(),
@@ -915,30 +934,41 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
                         'list',
                     ])
 
+                    onHover('list', () => { setData('hovering', true) })
+
+                    onHoverEnd('list', () => { setData('hovering', false) })
+
                     options.forEach((opt, i) => {
                         // const type = 'item' in opt? 'potion' : 'skill'
+                        const index = i + 1
+                        const ox = (index % 2 === 0)? tileWidth: 10
+                        const oy = 0 - ((tileWidth / 2) * ((options.length / 2) - Math.floor((index % 2 === 0)? (index - 1) / 2 : index / 2)))
 
                         if('item' in opt && opt.item.id.includes('clear')){
                             const clear = list.add([
                                 text("CLEAR", { size: tileWidth / 3 }),
                                 area(),
                                 anchor('botleft'),
-                                pos(0 + 10, 0 - (tileWidth / 2) * (options.length - (i + 1))),
+                                pos(ox, oy),
                                 fixed()                                
                             ])
 
-                            clear.onClick(() => {  slot.binded = {} })
+                            clear.onClick(() => { 
+                                console.log('clear cliked')
+                                slot.binded = {} 
+                            })
                         }else{
                             const option = list.add([
                                 sprite('item', { frame: 0 }),
                                 area(),
                                 anchor('botleft'),
-                                pos(0 + 10, 0 - (tileWidth / 2) * (options.length - (i + 1))),
+                                pos(ox, oy),
                                 fixed()
                             ])
 
                             // Assign options to slot
                             option.onClick(() => {
+                                console.log('option cliked')
                                 list.hidden = true
 
                                 if('item' in opt){
@@ -950,8 +980,6 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
                                 }
                             })                            
                         }
-
-
                     })                    
                 }
             }             
