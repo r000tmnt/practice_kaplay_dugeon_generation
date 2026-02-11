@@ -93,10 +93,6 @@ const setMap = async(name = 'testMap') => {
         // Get the rooms
         const { entrance, exit } = store.get(gameState)
 
-        if(entrance) level[entrance.y][entrance.x] = 2
-
-        if(exit) level[exit.y][exit.x] = 2
-
         // Draw map
         drawMap(level, entrance, exit, name, tileWidth)
 

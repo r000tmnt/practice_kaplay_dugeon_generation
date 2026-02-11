@@ -12,7 +12,7 @@ import k from '../lib/kaplay'
 import { gameStore, getGameStoreValue, inventoryUI } from '../store/game'
 import { getOptionValue } from '../store/setting'
 import type { base, item } from '../model/item'
-import { displayItemsInGrid } from './UI'
+import { displayItemsInGrid } from '../components/inventory'
 
 const { 
     area,
@@ -23,10 +23,13 @@ const {
     // evaluateBezier,
     // normalizedCurve,
     // loop,
+    onHover,
+    onHoverEnd,
     pos,
     // rect,
     RNG,
     sprite,
+    setData,
     // text,
     tween,
     vec2,
@@ -236,7 +239,11 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, frame:
                     dropped,
                     'pos',
                     0.04,
-                )
+                )                
+
+                onHover('item', () => { setData('hovering', true) })
+
+                onHoverEnd('item', () => { setData('hovering', false) })
 
                 dropped.onClick(() => {
                     const player = get('player')[0]
@@ -254,7 +261,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, frame:
                             if(item.item.stackable){
                                 const sameItem = inventory.space.findIndex(stored => stored.item.id === item.item.id)
 
-                               if(sameItem >= 0){
+                                if(sameItem >= 0){
                                     const { quantity, limit } = inventory.space[sameItem].item
                                     if(quantity && limit){
                                         if(quantity < limit){
@@ -266,7 +273,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, frame:
                                             gameStore.set(inventoryUI, inventory)                                            
                                         }
                                     }
-                               }
+                                }
                             }
 
                             if(stacked) return

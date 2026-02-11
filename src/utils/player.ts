@@ -10,7 +10,8 @@ import type { item } from '../model/item';
 // import { getOptionValue } from '../store/setting';
 import { spawnEnemiesForRoom } from './enemy';
 import playerData from '../data/player.json'
-import { setUIElements, setInventoryUI } from './UI';
+import { setUIElements } from '../components/UI';
+import { setInventoryUI } from '../components/inventory'
 import { getOptionValue } from '../store/setting';
 import { 
     setDirection, 
@@ -33,6 +34,7 @@ const {
     patrol,
     pos,
     Rect,
+    rgb,
     // rotate,
     setData,
     // state,
@@ -214,10 +216,15 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
 
     player.add([
         text('', {
-            size: 10,
+            size: map.tileWidth / 4,
             transform: {
                 scale: 1
-            } 
+            },
+            styles: {
+                "yellow": {
+                    color: rgb(0, 50, 50)
+                }
+            }
         }),
         pos(0, -map.tileWidth),
         'text'
@@ -343,8 +350,9 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                 if(room) onEnterRoom(room)
 
                 if (isKeyDown('z') || isMousePressed('left')){
+                    const hovering = getData('hovering')
                     const { inventory } = getGameStoreValue()
-                    if(currentAnim?.name !== 'attack' && !inventory.open) {
+                    if(currentAnim?.name !== 'attack' && !inventory.open && !hovering) {
                         player.play("attack", {
                             onEnd: () => {
                                 player.frame = 0
@@ -368,13 +376,12 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         if(getData('ready') !== false){
             console.log('release key', key)
             const { inventory } = getGameStoreValue()
-            const { tileWidth } = getOptionValue()
             if(!inventory.inProgress){
                 inventory.open = !inventory.open
                 inventory.inProgress = !inventory.inProgress
                 gameStore.set(inventoryUI, inventory)
 
-                await setInventoryUI(player, map, tileWidth, inventory.open).then(() => {
+                await setInventoryUI(player, map, inventory.open).then(() => {
                     inventory.inProgress = false
                     gameStore.set(inventoryUI, inventory)              
                 })                

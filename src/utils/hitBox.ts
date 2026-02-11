@@ -25,14 +25,19 @@ const {
 const onHitEvent = (hitBox: GameObj, attacker: GameObj, defender: GameObj) => {
     // Calculate damage
     if(hitBox.anim === 'attack'){
-        const { hit, dmg } = calculateDamage(attacker, defender)
+        const { hit, dmg, crit } = calculateDamage(attacker, defender)
         const textHolder = defender.get('text')[0]
 
         if(textHolder){
             if(hit){
                 defender.hp -= dmg
                 // Display dmg number
-                textHolder.text = String(dmg)
+                if(crit){
+                    textHolder.text = `[yellow]${dmg}[yellow]`
+                    textHolder.size = textHolder.size * 1.5
+                }else{
+                    textHolder.text = String(dmg)
+                }
             }else{
                 textHolder.text = "MISS"
             }                 
@@ -46,6 +51,7 @@ const onHitEvent = (hitBox: GameObj, attacker: GameObj, defender: GameObj) => {
             ).onEnd(() => {
                 textHolder.textTransform.scale = 1
                 textHolder.text= ''
+                if(crit) textHolder.size -= textHolder.size / 1.5 
             })                    
         }
     }    
@@ -80,7 +86,6 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
             size.angle = 0 
         break;        
     }
-
 
     const hitBox = unit.add([
         area({ 

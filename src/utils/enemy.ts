@@ -31,6 +31,7 @@ const {
     pos,
     Rect,
     RNG,
+    rgb,
     // rotate,
     // setData,
     state,
@@ -225,10 +226,15 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
 
             enemy.add([
                 text('', {
-                    size: 10,
+                    size: tileWidth / 4,
                     transform: {
                         scale: 1
-                    } 
+                    },
+                    styles: {
+                        "yellow": {
+                            color: rgb(0, 50, 50)
+                        }
+                    }                    
                 }),
                 pos(0, -tileWidth),
                 'text'

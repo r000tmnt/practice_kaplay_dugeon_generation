@@ -45,8 +45,12 @@ import type { Vec2 } from 'kaplay';
 import { getOptionValue } from '../store/setting';
 import { gameState, gameStore } from "../store/game";
 
-const MAP_WIDTH = 60;
-const MAP_HEIGHT = 40;
+const MAP_WIDTH = 40;
+const MAP_HEIGHT = 35;
+const MAP_MAX_WIDTH = 60;
+const MAP_MAX_HEIGHT = 40;
+const MAP_MIN_WIDTH = 20;
+const MAP_MIN_HEIGHT = 10; 
 const MIN_LEAF_SIZE = 12;
 const MAX_LEAF_SIZE = 24;
 const MIN_ROOM_SIZE = 6;
@@ -917,6 +921,7 @@ export const generateBSPDungeon = async() => {
     );
 
     console.log('rewardDeadEnds', rewardDeadEnds)
+    const { propRules } = getOptionValue()
 
     // Apply content per room (NOT per tile)
     for (const roomId of rewardDeadEnds) {
@@ -932,10 +937,10 @@ export const generateBSPDungeon = async() => {
         // Add props
         switch(type){
             case DeadEndType.Treasure:
-                placeChest(roomId, tiles)   
+                placeChest(roomId, tiles, propRules.chest)
             break;
             case DeadEndType.Breakables:
-                placePot(innerSpace, roomId, tiles)   
+                placePot(innerSpace, roomId, tiles, propRules.pot)   
             break;
         }
     }
