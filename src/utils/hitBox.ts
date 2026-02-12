@@ -31,9 +31,10 @@ const onHitEvent = (hitBox: GameObj, attacker: GameObj, defender: GameObj) => {
         if(textHolder){
             if(hit){
                 defender.hp -= dmg
+                defender.attribute.hp -= dmg
                 // Display dmg number
                 if(crit){
-                    textHolder.text = `[yellow]${dmg}[yellow]`
+                    textHolder.text = `[yellow]${dmg}[/yellow]`
                     textHolder.size = textHolder.size * 1.5
                 }else{
                     textHolder.text = String(dmg)
