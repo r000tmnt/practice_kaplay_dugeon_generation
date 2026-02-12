@@ -659,28 +659,28 @@ export const setInventoryUI = async(parent: GameObj, player: GameObj, open = fal
                 }
                 
                 // Display "PLUS" button or not
-                if(player.pt > 0 && !buttons.length){
-                    const button = inventory.add([
-                        rect(tileWidth, tileWidth),
-                        pos(tileWidth + padding, + (itemRow * tileWidth) + ((padding / 2) * count) + ((tileWidth / 2) * fontSize)),
-                        area(),
-                        color(75, 75, 75),
-                        fixed(),
-                        {
-                            key
-                        },
-                        'button'
-                    ])
+                if(player.pt > 0){
+                    if(!buttons.length){
+                        const button = inventory.add([
+                            rect(tileWidth, tileWidth),
+                            pos(tileWidth + padding, + (itemRow * tileWidth) + ((padding / 2) * count) + ((tileWidth / 2) * fontSize)),
+                            area(),
+                            color(75, 75, 75),
+                            fixed(),
+                            {
+                                key
+                            },
+                            'button'
+                        ])
 
-                    button.onClick(() => {
-                        player.attribute[button.key] = Number(value) + 1
-                        player.pt -= 1
-                    })
+                        button.onClick(() => {
+                            player.attribute[button.key] = Number(value) + 1
+                            player.pt -= 1
+                        })                        
+                    }else buttons[i].hidden = false
                 }else
                 if(player.pt === 0 && buttons.length){
                     buttons[i].hidden = true
-                }else if(buttons[i] !== undefined){
-                    buttons[i].hidden = false
                 }
             })
 
