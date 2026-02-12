@@ -144,6 +144,7 @@ export const rectangleGauge = (rectGaugeOption: rectGaugeOption) => {
                 pos(position.x, position.y),
                 fixed(),
                 {
+                    ...reference,
                     ...option
                 }
             ])              
@@ -155,6 +156,7 @@ export const rectangleGauge = (rectGaugeOption: rectGaugeOption) => {
                 pos(position.x, position.y),
                 fixed(),
                 {
+                    ...reference,
                     ...option
                 }
             ])    
@@ -200,6 +202,7 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
                 fixed(),
                 pos(position.x, position.y),
                 {
+                    ...reference,
                     ...option
                 }        
             ])
@@ -209,6 +212,7 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
             fixed(),
             pos(position.x, position.y),
             {
+                ...reference,
                 ...option
             }        
         ])        
