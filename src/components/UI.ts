@@ -1,8 +1,8 @@
-import type { GameObj, Vec2 } from "kaplay";
+import type { GameObj } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 // import { getGameStoreValue } from "../store/game";
-import type { uiOwner } from "../model/UI"
+// import type { uiOwner } from "../model/UI"
 
 import { rectangleGauge, ringGauge } from "./gauge";
 import { createToolBar } from "./toolBar";
@@ -20,17 +20,17 @@ const {
     vec2,
 } = k
 
-// const displayTextOnBar = (bar:GameObj, reference:uiOwner, position: Vec2 ) => {
-//     const { unit, attribute } = reference
+const displayTextOnBar = (bar:GameObj, barHeight: number, tileWidth: number ) => {
+    const { unit, attribute, worldPos, area } = bar
 
-//     drawText({
-//         text: `${unit[attribute]}/${unit.max[attribute]}`,
-//         pos: vec2(k.width() * 0.2, k.height() * 5/6 + ((barHeight - (tileWidth / 2)) / 2)),
-//         align: 'center',
-//         width: barWidth,
-//         size: tileWidth / 2
-//     })         
-// }
+    drawText({
+        text: `${unit.attribute[attribute]}/${unit.max[attribute]}`,
+        pos: vec2(worldPos.x, worldPos.y + ((barHeight - (tileWidth / 2)) / 2)),
+        align: 'center',
+        width: area.shape.width,
+        size: tileWidth / 2
+    })         
+}
 
 export const setUIElements = (player: GameObj, map: GameObj) => {
     const { tileWidth } = getOptionValue()
@@ -48,8 +48,9 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
     const barHeight = k.height() / 20  
 
     ui.onClick(() => {
-        console.log('ui wrapper clicked')
-        setData('listOpen', false)
+        const isHovering = getData('hovering')
+        console.log('ui wrapper clicked', isHovering)        
+        if(!isHovering) setData('listOpen', false)
     })
 
     // #region HP, MP, LV UI
@@ -78,13 +79,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
             event: 'draw',
             call: () => {
                 if(hpBar?.displayText){
-                    drawText({
-                        text: `${player.hp}/${player.maxHP}`,
-                        pos: vec2(k.width() * 0.2, k.height() * 5/6 + ((barHeight - (tileWidth / 2)) / 2)),
-                        align: 'center',
-                        width: barWidth,
-                        size: tileWidth / 2
-                    })            
+                    displayTextOnBar(hpBar, barHeight, tileWidth)
                 }
             }
         },        
@@ -110,13 +105,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
             event: 'draw',
             call: () => {
                 if(mpBar?.displayText){
-                    drawText({
-                        text: `${player.attribute.mp}/${player.max.mp}`,
-                        pos: vec2(k.width() * 0.55, k.height() * 5/6 + ((barHeight - (tileWidth / 2)) / 2)),
-                        align: 'center',
-                        width: barWidth,
-                        size: tileWidth / 2
-                    })          
+                    displayTextOnBar(mpBar, barHeight, tileWidth)       
                 }
             }
         },          
@@ -128,16 +117,16 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
     })
 
     hpBar?.onClick(() => {
-        const listOpen = getData('listOpen') 
-        if(listOpen) return
+        const isHovering = getData('hovering') 
+        if(isHovering) return
 
-        console.log('hp')
+        console.log('hp', isHovering)
         hpBar.displayText = !hpBar.displayText
     }, 'left')
 
     mpBar?.onClick(() => {
-        const listOpen = getData('listOpen') 
-        if(listOpen) return
+        const isHovering = getData('hovering') 
+        if(isHovering) return
                 
         console.log('mp')
         mpBar.displayText = !mpBar.displayText
