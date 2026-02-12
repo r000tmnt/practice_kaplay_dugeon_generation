@@ -381,7 +381,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                 inventory.inProgress = !inventory.inProgress
                 gameStore.set(inventoryUI, inventory)
 
-                await setInventoryUI(player, map, inventory.open).then(() => {
+                await setInventoryUI(map.get('ui')[0], player, inventory.open).then(() => {
                     inventory.inProgress = false
                     gameStore.set(inventoryUI, inventory)              
                 })                
