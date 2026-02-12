@@ -9,6 +9,7 @@ const {
     color,
     drawText,
     drawSprite,
+    getData,
     fixed,
     outline,
     onHover,
@@ -106,8 +107,6 @@ export const createToolBar = (
         slot.onClick(() => {
             console.log('slot clicked')
 
-            setData('listOpen', true)
-
             const key = slot.tags[2]
 
             if(isNaN(Number(key))){
@@ -131,6 +130,8 @@ export const createToolBar = (
                     break;                                                                                                 
                 }
             }else{
+                setData('listOpen', true)
+
                 // number keys
                 const { inventory } = getGameStoreValue()
 
@@ -149,7 +150,6 @@ export const createToolBar = (
                 listHeight = ((options.length / 2) + (options.length % 2)) * tileWidth
 
                 if(list.length){
-                    list[0].hidden = false
                     list[0].height = listHeight
                     list[0].pos = vec2(slot.pos.x, slot.pos.y)
                 }else{
@@ -170,6 +170,11 @@ export const createToolBar = (
 
                     onHoverEnd('list', () => { setData('hovering', false) })
 
+                    list.onUpdate(() => {
+                        const open = getData('listOpen')
+                        list.hidden = !open
+                    })
+
                     options.forEach((opt, i) => {
                         // const type = 'item' in opt? 'potion' : 'skill'
                         const index = i + 1
@@ -182,7 +187,8 @@ export const createToolBar = (
                                 area(),
                                 anchor('botleft'),
                                 pos(ox, oy),
-                                fixed()                                
+                                fixed(),
+                                'option'                            
                             ])
 
                             clear.onClick(() => { 
@@ -195,13 +201,17 @@ export const createToolBar = (
                                 area(),
                                 anchor('botleft'),
                                 pos(ox, oy),
-                                fixed()
+                                fixed(),
+                                'option'
                             ])
+
+                            onHover('option', () => { setData('hovering', true) })
+
+                            onHoverEnd('option', () => { setData('hovering', false) })
 
                             // Assign options to slot
                             option.onClick(() => {
                                 console.log('option cliked')
-                                list.hidden = true
 
                                 if('item' in opt){
                                     slot.binded = opt.item
