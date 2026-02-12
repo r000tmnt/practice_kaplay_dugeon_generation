@@ -350,9 +350,9 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                 if(room) onEnterRoom(room)
 
                 if (isKeyDown('z') || isMousePressed('left')){
-                    const hovering = getData('hovering')
+                    const listOpen = getData('listOpen')
                     const { inventory } = getGameStoreValue()
-                    if(currentAnim?.name !== 'attack' && !inventory.open && !hovering) {
+                    if(currentAnim?.name !== 'attack' && !inventory.open && !listOpen) {
                         player.play("attack", {
                             onEnd: () => {
                                 player.frame = 0
