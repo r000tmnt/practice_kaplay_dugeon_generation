@@ -44,17 +44,11 @@ const drawRectGauge = (
         color: color.outter,
         radius
     })
-
-    if(direction === 'horizontal'){
-        width = width * percentage    
-    }else{
-        height = height * percentage
-    }   
-
+    
     // Inner bar
     drawRect({
-        width,
-        height,
+        width: (direction === 'horizontal')? width * percentage : width,
+        height: (direction === 'vertical')? height * percentage : height,
         pos: reverse? vec2(position.x + width, position.y) : position,
         color: color.inner,
         radius,
