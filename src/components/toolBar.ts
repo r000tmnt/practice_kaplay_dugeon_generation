@@ -1,7 +1,8 @@
 import type { GameObj, Color, Vec2 } from "kaplay"
 import k from "../lib/kaplay"
 import { getOptionValue } from "../store/setting"
-import { getGameStoreValue } from "../store/game"
+import { gameStore, getGameStoreValue, inventoryUI } from "../store/game"
+import { setInventoryUI } from "./inventory"
 
 const {
     area,
@@ -10,6 +11,7 @@ const {
     drawText,
     drawSprite,
     getData,
+    get,
     fixed,
     outline,
     onHover,
@@ -75,7 +77,7 @@ export const createToolBar = (
             color(50, 50, 50),
             fixed(),
             {
-                binded: {}
+                bind: {}
             }, 
             'slot'           
         ])
@@ -112,8 +114,12 @@ export const createToolBar = (
             if(isNaN(Number(key))){
                 switch(key){
                     case 'I': case 'C':{
-                        // const { inventory } = getGameStoreValue()
-                        // setInventoryUI(player, map, tileWidth, inventory.open)
+                        const { inventory } = getGameStoreValue()
+                        if(inventory.open) return
+                        inventory.open = !inventory.open
+                        setInventoryUI(get('map')[0].get('ui')[0], get('player')[0], inventory.open).then(() => {
+                            gameStore.set(inventoryUI, inventory)            
+                        })          
                     }
                     break;
                     case 'S':
@@ -135,7 +141,7 @@ export const createToolBar = (
                 // number keys
                 const { inventory } = getGameStoreValue()
 
-                // TODO: Display avialable item and skill
+                // TODO: Display available item and skill
                 const list = tool.get('list')
 
                 const potions = inventory.space.filter(stored => stored.item.id.includes('potion'))
@@ -193,7 +199,7 @@ export const createToolBar = (
 
                             clear.onClick(() => { 
                                 console.log('clear cliked')
-                                slot.binded = {} 
+                                slot.bind = {} 
                             })
                         }else{
                             const option = list.add([
@@ -214,11 +220,11 @@ export const createToolBar = (
                                 console.log('option cliked')
 
                                 if('item' in opt){
-                                    slot.binded = opt.item
+                                    slot.bind = opt.item
                                 }
 
                                 if('skill' in opt){
-                                    slot.binded = opt.skill
+                                    slot.bind = opt.skill
                                 }
 
                                 setData('listOpen', false)
@@ -230,7 +236,7 @@ export const createToolBar = (
         })
 
         slot.onDraw(() => {
-            if(Object.entries(slot.binded).length){
+            if(Object.entries(slot.bind).length){
                 drawSprite({
                     sprite: 'item', // TODO: Need another sprite
                     frame: 0,
@@ -238,9 +244,9 @@ export const createToolBar = (
                     pos: vec2(slotWidth / 2, height / 2)
                 })
 
-                if('quantity' in slot.binded){
+                if('quantity' in slot.bind){
                     drawText({
-                        text: String(slot.binded.quantity),
+                        text: String(slot.bind.quantity),
                         size: tileWidth / 3,
                         anchor: 'botright',
                         pos: vec2(slotWidth, height)
