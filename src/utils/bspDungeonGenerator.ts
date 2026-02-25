@@ -47,10 +47,6 @@ import { gameState, gameStore } from "../store/game";
 
 const MAP_WIDTH = 40;
 const MAP_HEIGHT = 35;
-const MAP_MAX_WIDTH = 60;
-const MAP_MAX_HEIGHT = 40;
-const MAP_MIN_WIDTH = 20;
-const MAP_MIN_HEIGHT = 10; 
 const MIN_LEAF_SIZE = 12;
 const MAX_LEAF_SIZE = 24;
 const MIN_ROOM_SIZE = 6;
@@ -158,10 +154,9 @@ const createCorridors = (leaf: Leaf, grid: number[][]) => {
 const carveHorizontal = (map: number[][], y: number, x1: number, x2: number) => {
     const from = Math.min(x1, x2)
     const to   = Math.max(x1, x2)
-    const half = Math.floor(CORRIDOR_WIDTH / 2)
 
     for (let x = from; x <= to; x++) {
-        for(let dy = -half; dy < CORRIDOR_WIDTH - half; dy++){
+        for(let dy = 0; dy < CORRIDOR_WIDTH; dy++){
             const dist = y + dy
             if (map[dist] !== undefined && dist > 0 && dist < (map.length - 1)) map[y + dy][x] = 0            
         }
@@ -171,10 +166,9 @@ const carveHorizontal = (map: number[][], y: number, x1: number, x2: number) => 
 const carveVertical = (map: number[][], x: number, y1: number, y2: number) => {
     const from = Math.min(y1, y2)
     const to   = Math.max(y1, y2)
-    const half = Math.floor(CORRIDOR_WIDTH / 2)
 
     for (let y = from; y <= to; y++) {
-        for(let dx = -half; dx < CORRIDOR_WIDTH - half; dx++){
+        for(let dx = 0; dx < CORRIDOR_WIDTH; dx++){
             const dist = x + dx
             if (map[y][dist] !== undefined && dist > 0 && dist < (map[y].length - 1)) map[y][x + dx] = 0         
         }
@@ -369,49 +363,107 @@ const findRoomAt = (x: number, y: number, graph: Map<number, RoomNode>): number 
 }
 
 const findConnectedRooms = (
-    startId: number,
-    graph: Map<number, RoomNode>
-): Set<number> => {
-    const visited = new Set<number>();
-    const queue = [startId];
+    grid: number[][],
+    leaves: Leaf[]
+) => {
+    // const visited = new Set<number>();
+    // const queue = [startId];
 
-    visited.add(startId);
+    // visited.add(startId);
 
-    let current = 0
+    // let current = 0
 
-    while (queue.length > 0) {
-        try {
-            current = queue.shift()!;
-            for (const n of graph.get(current)!.neighbors) {
-                if (!visited.has(n)) {
-                    visited.add(n);
-                    queue.push(n);
-                }
-            }            
-        } catch {
-            console.log(`Can't find id ${current}`)
+    // while (queue.length > 0) {
+    //     try {
+    //         current = queue.shift()!;
+    //         for (const n of graph.get(current)!.neighbors) {
+    //             if (!visited.has(n)) {
+    //                 visited.add(n);
+    //                 queue.push(n);
+    //             }
+    //         }            
+    //     } catch {
+    //         console.log(`Can't find id ${current}`)
+    //     }
+    // }
+
+    // Hot fix 
+    // Check around the edges of the wall for any rooms
+    ROOMNODES.forEach(node => {
+        const connected = {
+            top: false,
+            down: false,
+            left: false,
+            right: false
         }
-    }
 
-    return visited;
+        for(let x=node.x; x < node.w; x++){
+            // top
+            if(grid[node.y - 1][x] === 0) {
+                connected.top = true
+            }
+
+            // down
+            if(grid[node.y + node.h][x] === 0) {
+                connected.down = true
+            }            
+        }
+        
+        
+        for(let y=node.y; y < node.h; y++){
+            // left
+            if(grid[y][node.x - 1] === 0) {
+                connected.left = true
+            }
+
+            // right
+            if(grid[y][node.x + 1] === 0) {
+                connected.right = true
+            }
+        }
+
+        const connectedCount = Object.values(connected).filter(Boolean).length;
+        if (connectedCount === 0) {
+            console.log(`Room ${node.id} is not connected to any other room`);
+
+            // Try to connect to any adjacent room
+            if(node.connections.size === 0){
+                // Find a valid room position
+                 const connId = findNearestReachableRoom(node.id)
+                 console.log(`Connecting room ${node.id} to nearest reachable room ${connId}`)
+                if(connId) {
+                    const leaf = leaves.find(l => l.room?.id === connId)
+                    setCorridor(leaf!, node, ROOMNODES[connId], grid)
+                }
+            }
+            else{
+                node.connections.forEach(connId => {
+                    console.log(`Connecting room ${node.id} to connected room ${connId}`)
+                    const leaf = leaves.find(l => l.room?.id === connId)
+                    setCorridor(leaf!, node, ROOMNODES[connId], grid)
+                 
+                })
+            }
+        }
+    })
+
+    // return visited;
 }
 
 const findNearestReachableRoom =(
     fromId: number,
-    reachable: Set<number>,
-    graph: Map<number, RoomNode>
 ) => {
     let best = null;
     let bestDist = Infinity;
 
-    const from = graph.get(fromId)!.room;
+    const from = ROOMNODES[fromId];
 
-    for (const id of reachable) {
-        const to = graph.get(id)!.room;
+    for (const room of ROOMNODES) {
+        const to = room;
         const dist = getManhattanDistance(from, to);
         if (dist < bestDist) {
             bestDist = dist;
-            best = id;
+            best = room.id;
         }
     }
 
@@ -453,8 +505,8 @@ const getInnerSpaceAndTiles = (grid: number[][], room: room) => {
     const innerSpace = {
         x: room.x + margin,
         y: room.y + margin,
-        w: room.w - margin * 2,
-        h: room.h - margin * 2
+        w: room.w - (margin * 2),
+        h: room.h - (margin * 2)
     }
 
     const tiles = getFloorTiles(grid, innerSpace as room)
@@ -759,8 +811,8 @@ export const generateBSPDungeon = async() => {
             const leaf = leaves[i];
             if (leaf.left === null && leaf.right === null) {
                 if (leaf.w > MAX_LEAF_SIZE || leaf.h > MAX_LEAF_SIZE || Math.random() > 0.75) {
-                    const splited = leaf.split()
-                    if (!splited) break
+                    const splitted = leaf.split()
+                    if (!splitted) break
 
                     if(leaf.left && leaf.right){
                         leaves.push(leaf.left);
@@ -869,48 +921,50 @@ export const generateBSPDungeon = async() => {
         }
     }    
 
-    const reachable = findConnectedRooms(entranceId, graph)
+    findConnectedRooms(grid, leaves)
 
-    console.log(reachable)
+    // const reachable = findConnectedRooms(entranceId, graph)
 
-    const unreachable = [...graph.keys()]
-        .filter(id => !reachable.has(id));  
+    // console.log(reachable)
+
+    // const unreachable = [...graph.keys()]
+    //     .filter(id => !reachable.has(id));  
         
-    console.log(unreachable)
+    // console.log(unreachable)
 
-    unreachable.forEach(id => {
-        const findNewPath = findNearestReachableRoom(id, reachable, graph)
+    // unreachable.forEach(id => {
+    //     const findNewPath = findNearestReachableRoom(id, reachable, graph)
 
-        console.log(findNewPath)
+    //     console.log(findNewPath)
 
-        if(typeof findNewPath === 'number'){
-            // Find the leaf
-            const leaf = leaves.find(l => l.room?.id === findNewPath)
-            // Carve a new corridor
-            if(leaf){
-                const roomA = leaves.find(l => l.room?.id === id)!.room
-                const roomB = leaf.room
+    //     if(typeof findNewPath === 'number'){
+    //         // Find the leaf
+    //         const leaf = leaves.find(l => l.room?.id === findNewPath)
+    //         // Carve a new corridor
+    //         if(leaf){
+    //             const roomA = leaves.find(l => l.room?.id === id)!.room
+    //             const roomB = leaf.room
 
-                if(roomA && roomB){
-                    setCorridor(leaf, roomA, roomB, grid)
+    //             if(roomA && roomB){
+    //                 setCorridor(leaf, roomA, roomB, grid)
                                         
-                    // Update graph          
-                    graph.get(id)!.neighbors.add(roomB.id);
-                    graph.get(roomB.id)!.neighbors.add(id);
-                    reachable.add(id);                              
-                }
-            }
-        }
-    }) 
+    //                 // Update graph          
+    //                 graph.get(id)!.neighbors.add(roomB.id);
+    //                 graph.get(roomB.id)!.neighbors.add(id);
+    //                 reachable.add(id);                              
+    //             }
+    //         }
+    //     }
+    // }) 
 
     // Final check
-    const finalReachable = findConnectedRooms(entranceId, graph);
+    // const finalReachable = findConnectedRooms(entranceId, graph);
 
-    if (finalReachable.size !== graph.size) {
-        console.warn("Dungeon still disconnected!");
-    }
+    // if (finalReachable.size !== graph.size) {
+    //     console.warn("Dungeon still disconnected!");
+    // }
 
-    // Find dead-ends
+    // // Find dead-ends
     const deadEnds = findDeadEnds(graph)
 
     console.log('dead-ends', deadEnds)
@@ -921,9 +975,12 @@ export const generateBSPDungeon = async() => {
     );
 
     console.log('rewardDeadEnds', rewardDeadEnds)
+
+    // TODO: Decorate dead-ends
+
     const { propRules } = getOptionValue()
 
-    // Apply content per room (NOT per tile)
+    // // Apply content per room (NOT per tile)
     for (const roomId of rewardDeadEnds) {
         if (roomId === entranceId) return;
         if (roomId === exitId) return;
@@ -954,7 +1011,7 @@ export const generateBSPDungeon = async() => {
 
     if(entrance) await checkDoorPosition(grid, entrance)
     if(exit) await checkDoorPosition(grid, exit)
-    await setPorps(grid, rooms)
+    await setProps(grid, rooms)
 
     //#region enemy spawn rule 
     // Compute room depth
@@ -1022,7 +1079,7 @@ export const generateBSPDungeon = async() => {
 //#endregion
 
 //#region Set props for chunks
-const setPorps = async(grid: number[][], rooms: room[]) => {
+const setProps = async(grid: number[][], rooms: room[]) => {
     // const allProps: prop[] = []
     const { propRules } = getOptionValue()
 
@@ -1132,4 +1189,4 @@ const getFloorTiles = (grid: number[][], room: room) => {
 
     return tiles
 }
-//#endrefion
+//#endregion
