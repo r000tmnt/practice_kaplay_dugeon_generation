@@ -5,7 +5,7 @@ type direction = 'horizontal'|'vertical'
 type event = 'draw'|'update'
 
 type gaugeColor = {
-    outter: Color,
+    outer: Color,
     inner: Color
 }
 
