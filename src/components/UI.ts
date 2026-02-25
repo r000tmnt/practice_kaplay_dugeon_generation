@@ -61,7 +61,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         position: vec2(k.width() * 0.2, k.height() * 5/6),
         color: {
             inner: rgb(150, 0 ,0),
-            outter: rgb(50, 50 ,50)
+            outer: rgb(50, 50 ,50)
         },
         clickable: true,
         reverse: true,
@@ -92,7 +92,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         position: vec2(k.width() * 0.55, k.height() * 5/6),
         color: {
             inner: rgb(0, 0, 150),
-            outter: rgb(50, 50, 50)
+            outer: rgb(50, 50, 50)
         },
         clickable: true,
         width: barWidth,
@@ -171,7 +171,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         position: vec2(k.width() / 2, k.height() * 5/6),
         color: {
             inner: rgb(0, 150, 0),
-            outter: rgb(50, 50, 50)
+            outer: rgb(50, 50, 50)
         },
         reference: {
             unit: player,
