@@ -147,59 +147,59 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                 //     spawnedItems[block].item.index = block
                 // }else
 
-                // TODO: If item took the space alreay
+                // TODO: If item took the space already
                 const placedItem = spawnedItems.find(item => item.index === block)
                 if(placedItem){
-                    if(
-                        placedItem.item.id !== space[block].item.id ||
-                        !placedItem.item.stackable
-                    ){
-                        // Find the available block
-                        for(let i=0; i < (itemCol * itemRow); i++){
-                            if(spawnedItems.find(item => item.index === i) === undefined){
-                                const newRow = i / itemRow
-                                const newCol = i % itemRow
+                    // if(
+                    //     placedItem.item.id !== space[block].item.id ||
+                    //     !placedItem.item.stackable
+                    // ){
+                    //     // Find the available block
+                    //     for(let i=0; i < (itemCol * itemRow); i++){
+                    //         if(spawnedItems.find(item => item.index === i) === undefined){
+                    //             const newRow = i / itemRow
+                    //             const newCol = i % itemRow
 
-                                const spawn = {
-                                    x: // If index point to the center col
-                                        (newCol + 1) >= (itemCol / 2)?
-                                        // ((col - halfCol) * tileWidth) - (halfTile)                  
-                                        (((newCol + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
-                                        // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
-                                        0 - (((itemCol / 2) - newCol) * tileWidth) + (tileWidth / 2),
-                                    y: // If index point to the center row
-                                        ((newRow + 1) >= (itemRow / 2))?
-                                        // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
-                                        (height / 4) + (((newRow + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
-                                        // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
-                                        (height / 4) - ((((itemRow / 2) - newRow) * tileWidth) - (tileWidth / 2)),   
-                                }    
+                    //             const spawn = {
+                    //                 x: // If index point to the center col
+                    //                     (newCol + 1) >= (itemCol / 2)?
+                    //                     // ((col - halfCol) * tileWidth) - (halfTile)                  
+                    //                     (((newCol + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
+                    //                     // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
+                    //                     0 - (((itemCol / 2) - newCol) * tileWidth) + (tileWidth / 2),
+                    //                 y: // If index point to the center row
+                    //                     ((newRow + 1) >= (itemRow / 2))?
+                    //                     // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
+                    //                     (height / 4) + (((newRow + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
+                    //                     // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
+                    //                     (height / 4) - ((((itemRow / 2) - newRow) * tileWidth) - (tileWidth / 2)),   
+                    //             }    
 
-                                space[block].index = i
+                    //             space[block].index = i
 
-                                // Add sprite
-                                placeItemInGrid(
-                                    inventory,
-                                    i,
-                                    space[block],
-                                    spawn,
-                                    tileWidth,
-                                    spawnedItems
-                                )                                
+                    //             // Add sprite
+                    //             placeItemInGrid(
+                    //                 inventory,
+                    //                 i,
+                    //                 space[block],
+                    //                 spawn,
+                    //                 tileWidth,
+                    //                 spawnedItems
+                    //             )                                
                                                             
-                                break
-                            }
-                        }                        
-                    }
+                    //             break
+                    //         }
+                    //     }                        
+                    // }
 
-                    if(spawnedItems[block].item.stackable && placedItem.item.id === space[block].item.id){
-                        spawnedItems[block].item.quantity += 1
-                        // Remove item in gameStore
-                        const storedInventory = getGameStoreValue().inventory
-                        storedInventory.space.splice(block, 1)
-                        // Update store
-                        gameStore.set(inventoryUI, storedInventory)
-                    }
+                    // if(spawnedItems[block].item.stackable && placedItem.item.id === space[block].item.id){
+                    //     spawnedItems[block].item.quantity += 1
+                    //     // Remove item in gameStore
+                    //     const storedInventory = getGameStoreValue().inventory
+                    //     storedInventory.space.splice(block, 1)
+                    //     // Update store
+                    //     gameStore.set(inventoryUI, storedInventory)
+                    // }
                 }else{
                     const spawn = {
                         x: // If index point to the center col
@@ -434,7 +434,7 @@ const placeItemInGrid = (
                     // Update gameStore
                     gameStore.set(inventoryUI, storedInventory)
 
-                    // Destory dragging item
+                    // Destroy dragging item
                     item.destroy()                    
                 }
                 
@@ -469,7 +469,7 @@ const placeItemInGrid = (
 
                     spawnedItems[targetBlock].children[0].text = spawnedItems[targetBlock].item.item.quantity
 
-                    // Destory dragging item
+                    // Destroy dragging item
                     item.destroy()
 
                     return
@@ -497,6 +497,55 @@ const placeItemInGrid = (
     }    
 }
 
+const displayAttributeButtons = (
+    inventory: GameObj, 
+    player: GameObj, 
+    tileWidth: number, 
+    itemRow: number, 
+    itemCol: number, 
+    padding: number
+) => {
+    const buttons = inventory.get('button')
+
+    // Display "PLUS" button or not
+    if(player.pt > 0){
+        if(!buttons.length){
+            Object.entries(player.attribute).forEach((params, i) => {
+                const key = params[0]
+                const count = i + 4
+                const fontSize = i + 3
+                const ay = -(itemRow * tileWidth) + ((padding / 2) * count) + ((tileWidth / 2) * fontSize)
+
+                const button = inventory.add([
+                    rect(tileWidth / 3, tileWidth / 3),
+                    pos((tileWidth * ((itemCol / 2) - 1)) + (tileWidth / 3), ay),
+                    area(),
+                    color(75, 75, 75),
+                    fixed(),
+                    {
+                        key
+                    },
+                    'button'
+                ])
+
+                button.add([
+                    text('+', { width: button.width, align: 'center', size: tileWidth / 3 }),
+                    pos(0, 0)
+                ])
+
+                button.onClick(() => {
+                    player.attribute[button.key] += 1
+                    player.pt -= 1
+                })
+
+                button.onUpdate(() => {
+                    button.hidden = player.pt === 0
+                })
+            })
+        }
+    }
+}
+
 /**
  * Create or open inventory
  * @param parent - The wrapper of the element.
@@ -512,6 +561,7 @@ export const setInventoryUI = async(parent: GameObj, player: GameObj, open = fal
     const inventoryHeight = k.height() * 19/20
     const itemRow = 6
     const itemCol = 12    
+    const padding = 10
 
     if(inventory.length){
         console.log('toggle inventory')
@@ -519,6 +569,8 @@ export const setInventoryUI = async(parent: GameObj, player: GameObj, open = fal
 
         // Place Items
         displayItemsInGrid(inventory[0], tileWidth)
+
+        displayAttributeButtons(inventory[0], player, tileWidth, itemRow, itemCol, padding)
 
         return
     }else
@@ -594,8 +646,6 @@ export const setInventoryUI = async(parent: GameObj, player: GameObj, open = fal
             })
             // #endregion
 
-            const padding = 10
-
             // Gold
             drawText({
                 text: `$ ${getGameStoreValue().inventory.gold}`,
@@ -638,49 +688,24 @@ export const setInventoryUI = async(parent: GameObj, player: GameObj, open = fal
                 pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + ((padding / 2) * 3) + tileWidth)
             })                 
 
-            const buttons = inventory.get('button')
-
             Object.entries(player.attribute).forEach(([key, value], i) => {
                 const count = i + 4
                 const fontSize = i + 3
+                const ax = tileWidth + padding
+                const ay = -(itemRow * tileWidth) + ((padding / 2) * count) + ((tileWidth / 2) * fontSize)
 
                 if(key === 'hp' || key === 'mp'){
                     drawText({
                         text: `${key.toUpperCase()}: ${value}/${key === 'hp'? player.maxHP : player.max.mp}`,
                         size: tileWidth / 3,
-                        pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + ((padding / 2) * count) + ((tileWidth / 2) * fontSize))                        
+                        pos: vec2(ax, ay)                        
                     })                      
                 }else{
                     drawText({
                         text: `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`,
                         size: tileWidth / 3,
-                        pos: vec2(tileWidth + padding, -(itemRow * tileWidth) + ((padding / 2) * count) + ((tileWidth / 2) * fontSize))                             
+                        pos: vec2(ax, ay)                             
                     })   
-                }
-                
-                // Display "PLUS" button or not
-                if(player.pt > 0){
-                    if(!buttons.length){
-                        const button = inventory.add([
-                            rect(tileWidth, tileWidth),
-                            pos(tileWidth + padding, + (itemRow * tileWidth) + ((padding / 2) * count) + ((tileWidth / 2) * fontSize)),
-                            area(),
-                            color(75, 75, 75),
-                            fixed(),
-                            {
-                                key
-                            },
-                            'button'
-                        ])
-
-                        button.onClick(() => {
-                            player.attribute[button.key] = Number(value) + 1
-                            player.pt -= 1
-                        })                        
-                    }else buttons[i].hidden = false
-                }else
-                if(player.pt === 0 && buttons.length){
-                    buttons[i].hidden = true
                 }
             })
 
@@ -800,6 +825,8 @@ export const setInventoryUI = async(parent: GameObj, player: GameObj, open = fal
             // })  
             // #endregion            
         })
+
+        displayAttributeButtons(inventory, player, tileWidth, itemRow, itemCol, padding)
 
         // TODO: Place items
         displayItemsInGrid(inventory, tileWidth)
