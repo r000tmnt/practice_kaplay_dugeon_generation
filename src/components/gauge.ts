@@ -36,12 +36,12 @@ const drawRectGauge = (
     const { unit, attribute } = reference
     const percentage = unit.attribute[attribute] / unit.max[attribute]
 
-    // outter bar
+    // outer bar
     drawRect({
         width,
         height,
         pos: position,
-        color: color.outter,
+        color: color.outer,
         radius
     })
     
@@ -64,7 +64,7 @@ const drawRectGauge = (
  * @param height - The height of the element.
  * @param direction - How to place the element
  * @param position - Where to place the element
- * @param color - Support to set color for both outter and inner of the element
+ * @param color - Support to set color for both outer and inner of the element
  * @param reference - The number to determine how the gauge looks like.
     * @param reference.unit - Who provides the number.
     * @param reference.attribute - The attribute to check per frame.
@@ -171,7 +171,7 @@ export const rectangleGauge = (rectGaugeOption: rectGaugeOption) => {
  * @param radius - Determine the size of the element.
  * @param position - Where to place the element.
  * @param clickable - If the element can invoke click event. Will return the element for further usage.
- * @param color - Support to set color for both outter and inner of the element.
+ * @param color - Support to set color for both outer and inner of the element.
  * @param reference - The number to determine how the gauge looks like.
     * @param reference.unit - Who provides the number.
     * @param reference.attribute - The attribute to check per frame.
@@ -214,7 +214,7 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
 
     ring.onDraw(() => {
         const { unit, attribute } = reference
-        const progress = unit.attribute[attribute] / unit.max[attribute]
+        const progress = unit[attribute] / unit.max[attribute]
         const steps = 60
         const thickness = 10
 
@@ -252,10 +252,10 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
         drawCircle({
             pos: vec2(0,0),
             radius: radius,
-            color: color.outter,
+            color: color.outer,
             outline: {
                 width: thickness / 2,
-                color: color.outter
+                color: color.outer
             }
         })          
 
@@ -269,7 +269,7 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
         drawCircle({
             pos: vec2(0,0),
             radius: radius -10,
-            color: color.outter
+            color: color.outer
         })  
 
         if(option?.text !== undefined){
