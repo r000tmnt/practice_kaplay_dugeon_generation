@@ -29,10 +29,10 @@ export const calculateDamage = (attacker: GameObj, defender: GameObj) => {
     const finalNumber = baseDef >= dmg? 1 : Math.floor(dmg - baseDef)
 
     // Calculate chance to hit and avoid
-    const baseHithance = attribute.agility * 7/10
+    const baseHitChance = attribute.agility * 7/10
     const baseAvoidChance = defender.attribute.agility * 1/10
     const baseCritChance = attribute.agility * 1/10
-    const toHit = finalNumber * baseHithance
+    const toHit = finalNumber * baseHitChance
     const toAvoid = finalNumber * baseAvoidChance   
     const toCrit = finalNumber * baseCritChance 
     const total = toHit + toAvoid + toCrit
