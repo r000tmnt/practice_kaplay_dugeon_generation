@@ -31,13 +31,13 @@ const {
     pos,
     Rect,
     RNG,
-    rgb,
+    // rgb,
     // rotate,
     // setData,
     state,
     sentry,
     sprite,
-    text,
+    // text,
     vec2,
     wait,
 } = k
@@ -118,7 +118,7 @@ const stayOrNot = (enemy: GameObj) => {
 }
 
 export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData | null = null) => {
-    if(!data) data = enemyData
+    if(!data) data = JSON.parse(JSON.stringify(enemyData))
     const { enemies, level, danger } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
     const count = enemies.filter((e: prop) => {
@@ -130,10 +130,11 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
     // Alter enemy attributes based on danger level
     for(let i=0; i < danger; i++){
         console.log('times', i)
-        Object.entries(data.attribute).forEach(([key, value]) => {
-            data.attribute[key as keyof { hp: number, mp: number, physique: number, mentality: number, agility: number }] += Math.floor(Math.random() * GROWTH.length)
-            console.log(key, value)
-        })
+        if(data)
+            Object.entries(data.attribute).forEach(([key, value]) => {
+                data.attribute[key as keyof { hp: number, mp: number, physique: number, mentality: number, agility: number }] = value + GROWTH[Math.floor(Math.random() * GROWTH.length)]
+                console.log(key, data.attribute[key as keyof { hp: number, mp: number, physique: number, mentality: number, agility: number }])
+            })
     }
 
     // Check if spawned
@@ -207,7 +208,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                         console.log('distance', distance)
 
                         if(distance < 50){
-                            console.log('eneter by checkDistanceToPlayer')
+                            console.log('enter by checkDistanceToPlayer')
                             enemy.enterState('attack', player)
                         }else
                         if(distance < 200){
@@ -223,22 +224,6 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             ])
 
             console.log('spawned enemy', enemy)
-
-            enemy.add([
-                text('', {
-                    size: tileWidth / 4,
-                    transform: {
-                        scale: 1
-                    },
-                    styles: {
-                        "yellow": {
-                            color: rgb(0, 50, 50)
-                        }
-                    }                    
-                }),
-                pos(0, -tileWidth),
-                'text'
-            ])
 
             enemy.onObjectsSpotted((objs) => {
                 if(enemy.defeat) return
@@ -268,6 +253,8 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                     enemy.waypoints = [enemy.path[0]]
                     enemy.path.splice(0, 1)
                 }else{
+                    console.log('patrol finished')
+                    if(enemy.state === 'chase' || enemy.state === 'attack' || enemy.state === 'pause') return
                     enemy.stop()
                     enemy.frame = 0                    
                     wait(Math.random(), () => {
@@ -292,6 +279,10 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             })            
 
             enemy.onStateUpdate('chase', () => {
+                const curAnim = enemy.getCurAnim()
+
+                if(curAnim?.name === 'hurt') return
+
                 const player = getPlayers()[0]
                 // // console.log('players', players)
                 // players.forEach(player => {
@@ -321,11 +312,12 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
 
                 enemy.play('attack', {
                     onEnd: () => {
+                        console.log('enemy attack animation ended', enemy.hp)
                         if(enemy.hp <= 0) return
 
                         enemy.frame = 0
 
-                        // Destory hitBoxes
+                        // Destroy hitBoxes
                         enemy.clearHitBox('attack')
 
                         // And more
@@ -335,6 +327,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             })      
             
             enemy.onStateEnter('pause', () => {
+                console.log('enter pause')
                 enemy.waypoints?.splice(0)
                 enemy.stop()
                 enemy.frame = 0
@@ -354,9 +347,14 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             })
 
             enemy.onDeath(() => {
+                console.log('enter onDeath')
+                enemy.defeat = true
+                enemy.unuse('patrol')
+                enemy.unuse('pathfinder')
+                enemy.clearHitBox('attack')
                 enemy.play('lose', {
                     onEnd: () => {
-                        console.log('lose animation ended')
+                        console.log('enemy lose animation ended')
 
                         // Update props
                         const eIndex = enemies.findIndex(prop => prop.type === 'enemy' && prop.x === enemy.spawn.x && prop.y === enemy.spawn.y)
@@ -402,13 +400,8 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                         prepareItemsToDrop(enemy, base)
                     }
                 })
-
-                enemy.defeat = true
                 enemy.unuse('body')
-                console.log('enemy dead')            
-                // Drop items         
-
-                // And more        
+                console.log('enemy dead')              
             })
 
             enemy.onCollideUpdate('player', (player: GameObj) => {
