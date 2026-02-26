@@ -24,12 +24,15 @@ const {
     anchor,
     body,
     getData,
+    // getSprite,
     get,
     health,
     isKeyDown,
     isMousePressed,
     layer,
+    lifespan,
     // onKeyRelease,
+    opacity,
     pathfinder,
     patrol,
     pos,
@@ -40,6 +43,7 @@ const {
     // state,
     sprite,
     text,
+    tween,
     vec2,
     wait
 } = k
@@ -184,15 +188,41 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                     player.lv += 1
                     player.pt += 3
 
+                    const textHolder = player.add([
+                        text("[light]LEVEL UP[/light]", { 
+                            size: map.tileWidth / 2,
+                            align: 'center', 
+                            styles: {
+                                "light": {
+                                    color: rgb(250,250,210)
+                                }
+                            } 
+                        }),
+                        pos(0, -map.tileWidth),
+                        anchor('center'),
+                        lifespan(1, { fade: 0.5 }),
+                        opacity(1)
+                    ])
+
+                    tween(
+                        textHolder.pos.y,
+                        textHolder.pos.y - 10,
+                        0.5,
+                        (v) => { textHolder.pos.y = v }
+                    )
+
                     // Random growth
                     Object.entries(player.attribute).forEach(attr => {
                         const rng = Math.floor(Math.random() * (GROWTH.length - 1))
                         switch(attr[0]){
                             case 'hp':
                                 player.max.hp += GROWTH[rng]
+                                player.attribute.hp += player.max.hp - player.hp
+                                player.hp += player.max.hp - player.hp
                             break;
                             case 'mp':
                                 player.max.mp += GROWTH[rng]
+                                player.attribute.mp += player.max.mp - player.attribute.mp
                             break;
                             default:
                                 attr[1] += GROWTH[rng]
@@ -201,8 +231,8 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                     })
 
                     // Increase required exp for next lv
-                    player.max.exp += player.max.exp * 1.5 
-                    // Incase if exp is much higer
+                    player.max.exp += Math.floor(player.max.exp * 1.5)
+                    // In case if exp is much higher
                     player.levelUp() 
                 }                
             }
@@ -213,22 +243,6 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
 
     // Equip weapon
     equipItem(player, 'rightHand', handData[0]) 
-
-    player.add([
-        text('', {
-            size: map.tileWidth / 4,
-            transform: {
-                scale: 1
-            },
-            styles: {
-                "yellow": {
-                    color: rgb(0, 50, 50)
-                }
-            }
-        }),
-        pos(0, -map.tileWidth),
-        'text'
-    ])
 
     console.log('player', player)
     setCameraPosition(player, mapWidth, mapHeight)
@@ -376,16 +390,11 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         if(getData('ready') !== false){
             console.log('release key', key)
             const { inventory } = getGameStoreValue()
-            if(!inventory.inProgress){
-                inventory.open = !inventory.open
-                inventory.inProgress = !inventory.inProgress
-                gameStore.set(inventoryUI, inventory)
+            inventory.open = !inventory.open
 
-                await setInventoryUI(map.get('ui')[0], player, inventory.open).then(() => {
-                    inventory.inProgress = false
-                    gameStore.set(inventoryUI, inventory)              
-                })                
-            }
+            setInventoryUI(map.get('ui')[0], player, inventory.open).then(() => {
+                gameStore.set(inventoryUI, inventory)              
+            })     
         }
     })
 
