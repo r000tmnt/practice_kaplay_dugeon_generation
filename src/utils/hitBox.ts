@@ -9,14 +9,19 @@ import potData from '../data/pot.json'
 import chestData from '../data/chest.json'
 
 const { 
+    add,
     area,
     anchor,
     // Asset,
     // canvas,
     // get,
+    lifespan,
+    opacity,
     pos,
     Rect,
+    rgb,
     rotate,
+    text,
     tween,
     vec2,
     wait
@@ -28,44 +33,45 @@ const onHitEvent = (hitBox: GameObj, attacker: GameObj, defender: GameObj) => {
         if(defender.defeat || defender.hp <= 0) return
 
         const { hit, dmg, crit } = calculateDamage(attacker, defender)
-        const textHolder = defender.get('text')[0]
 
-        if(textHolder){
-            if(hit){
-                // Do not let hp go below 0
-                defender.hp -= (dmg > defender.hp)? defender.hp : dmg
-                defender.attribute.hp -= (dmg > defender.attribute.hp)? defender.attribute.hp : dmg
-                // Display dmg number
-                if(crit){
-                    textHolder.text = `[yellow]${dmg}[/yellow]`
-                    textHolder.size = textHolder.size * 1.5
-                }else{
-                    textHolder.text = String(dmg)
+        const { tileWidth } = getOptionValue()
+
+        const textHolder = add([
+            text(String(dmg), {
+                size: tileWidth / 4,
+                styles: {
+                    "yellow": {
+                        color: rgb(200, 86, 10)
+                    }
                 }
-            }else{
-                textHolder.text = "MISS"
-            }                 
-            
-            // Animate text pos and opacity
-            tween(
-                textHolder.pos.y,
-                textHolder.pos.y - 10,
-                1,
-                (pos) => textHolder.pos.y = pos
-            ).onEnd(() => {
-                textHolder.text= ''
-                if(crit) textHolder.size -= textHolder.size / 1.5 
-            })   
-            
-            tween(
-                textHolder.opacity,
-                0,
-                1,
-                (v) => textHolder.opacity = v
-            ).onEnd(() => {
-                textHolder.opacity = 1
-            })               
-        }
+            }),
+            lifespan(0.5, { fade: 0.25 }),
+            pos(defender.pos.x, defender.pos.y - (tileWidth / 2) - 10),
+            anchor('center'),
+            opacity(1),
+            'text'
+        ])
+
+        if(hit){
+            // Do not let hp go below 0
+            defender.hp -= (dmg > defender.hp)? defender.hp : dmg
+            defender.attribute.hp -= (dmg > defender.attribute.hp)? defender.attribute.hp : dmg
+            // Display dmg number
+            if(crit){
+                textHolder.text = `[yellow]${dmg}[/yellow]`
+                textHolder.textSize = Math.floor(textHolder.textSize * 1.5)
+            }
+        }else{
+            textHolder.text = "MISS"
+        }                 
+        
+        // Animate text pos
+        tween(
+            textHolder.pos.y,
+            textHolder.pos.y - 10,
+            0.25,
+            (pos) => { textHolder.pos.y = pos }
+        )
     }    
 }
 
