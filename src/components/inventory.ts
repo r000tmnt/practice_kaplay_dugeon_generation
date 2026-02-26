@@ -5,7 +5,7 @@ import { getGameStoreValue, gameStore, inventoryUI } from "../store/game";
 import type { EquipField } from "../model/item";
 import type { item, note } from "../model/item";
 
-import { equipItem, unequipItem } from "../utils/player";
+import { equipItem, getPlayers, unequipItem } from "../utils/player";
 import { drag, isPickable } from "../utils/UI";
 import { dropItem } from "../utils/item"
 
@@ -96,26 +96,32 @@ const range = {
 
 const setRangeData = (inventory: GameObj, tileWidth: number) => {
     const { width, height, itemRow, itemCol } = inventory
-    const itemWindowCenter = vec2(inventory.pos.x, inventory.pos.y + (height / 4))    
+    const itemWindowCenter = vec2(0, height / 4)    
 
-    range.top = inventory.pos.y - (height / 2)
-    range.down = inventory.pos.y + (height / 2)
-    range.left = inventory.pos.x - (width / 2)
-    range.right = inventory.pos.x + (width / 2)
+    range.top = -(height / 2)
+    range.down = (height / 2)
+    range.left = -(width / 2)
+    range.right = (width / 2)
 
     equipFields.forEach((field, i) => {
-        const index = (i + 1) > (equipFields.length / 2)? i - (equipFields.length / 2) : i
-        const offset = -0.5 + (1.5 * index)
-        range.equip[field].top = inventory.pos.y + ((itemRow - offset) * tileWidth)
-        range.equip[field].down = inventory.pos.y - (itemRow - ((offset - 1) * tileWidth))
-        range.equip[field].left = inventory.pos.x - (((itemCol / 2) * tileWidth) + (tileWidth / 2))
-        range.equip[field].right = inventory.pos.x -(((itemCol / 2) * tileWidth) + (tileWidth * 1.5))
+        let x = -((itemCol / 2) * tileWidth)
+        let index = i
+        if((i + 1) > (equipFields.length / 2)){
+            x = -tileWidth 
+            index = i - (equipFields.length / 2)
+        }
+        const y = -((itemRow - (0.5 + (1.5 * index))) * tileWidth) - (tileWidth / 2)
+        // const offset = -0.5 + (1.5 * index)
+        range.equip[field].top = y
+        range.equip[field].down = y + tileWidth
+        range.equip[field].left = x
+        range.equip[field].right = x + tileWidth
     })
 
-    range.items.top = itemWindowCenter.y - ((itemRow / 2) * tileWidth) - (tileWidth / 2)
-    range.items.down = itemWindowCenter.y + ((itemRow / 2) * tileWidth) + (tileWidth / 2)
-    range.items.left = itemWindowCenter.x - ((itemCol / 2) * tileWidth) - (tileWidth / 2)
-    range.items.right = itemWindowCenter.x + ((itemCol / 2) * tileWidth) + (tileWidth / 2)
+    range.items.top = itemWindowCenter.y - ((itemRow / 2) * tileWidth)
+    range.items.down = itemWindowCenter.y + ((itemRow / 2) * tileWidth)
+    range.items.left = itemWindowCenter.x - ((itemCol / 2) * tileWidth)
+    range.items.right = itemWindowCenter.x + ((itemCol / 2) * tileWidth)
 }
 
 const isEquipment = (item: item) => {
@@ -139,68 +145,10 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
             // If item exist
             const block = col + (itemCol * row)
             if(space[block] !== undefined){
-                // if(spawnedItems[block] !== undefined){
-                //     // Change sprite and item
-                //     spawnedItems[block].sprite = "item"
-                //     spawnedItems[block].frame = space[block].frame
-                //     spawnedItems[block].item = space[block].item
-                //     spawnedItems[block].item.index = block
-                // }else
 
                 // TODO: If item took the space already
                 const placedItem = spawnedItems.find(item => item.index === block)
-                if(placedItem){
-                    // if(
-                    //     placedItem.item.id !== space[block].item.id ||
-                    //     !placedItem.item.stackable
-                    // ){
-                    //     // Find the available block
-                    //     for(let i=0; i < (itemCol * itemRow); i++){
-                    //         if(spawnedItems.find(item => item.index === i) === undefined){
-                    //             const newRow = i / itemRow
-                    //             const newCol = i % itemRow
-
-                    //             const spawn = {
-                    //                 x: // If index point to the center col
-                    //                     (newCol + 1) >= (itemCol / 2)?
-                    //                     // ((col - halfCol) * tileWidth) - (halfTile)                  
-                    //                     (((newCol + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
-                    //                     // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
-                    //                     0 - (((itemCol / 2) - newCol) * tileWidth) + (tileWidth / 2),
-                    //                 y: // If index point to the center row
-                    //                     ((newRow + 1) >= (itemRow / 2))?
-                    //                     // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
-                    //                     (height / 4) + (((newRow + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
-                    //                     // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
-                    //                     (height / 4) - ((((itemRow / 2) - newRow) * tileWidth) - (tileWidth / 2)),   
-                    //             }    
-
-                    //             space[block].index = i
-
-                    //             // Add sprite
-                    //             placeItemInGrid(
-                    //                 inventory,
-                    //                 i,
-                    //                 space[block],
-                    //                 spawn,
-                    //                 tileWidth,
-                    //                 spawnedItems
-                    //             )                                
-                                                            
-                    //             break
-                    //         }
-                    //     }                        
-                    // }
-
-                    // if(spawnedItems[block].item.stackable && placedItem.item.id === space[block].item.id){
-                    //     spawnedItems[block].item.quantity += 1
-                    //     // Remove item in gameStore
-                    //     const storedInventory = getGameStoreValue().inventory
-                    //     storedInventory.space.splice(block, 1)
-                    //     // Update store
-                    //     gameStore.set(inventoryUI, storedInventory)
-                    // }
-                }else{
+                if(!placedItem){
                     const spawn = {
                         x: // If index point to the center col
                             (col + 1) >= (itemCol / 2)?
@@ -226,30 +174,11 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                         spawnedItems
                     )
                 }
-
-                // drawSprite({
-                //     sprite: "item",
-                //     pos: vec2(
-                //         // If index point to the center col
-                //         (col + 1) >= (itemCol / 2)?               
-                //         // ((col - halfCol) * tileWidth) - (halfTile)                  
-                //         (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
-                //         // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
-                //         0 - (((itemCol / 2) - (col)) * tileWidth) + (tileWidth / 2), 
-                //         // If index point to the center row
-                //         ((row + 1) >= (itemRow / 2))?
-                //         // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
-                //         (inventoryHeight / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
-                //         // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
-                //         (inventoryHeight / 4) - ((((itemRow / 2) - (row)) * tileWidth) - (tileWidth / 2)),
-                //     ),
-                //     frame: 0
-                // })
             }else{
-                // Hide sprite is exist
-                if(spawnedItems[block] !== undefined){
-                    spawnedItems[block].hidden = true
-                }
+                // Hide sprite if exist
+                // if(spawnedItems[block] !== undefined){
+                //     spawnedItems[block].hidden = true
+                // }
             }
         }
     } 
@@ -332,7 +261,7 @@ const placeItemInGrid = (
         console.log('item on mouse press')
         if(item.isHovering()){
             if(isPickable(item)) item.pick()     
-            // If item is drag from equiptment slot
+            // If item is drag from equipment slot
             const equipment = isEquipment(item.item)
 
             if(equipment){
@@ -362,63 +291,79 @@ const placeItemInGrid = (
         item.onDragEnd(() => {
             const storedInventory = getGameStoreValue().inventory
 
+            // Get dist from item spawn pos
+            const spawnDist = {
+                x: Math.floor(Math.abs(item.spawn.x - range.items.left) / tileWidth),
+                y: Math.floor(Math.abs(item.spawn.y - range.items.top) / tileWidth)
+            }
+            
+            // Get dist from inventory pos
             const dist = {
-                x: Math.floor((item.pos.x - item.spawn.x) / tileWidth),
-                y: Math.floor((item.pos.y - item.spawn.y) / tileWidth)
+                x: Math.floor(Math.abs(item.pos.x - range.items.left) / tileWidth),
+                y: Math.floor(Math.abs(item.pos.y - range.items.top) / tileWidth)
             }
 
+            // Get the block before changing position
+            block = (item.tags.find(t => t === 'item'))? 
+                1 + spawnDist.x + (spawnDist.y * inventory.itemCol) : -1
+
+
+            console.log('dist', dist)
+
             const equipment = isEquipment(item.item)
+            let equip = false
 
             // TODO: If the mouse release on equipment blocks
-            let equip = false
             for(const [key, value] of Object.entries(range.equip)){
                 console.log('key', key)
                 const { top, down, left, right } = value
 
-                // TODO: If item is an equipment
+                // TODO: If position matches
                 if(
                     equipment && equipment === key &&
-                    item.worldPos.y > top && item.worldPos.y < down &&
-                    item.worldPos.x > left && item.worldPos.x < right
+                    item.pos.y > top && item.pos.y < down &&
+                    item.pos.x > left && item.pos.x < right
                 ){
                     //TODO: equip item
                     const player = get('player')[0]
                     // If the slot is taken
                     if(player.equip[key]?.id){
-                        // switch block
                         const gear = inventory.get(key)[0]
-                        gear.untag(key)
-                        gear.pos = vec2(item.spawn.x, item.spawn.y)
-                        gear.item.index = item.index
-                        gear.spawn = {
-                            x: item.spawn.x,
-                            y: item.spawn.y
+                        gear.tag('item')
+
+                        // Swap position
+                        if(block >= 0){
+                            gear.pos = vec2(item.spawn.x, item.spawn.y)
+                            gear.item.index = block
+                            gear.spawn = JSON.parse(JSON.stringify({
+                                x: item.spawn.x,
+                                y: item.spawn.y
+                            }))
+
+                            equip = equipItem(player, key, item.item)
+
+                            storedInventory.space[block] = {
+                                index: block,
+                                item: gear.item,
+                                frame: gear.frame
+                            }
+
+                            item.pos = vec2(left + (tileWidth / 2), top + (tileWidth / 2))
                         }
-                        // Push item to gameStore
-                        storedInventory.space.push({
-                            index: item.index,
-                            item: gear.item,
-                            frame: gear.frame
-                        })
+                    }else{
+                        equip = equipItem(player, key, item.item)
+                        item.pos = vec2(left + (tileWidth / 2), top + (tileWidth / 2))
+
+                        if(block >= 0) storedInventory.space.splice(block, 1)
                     }
-
-                    item.worldPos = vec2(left + (tileWidth / 2), top + (tileWidth / 2)) 
-
-                    // Remove item in gameStore
-                    const storedIndex = storedInventory.space.findIndex(stored => stored.index === item.index)
-                    storedInventory.space.splice(storedIndex, 1)
-                    // Update gameStore
-                    gameStore.set(inventoryUI, storedInventory)
-
-                    equip = equipItem(player, key, item.item)
                     break
                 }
             }            
 
             // TODO: If mouse release outside of inventory window
             if(
-                item.worldPos.x > range.right || item.worldPos.x < range.left ||
-                item.worldPos.y > range.down || item.worldPos.y < range.top
+                item.pos.x > range.right || item.pos.x < range.left ||
+                item.pos.y > range.down || item.pos.y < range.top
             ){
                 // Drop item
                 const player = get('player')[0]
@@ -429,8 +374,7 @@ const placeItemInGrid = (
 
                 if(block >= 0){
                     // Remove item in gameStore
-                    const storedIndex = storedInventory.space.findIndex(item => item.index === block)
-                    storedInventory.space.splice(storedIndex, 1)
+                    storedInventory.space.splice(block, 1)
                     // Update gameStore
                     gameStore.set(inventoryUI, storedInventory)
 
@@ -443,22 +387,29 @@ const placeItemInGrid = (
 
             // TODO: If the mouse release inside inventory but outside of item grid
             if(
-                item.worldPos.y > range.top && item.worldPos.y < range.items.top ||
-                item.worldPos.x < range.items.left || item.worldPos.x > range.items.right
+                item.pos.y > range.top && item.pos.y < range.items.top ||
+                item.pos.x < range.items.left || item.pos.x > range.items.right
             ){
-                // Put the item back to the spawn postion
+                // Put the item back to the spawn position
                 item.pos = vec2(item.spawn.x, item.spawn.y)
 
                 if(equipment){
                     const player = get('player')[0]
-                    const key = equipFields.find(field => item.item.id.includes(field))
-                    equip =  equipItem(player, key?? '', item.item)
+                    // const key = equipFields.find(field => item.item.id.includes(field))
+                    equip = equipItem(player, equipment, item.item)
+
+                    if(block >= 0){
+                        storedInventory.space.splice(block, 1)
+                    }
                 }
+            }  
+            
+            if(equip){
+                gameStore.set(inventoryUI, storedInventory)
+                return
             }
 
-            if(equip) return            
-
-            const targetBlock = block + (inventory.itemCol * dist.y) + dist.x
+            const targetBlock = 1 + (inventory.itemCol * dist.y) + dist.x
 
             // TODO: If overlap with item
             if(spawnedItems[targetBlock] !== undefined){
@@ -469,31 +420,81 @@ const placeItemInGrid = (
 
                     spawnedItems[targetBlock].children[0].text = spawnedItems[targetBlock].item.item.quantity
 
+                    if(storedInventory.space[targetBlock].item.quantity) storedInventory.space[targetBlock].item.quantity += 1
+
                     // Destroy dragging item
                     item.destroy()
-
-                    return
                 }else{
-                    // switch position
-                    spawnedItems[targetBlock].pos = vec2(item.spawn.x, item.spawn.y)
-                    spawnedItems[targetBlock].index = block
+                    // if Overlapping item is an equipment
+                    const overlaps = isEquipment(spawnedItems[targetBlock].item)
+
+                    // If the dragging item is an equipment
+                    if(equipment && equipment !== overlaps){
+                        // No more space
+                        if(storedInventory.space.length === storedInventory.limit) return
+
+                        // Find another space
+                        const empty = storedInventory.space.findIndex(s => !s)
+
+                        item.tag('item')
+                        storedInventory.space[empty] = {
+                            index: empty,
+                            item: item.item,
+                            frame: item.frame
+                        }      
+                        
+                    }else{
+                        // swap position
+                        spawnedItems[targetBlock].pos = vec2(item.spawn.x, item.spawn.y)
+                        spawnedItems[targetBlock].spawn = JSON.parse(JSON.stringify(item.spawn))
+                        spawnedItems[targetBlock].index = block
+
+                        // If Overlapping item is the same type as dragging item
+                        if(equipment && equipment === overlaps){
+                            // Equip item
+                            equipItem(getPlayers()[0], equipment, spawnedItems[targetBlock].item)
+                        }
+
+                        // Update store value
+                        storedInventory.space[targetBlock].index = block   
+                    }
                 }
+            }else{
+                item.pos = vec2(
+                    range.items.left + (tileWidth * dist.x) + (tileWidth / 2),
+                    range.items.top + (tileWidth * dist.y) + (tileWidth / 2)
+                )
+                
+                // Update spawn position
+                item.spawn = JSON.parse(JSON.stringify({ x: item.pos.x, y: item.pos.y }))   
+                item.index = targetBlock
+                
+                // Add tags
+                if(equipment) item.tag('item')
+
+                // Update store value
+                storedInventory.space[targetBlock] = {
+                    index: targetBlock,
+                    item: item.item,
+                    frame: item.frame
+                }          
+                
+                if(block >= 0){
+                    storedInventory.space.splice(block, 1)                    
+                }      
             }
-            
-            item.pos = vec2(
-                dist.x < 0?
-                item.spawn.x - (tileWidth * Math.abs(dist.x)):
-                item.spawn.x + (tileWidth * dist.x),
-                dist.y < 0?
-                item.spawn.y - (tileWidth * Math.abs(dist.y)):
-                item.spawn.y + (tileWidth * dist.y)
-            )
-            
-            // Update spawn position
-            item.spawn.x = item.pos.x
-            item.spawn.y = item.pos.y       
-            item.index = targetBlock                     
+
+            gameStore.set(inventoryUI, storedInventory)
         })
+
+        // item.onHoverUpdate(() => {
+        //     // Display detail
+        //     if(block / itemCol)
+        // })
+
+        // item.onHoverEnd(() => {
+        //     // Hide detail
+        // })
     }    
 }
 
