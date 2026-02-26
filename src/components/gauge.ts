@@ -214,7 +214,9 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
 
     ring.onDraw(() => {
         const { unit, attribute } = reference
-        const progress = unit[attribute] / unit.max[attribute]
+        const start = unit.max[attribute] / 2.5
+        const ringLength = (start > unit[attribute])? unit.max[attribute] - unit[attribute] : unit.max[attribute] - start 
+        const progress = (unit[attribute] - start) / ringLength
         const steps = 60
         const thickness = 10
 
