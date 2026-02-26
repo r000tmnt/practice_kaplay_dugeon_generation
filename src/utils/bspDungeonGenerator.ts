@@ -148,7 +148,7 @@ const createCorridors = (leaf: Leaf, grid: number[][]) => {
     }
 
     if (leaf.left) createCorridors(leaf.left, grid);
-    if (leaf.right) createCorridors(leaf.right, grid);    
+    if (leaf.right) createCorridors(leaf.right, grid);   
 }
 
 const carveHorizontal = (map: number[][], y: number, x1: number, x2: number) => {
@@ -559,8 +559,7 @@ const getEnemySpawnRule = (roomNode: RoomNode) => {
 const scaleEnemies = (base: { min: number, max: number }, depth: number) => {
     return Math.min(
         base.max,
-        base.min + Math.floor(depth / 3)
-    );
+        base.min + depth)
 }
 
 const buildSpawnGrid = (room: roomNode, tilemap: number[][]) => {
@@ -578,7 +577,7 @@ const buildSpawnGrid = (room: roomNode, tilemap: number[][]) => {
     return free;
 }
 
-// Refernce: https://stackoverflow.com/a/46545530/14173422
+// Reference: https://stackoverflow.com/a/46545530/14173422
 const shuffle = (array: any[]) => {
     const shuffled = array.map(value => ({ value, sort: Math.random() }))
                     .sort((a, b) => a.sort - b.sort)
@@ -841,6 +840,13 @@ export const generateBSPDungeon = async() => {
 
     // 6. Draw graph
     for (const room of ROOMNODES) {
+        // if(room.connections.size > 0){
+        //     const leaf = leaves.find(l => l.room?.id === room.id)
+        //     room.connections.forEach(connId => {
+        //         setCorridor(leaf, room, ROOMNODES[connId], grid)
+        //     })
+            
+        // }
         console.log(
             `Room ${room.id} → [${[...room.connections].join(", ")}]`
         );
@@ -1017,6 +1023,19 @@ export const generateBSPDungeon = async() => {
     // Compute room depth
     const roomDepth = computeRoomDepths(entranceId, graph)
 
+    if(roomDepth.size !== graph.size){
+        console.warn("Some rooms are not reachable from the entrance!");
+
+        [...graph.keys()].filter(id => {
+            if(!roomDepth.has(id)){
+                const unreachableDepths = computeRoomDepths(id, graph)
+                for(const [id, depth] of unreachableDepths){
+                    roomDepth.set(id, depth)
+                }
+            }
+        });
+    }
+
     console.log('roomDepth', roomDepth)
 
     // Decide spawn count
@@ -1025,7 +1044,7 @@ export const generateBSPDungeon = async() => {
     // ROOMNODES.forEach(room => {
     //     const enemySpawnRule = getEnemySpawnRule(room.id, entranceId, exitId, criticalPath)
 
-    console.log(`spawmnRule: ${JSON.stringify(enemySpawnRule)}`)
+    console.log(`spawnRule: ${JSON.stringify(enemySpawnRule)}`)
     // })
     
     // Scale by depth
