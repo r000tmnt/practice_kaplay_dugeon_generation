@@ -311,54 +311,7 @@ const placeItemInGrid = (
             console.log('dist', dist)
 
             const equipment = isEquipment(item.item)
-            let equip = false
-
-            // TODO: If the mouse release on equipment blocks
-            for(const [key, value] of Object.entries(range.equip)){
-                console.log('key', key)
-                const { top, down, left, right } = value
-
-                // TODO: If position matches
-                if(
-                    equipment && equipment === key &&
-                    item.pos.y > top && item.pos.y < down &&
-                    item.pos.x > left && item.pos.x < right
-                ){
-                    //TODO: equip item
-                    const player = get('player')[0]
-                    // If the slot is taken
-                    if(player.equip[key]?.id){
-                        const gear = inventory.get(key)[0]
-                        gear.tag('item')
-
-                        // Swap position
-                        if(block >= 0){
-                            gear.pos = vec2(item.spawn.x, item.spawn.y)
-                            gear.item.index = block
-                            gear.spawn = JSON.parse(JSON.stringify({
-                                x: item.spawn.x,
-                                y: item.spawn.y
-                            }))
-
-                            equip = equipItem(player, key, item.item)
-
-                            storedInventory.space[block] = {
-                                index: block,
-                                item: gear.item,
-                                frame: gear.frame
-                            }
-
-                            item.pos = vec2(left + (tileWidth / 2), top + (tileWidth / 2))
-                        }
-                    }else{
-                        equip = equipItem(player, key, item.item)
-                        item.pos = vec2(left + (tileWidth / 2), top + (tileWidth / 2))
-
-                        if(block >= 0) storedInventory.space.splice(block, 1)
-                    }
-                    break
-                }
-            }            
+            let equip = false       
 
             // TODO: If mouse release outside of inventory window
             if(
@@ -390,17 +343,46 @@ const placeItemInGrid = (
                 item.pos.y > range.top && item.pos.y < range.items.top ||
                 item.pos.x < range.items.left || item.pos.x > range.items.right
             ){
-                // Put the item back to the spawn position
-                item.pos = vec2(item.spawn.x, item.spawn.y)
-
-                if(equipment){
+                // If hovering on equipment slots
+                if(
+                    equipment && 
+                    item.pos.y >= range.equip[equipment].top && item.pos.y <= range.equip[equipment].down &&
+                    item.pos.x >= range.equip[equipment].left && item.pos.x <= range.equip[equipment].right
+                ){
                     const player = get('player')[0]
-                    // const key = equipFields.find(field => item.item.id.includes(field))
-                    equip = equipItem(player, equipment, item.item)
+                    // If the slot is taken
+                    if(player.equip[equipment]?.id){
+                        const gear = inventory.get(equipment)[0]
+                        gear.tag('item')
 
-                    if(block >= 0){
-                        storedInventory.space.splice(block, 1)
+                        // Swap position
+                        if(block >= 0){
+                            gear.pos = vec2(item.spawn.x, item.spawn.y)
+                            gear.item.index = block
+                            gear.spawn = JSON.parse(JSON.stringify({
+                                x: item.spawn.x,
+                                y: item.spawn.y
+                            }))
+
+                            equip = equipItem(player, equipment, item.item)
+
+                            storedInventory.space[block] = {
+                                index: block,
+                                item: gear.item,
+                                frame: gear.frame
+                            }
+
+                            item.pos = vec2(range.equip[equipment].left + (tileWidth / 2), range.equip[equipment].top + (tileWidth / 2))
+                        }
+                    }else{
+                        equip = equipItem(player, equipment, item.item)
+                        item.pos = vec2(range.equip[equipment].left + (tileWidth / 2), range.equip[equipment].top + (tileWidth / 2))
+
+                        if(block >= 0) storedInventory.space.splice(block, 1)
                     }
+                }else{
+                    // Put the item back to the spawn position
+                    item.pos = vec2(item.spawn.x, item.spawn.y)
                 }
             }  
             
