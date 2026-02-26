@@ -42,8 +42,8 @@ const continuousTween = (sequence: Vec2[]|number[], obj: GameObj, target: string
         sequence[count],
         duration,
         (value) => {
-            console.log('time', count)
-            console.log('next', value)
+            // console.log('time', count)
+            // console.log('next', value)
             obj[target] = value
         },
         easings.linear
@@ -268,7 +268,9 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, frame:
                                             inventory.space[sameItem].item.quantity = quantity + 1
                                             stacked = true
 
-                                            // Destory item on the map
+                                            console.log('stacked item', inventory.space[sameItem])
+
+                                            // Destroy item on the map
                                             dropped.destroy()
                                             gameStore.set(inventoryUI, inventory)                                            
                                         }
@@ -290,11 +292,13 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, frame:
                                     // Sort by index
                                     inventory.space.sort((a, b) => a.index - b.index)
 
+                                    console.log('added item to inventory', inventory.space)
+
                                     // If inventory is opened
                                     if(inventory.open){
                                         // Display pushed item
-                                        const inventoruUI = map.get('ui')[0].get('inventory')[0]
-                                        displayItemsInGrid(inventoruUI, tileWidth)
+                                        const inventoryUI = map.get('ui')[0].get('inventory')[0]
+                                        displayItemsInGrid(inventoryUI, tileWidth)
                                     }
 
                                     break
@@ -304,7 +308,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, frame:
                             if(availableIndex < 0){
                                 // No more space
                             }else{
-                                // Destory item on the map
+                                // Destroy item on the map
                                 dropped.destroy()
                                 gameStore.set(inventoryUI, inventory)
                             }                            
@@ -313,7 +317,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, frame:
                             const { inventory } = getGameStoreValue()
                             inventory.gold += item.item.quantity?? 0
 
-                            // Destory item on the map
+                            // Destroy item on the map
                             dropped.destroy()                            
                             gameStore.set(inventoryUI, inventory)
                         }
