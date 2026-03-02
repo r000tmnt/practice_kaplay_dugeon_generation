@@ -3,6 +3,8 @@
         "id": "hand_001",
         "name": "Wooden sword",
         "desc": "For practice only.",
+        "type": 6,
+        "rarity": "Common",
         "stackable": false,
         "oneHanded": true,
         "attribute": {
@@ -22,7 +24,9 @@
     {
         "id": "hand_002",
         "name": "Torch",
-        "desc": "",
+        "desc": "Primitive, but effective.",
+        "type": 7,
+        "rarity": "Common",
         "stackable": false,
         "oneHanded": true,
         "attribute": {
@@ -46,6 +50,8 @@
         "id": "hand_003",
         "name": "Falchion",
         "desc": "One-handed sword",
+        "type": 6,
+        "rarity": "Advance",
         "oneHanded": true,
         "stackable": false,
         "attribute": {
@@ -66,6 +72,8 @@
         "id": "hand_004",
         "name": "Hammer",
         "desc": "Two-handed weapon",
+        "type": 8,
+        "rarity": "Common",
         "oneHanded": false,
         "stackable": false,
         "attribute": {
@@ -88,6 +96,8 @@
         "id": "hand_005",
         "name": "Pickaxe",
         "desc": "Two-handed weapon",
+        "type": 9,
+        "rarity": "Common",
         "oneHanded": false,
         "stackable": false,
         "attribute": {
@@ -108,8 +118,10 @@
     },
     {
         "id": "hand_006",
-        "name": "Shavol",
+        "name": "Shovel",
         "desc": "Two-handed weapon",
+        "type": 7,
+        "rarity": "Common",
         "stackable": false,
         "oneHanded": false,
         "attribute": {
@@ -132,6 +144,8 @@
         "id": "hand_007",
         "name": "Pistol",
         "desc": "Gun",
+        "rarity": "Common",
+        "type": 10,
         "stackable": false,
         "oneHanded": true,
         "attribute": {

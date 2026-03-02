@@ -1,8 +1,10 @@
 [
     {
         "id": "body_001",
+        "rarity": "Common",
         "name": "Cloak",
         "desc": "",
+        "type": 5,
         "stackable": false,
         "attribute": {
             "physique": 1
@@ -17,8 +19,10 @@
     },
     {
         "id": "body_002",
+        "rarity": "Common",
         "name": "Tunic",
         "desc": "Simple style garment.",
+        "type": 3,
         "stackable": false,
         "attribute": {
             "physique": 1
@@ -31,8 +35,10 @@
     },
     {
         "id": "body_003",
+        "rarity": "Common",
         "name": "Jacket",
         "desc": "Generally lighter and tighter-fitting.",
+        "type": 3,
         "stackable": false,
         "attribute": {
             "physique": 1
@@ -45,8 +51,10 @@
     },
     {
         "id": "body_004",
+        "rarity": "Common",
         "name": "Coat",
         "desc": "The outermost layer for outdoor wear.",
+        "type": 5,
         "stackable": false,
         "attribute": {
             "physique": 2
@@ -59,8 +67,10 @@
     },
     {
         "id": "body_005",
+        "rarity": "Common",
         "name": "Chain mail",
         "desc": "",
+        "type": 4,
         "stackable": false,
         "attribute": {
             "physique": 2,
@@ -76,8 +86,10 @@
     },
     {
         "id": "body_006",
+        "rarity": "Common",
         "name": "Vestment",
         "desc": "",
+        "type": 4,
         "stackable": false,
         "attribute": {
             "mentality": 2
@@ -93,8 +105,10 @@
     },
     {
         "id": "body_007",
+        "rarity": "Common",
         "name": "Stole",
         "desc": "",
+        "type": 3,
         "stackable": false,
         "attribute": {
             "mentality": 5,

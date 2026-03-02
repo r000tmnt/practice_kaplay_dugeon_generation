@@ -25,6 +25,27 @@ type RarityTypes = 'common' | 'advance' | 'rare' | 'unique' | 'legendary';
 
 type partialItem = Partial<Record<ItemTypes, number>>
 
+const itemSubType = [
+    // head
+    'Helm', 'Hat', 'Hood', // 2
+    // body,
+    'Cloth', 'Armor', 'Coat', // 5
+    // right hand,
+    'Sword', 'Bat', 'Hammer', 'Axe', 'Gun', // 10
+    // left hand,
+    'Shield', // 11
+    // feet,
+    'Booth', 'Sandal',  // 13
+    // accessory,
+    'Jewel', 'Charm', 'Ring', 'Badge', // 117
+    // potion
+    'Potion', // 18
+    // cards
+    'Card', // 19
+    // other
+    // 20
+]
+
 const RARITY_COLORS: Record<RarityTypes, string> = {
     'common': '#ffffff', // White,
     'advance': '#1eff00', // Green
@@ -47,8 +68,10 @@ interface base {
 
 interface item {
     id: string,
+    rarity: RarityTypes,
     name: string,
     desc: string,
+    type: number,
     stackable: boolean,
     oneHanded?: boolean,
     attribute?: object | null,
@@ -84,9 +107,10 @@ export type {
     note,
     item,
     pickableItem,
-    EquipField
+    EquipField,
 }
 
 export {
-    RARITY_COLORS
+    RARITY_COLORS,
+    itemSubType,
 }

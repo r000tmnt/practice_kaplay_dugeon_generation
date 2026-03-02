@@ -1,9 +1,11 @@
 [
     {
         "id": "accessory_001",
+        "rarity": "Rare",
         "name": "Ring",
         "stackable": false,
         "desc": "A symbol of status.",
+        "type": 16,
         "attribute": {
             "mentality": 1
         },

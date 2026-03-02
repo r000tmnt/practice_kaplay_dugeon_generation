@@ -1,8 +1,10 @@
 [
     {
         "id": "feet_001",
-        "name": "Sandle",
-        "desc": "A lighty footwear",
+        "name": "Sandal",
+        "desc": "A lightly footwear",
+        "rarity": "Common",
+        "type": 13,
         "stackable": false,
         "attribute": {
             "agility": 1
@@ -18,6 +20,8 @@
         "id": "feet_002",
         "name": "Boots",
         "desc": "A fully covered shoes for protection",
+        "rarity": "Common",
+        "type": 12,
         "stackable": false,
         "attribute": {
             "physique": 2,
@@ -36,8 +40,10 @@
     },    
     {
         "id": "feet_003",
-        "name": "Leather shose",
+        "name": "Leather shoes",
         "desc": "",
+        "type": 12,
+        "rarity": "Common",
         "stackable": false,
         "attribute": {
             "physique": 1,
@@ -54,6 +60,8 @@
         "id": "feet_004",
         "name": "Poulaine",
         "desc": "",
+        "type": 12,
+        "rarity": "Common",
         "stackable": false,
         "attribute": {
             "mentality": 1,

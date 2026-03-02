@@ -3,6 +3,8 @@
         "id": "head_001",
         "name": "Cap",
         "desc": "",
+        "type": 0,
+        "rarity": "Common",
         "stackable": false,
         "attribute": {
             "physique": 1
@@ -17,6 +19,8 @@
         "id": "head_002",
         "name": "Hood",
         "desc": "",
+        "type": 2,
+        "rarity": "Common",
         "stackable": false,
         "attribute": {
             "physique": 1
@@ -31,6 +35,8 @@
         "id": "head_003",
         "name": "Coif",
         "desc": "",
+        "type": 1,
+        "rarity": "Common",
         "stackable": false,
         "attribute": {
             "physique": 1
@@ -45,6 +51,8 @@
         "id": "head_004",
         "name": "Beret",
         "desc": "A durable all-purpose cap.",
+        "type": 1,
+        "rarity": "Common",
         "stackable": false,
         "attribute": {
             "physique": 1,
@@ -60,6 +68,8 @@
         "id": "head_005",
         "name": "Capuchon",
         "desc": "A headgear in the form of hood with a hole to frame the face.",
+        "type": 2,
+        "rarity": "Common",
         "stackable": false,
         "attribute": {
             "physique": 2
@@ -73,7 +83,9 @@
     {
         "id": "head_006",
         "name": "Strew hat",
-        "desc": "They keep rain and sun out of your face quite effectely.",
+        "desc": "They keep rain and sun out of your face quite effective.",
+        "type": 1,
+        "rarity": "Common",
         "stackable": false,
         "attribute": {
             "physique": 2,
@@ -89,6 +101,8 @@
         "id": "head_007",
         "name": "Square crown",
         "desc": "For nobility only.",
+        "type": 0,
+        "rarity": "Rare",
         "stackable": false,
         "attribute": {
             "physique": 1,
