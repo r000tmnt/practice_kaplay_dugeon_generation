@@ -280,7 +280,7 @@ const placeItemInGrid = (
         if('dragging' in item && item.dragging === true){
             console.log('item on drag end')
             item.trigger("dragEnd");
-            item.dragging = null                                    
+            item.dragging = false                             
         }
     })
 
