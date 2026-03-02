@@ -64,7 +64,7 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
     item: { gold: 0.5 }, 
     gold: { min: 0, max: 0 } 
 }) => {
-    const items: { name: string, item: item, frame: number }[] = []
+    const items: { name: string, item: item, sprite: string, frame: number }[] = []
     
     // Decide how many items to drop
     const count = Math.floor(Math.random() * (base.count.max - base.count.min + 1)) + base.count.min
@@ -83,24 +83,24 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
                         desc: "",
                         stackable: true,
                         quantity: goldAmount
-                    }, frame: 0 })
+                    }, sprite: '', frame: 0 })
                 }
                 break;
                 case 'potion':{
                     // Randomly select a potion from potionData
                     const potionIndex = Math.floor(rng * potionData.length)
-                    items.push({ name: 'potion', item: potionData[potionIndex], frame: 1 })
+                    items.push({ name: 'potion', item: potionData[potionIndex], sprite: 'item', frame: 1 })
                 }
                 break;
                 case 'other':{
                     // Randomly select an other item from otherData
                     const otherIndex = Math.floor(rng * otherData.length)
-                    items.push({ name: 'other', item: otherData[otherIndex], frame: 2 })
+                    items.push({ name: 'other', item: otherData[otherIndex], sprite: 'item', frame: 2 })
                 }
                 break;
                 case 'card':{
                     const cardIndex = Math.floor(rng * cardData.length)
-                    items.push({ name: 'other', item: cardData[cardIndex], frame: 0 })
+                    items.push({ name: 'other', item: cardData[cardIndex], sprite: 'item', frame: 0 })
                 }
                 break;
                 default:{
@@ -133,16 +133,9 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
                     }
                     // TODO: Modify item     
                     
-                    if(equipment) items.push({ name: key, item: equipment, frame })
+                    if(equipment) items.push({ name: key, item: equipment, sprite: 'equipment', frame })
                 }              
                 break;
-                // case 'card':{
-                //     // Randomly select a card from cardData
-                //     const cardIndex = Math.floor(Math.random() * (cardData.length - 1))
-                //     const card = cardData[cardIndex]
-                //     items.push({ name: 'card', item: card })                        
-                // }
-                // break;
             }
         }
     }
@@ -150,7 +143,7 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
     dropItem(obj, items)
 }
 
-export const dropItem = (obj: GameObj, items: { name: string, item: item, frame: number }[]) => {
+export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite: string, frame: number }[]) => {
     const { level } = getGameStoreValue()
     const { tileWidth } = getOptionValue()
     const map = get('map')[0]
@@ -201,7 +194,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, frame:
             try {
                 // Create the item entity here
                 const dropped = map.add([
-                    sprite('item', { frame: item.frame }),
+                    sprite(item.sprite, { frame: item.frame }),
                     area(),
                     pos(obj.pos.x, obj.pos.y),
                     {
