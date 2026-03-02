@@ -4,6 +4,7 @@
         "name": "Red potion",
         "desc": "The kind of potion that comes with weird smell. Restore a portion of health point.",
         "type": 18,
+        "rarity": "Common",
         "stackable": true,
         "attribute": {
             "hp": 10
@@ -15,8 +16,9 @@
         "id": "potion_002",
         "name": "Blue potion",
         "type": 1,
-        "desc": "The taste is somewhat accpetable. Restore a portion of mana point.",
+        "desc": "The taste is somewhat acceptable. Restore a portion of mana point.",
         "type": 18,
+        "rarity": "Common",
         "stackable": true,
         "attribute": {
             "mp": 15
@@ -28,8 +30,9 @@
         "id": "potion_003",
         "name": "Green potion",
         "type": 1,
-        "desc": "The kind of potion that has no smell or taset. Said to cause people get exciting for somereason. Increase tension for a while.",
+        "desc": "The kind of potion that has no smell or taste. Said to cause people get exciting for some reason. Increase tension for a while.",
         "type": 18,
+        "rarity": "Common",
         "stackable": true,
         "attribute": {
             "crit": 10
