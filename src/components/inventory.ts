@@ -1,4 +1,4 @@
-import type { GameObj } from "kaplay";
+import type { GameObj, Anchor } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 import { getGameStoreValue, gameStore, inventoryUI } from "../store/game";
@@ -478,11 +478,6 @@ const placeItemInGrid = (
             if('dragging' in item && item.dragging === false){
                 // Display detail
                 item.hovering = true
-                // if(inventory.get('detail').length){
-                //     //
-                // }else{
-                //     const detail = 
-                // }
             }
         })
 
@@ -493,6 +488,16 @@ const placeItemInGrid = (
 
         item.onDraw(() => {
             if(item.hovering){
+                const equipment = isEquipment(item.item)
+
+                // Get dist from inventory pos
+                const dist = {
+                    x: Math.floor(Math.abs(item.pos.x - range.items.left) / tileWidth),
+                    y: Math.floor(Math.abs(item.pos.y - range.items.top) / tileWidth)
+                }
+
+                // console.log(dist)
+
                 const padding = 10
 
                 const itemColor = RARITY_COLORS[item.item.rarity.toLowerCase() as RarityTypes]
@@ -506,7 +511,6 @@ const placeItemInGrid = (
                     // Desc
                     item.item.desc
                 ]
-
                 
                 // Attribute
                 if(item.item.attribute){
@@ -544,37 +548,73 @@ const placeItemInGrid = (
                     })
                 }                
 
+                const dw = tileWidth * 5
+                const dh = ((tileWidth / 3) * attribute.length) + (padding * (attribute.length + 1))
+
+                let dx = tileWidth / 2
+                let dy = -tileWidth / 2
+                let anchor : Anchor = 'topleft'
+
+                if( 
+                    equipment &&
+                    item.pos.y >= range.equip[equipment].top && item.pos.y <= range.equip[equipment].down &&
+                    item.pos.x >= range.equip[equipment].left && item.pos.x <= range.equip[equipment].right
+                ){
+                    // Hovering on equipment slot. Do nothing
+                }else{
+                    if(dist.x > (inventory.itemCol / 2)) dx = 0 - dx
+                    if(dist.y > (inventory.itemRow / 2)) dy = 0 - dy
+
+                    anchor = dx < 0 && dy > 0 ? 'botright':
+                                dx < 0 && dy < 0 ? 'topright':
+                                dx > 0 && dy > 0 ? 'botleft' :
+                                dx > 0 && dy < 0 ? 'topleft' : 'topleft'                    
+                }        
+
                 drawRect({
-                    width: tileWidth * 5,
-                    height: ((tileWidth / 3) * attribute.length) + (padding * (attribute.length + 1)),
-                    pos: vec2(tileWidth / 2, -tileWidth / 2),
+                    width: dw,
+                    height: dh,
+                    pos: vec2(dx, dy),
                     color: rgb(0, 0, 0),
-                    opacity: 0.9,
-                    radius: tileWidth / 4
+                    opacity: 0.75,
+                    radius: tileWidth / 4,
+                    anchor,
                 })
 
                 // Outline
                 drawRect({
-                    width: tileWidth * 5,
-                    height: ((tileWidth / 3) * attribute.length) + (padding * (attribute.length + 1)),
-                    pos: vec2(tileWidth / 2, -tileWidth / 2),
+                    width: dw,
+                    height: dh,
+                    pos: vec2(dx, dy),
                     fill: false,
                     outline: {
                         width: 2,
                         color: Color.fromHex(itemColor),
                     },
-                    radius: tileWidth / 4
+                    radius: tileWidth / 4,
+                    anchor,
                 })                
 
                 attribute.forEach((param, i) => {
+                    let tx = tileWidth / 2 + padding
+                    let ty = -tileWidth / 2 + ((tileWidth / 3) * i) + (padding * (i + 1))
+
+                    if(anchor.includes('bot')){
+                        ty = ty - (dh - tileWidth)
+                    }
+
+                    if(anchor.includes('right')){
+                        tx = tx - tileWidth - (dw - padding)
+                    }
+
                     drawText({
                         text: param,
                         size: tileWidth / 3,
-                        pos: vec2(tileWidth / 2 + padding, -tileWidth / 2 + ((tileWidth / 3) * i) + (padding * (i + 1))),
+                        pos: vec2(tx, ty),
                         styles: {
                             'red': color(150, 0, 0),
                             'rarity': color(Color.fromHex(itemColor))
-                        }
+                        },
                     })                    
                 })
             }
