@@ -332,10 +332,11 @@ const placeItemInGrid = (
                     storedInventory.space.splice(block, 1)
                     // Update gameStore
                     gameStore.set(inventoryUI, storedInventory)
-
-                    // Destroy dragging item
-                    item.destroy()                    
+                
                 }
+
+                // Destroy dragging item
+                item.destroy()                    
                 
                 return
             }
