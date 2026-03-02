@@ -295,7 +295,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                     // Direction to player
                     setDirection(enemy, player.pos)
                     console.log('enter from chase')
-                    enemy.enterState('attack', player)
+                    if(enemy.hp > 0) enemy.enterState('attack', player)
                 }
                 
                 // If player is out of range, go for the last known position
