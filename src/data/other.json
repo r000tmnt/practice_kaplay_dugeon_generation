@@ -4,6 +4,6 @@
         "name": "Small Key",
         "desc": "A small key that can open a locked chest.",
         "stackable": true,
-        "attribute": {}
+        "attribute": null
     }
 ]

@@ -127,7 +127,7 @@
         "type": 19,
         "rarity": "Rare",
         "stackable": true,
-        "effect": {},
+        "effect": null,
         "limit": 5
     }        
 ]

@@ -111,7 +111,7 @@
         "secondary": {
             "cast_speed": 0.03
         },  
-        "resist": {},
+        "resist": null,
         "requirement": {
             "lv": 8,
             "mentality": 15

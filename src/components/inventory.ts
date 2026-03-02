@@ -2,8 +2,8 @@ import type { GameObj } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 import { getGameStoreValue, gameStore, inventoryUI } from "../store/game";
-import type { EquipField } from "../model/item";
-import type { item, note } from "../model/item";
+import type { EquipField, item, note, RarityTypes } from "../model/item";
+import { itemSubType, RARITY_COLORS } from "../model/item";
 
 import { equipItem, getPlayers, unequipItem } from "../utils/player";
 import { drag, isPickable } from "../utils/UI";
@@ -13,12 +13,14 @@ const {
     area,
     anchor,
     color,
+    Color,
     drawRect,
     drawSprite,
     drawText,
     drawLine,
     fixed,
     get,
+    // mousePos,
     pos,
     rgb,
     readd,
@@ -237,6 +239,7 @@ const placeItemInGrid = (
         pos(spawn.x, spawn.y),
         {
             index: data.index,
+            hovering: false,
             item: { ...data.item },
             spawn
         },
@@ -284,6 +287,7 @@ const placeItemInGrid = (
     if(isPickable(item)){
         item.onDrag(() => {
             if('dragging' in item && item.dragging === true){
+                item.hovering = false
                 readd(item)
             }
         })      
@@ -469,14 +473,112 @@ const placeItemInGrid = (
             gameStore.set(inventoryUI, storedInventory)
         })
 
-        // item.onHoverUpdate(() => {
-        //     // Display detail
-        //     if(block / itemCol)
-        // })
+        item.onHoverUpdate(() => {
+            // If not dragging
+            if('dragging' in item && item.dragging === false){
+                // Display detail
+                item.hovering = true
+                // if(inventory.get('detail').length){
+                //     //
+                // }else{
+                //     const detail = 
+                // }
+            }
+        })
 
-        // item.onHoverEnd(() => {
-        //     // Hide detail
-        // })
+        item.onHoverEnd(() => {
+            // Hide detail
+            item.hovering = false
+        })
+
+        item.onDraw(() => {
+            if(item.hovering){
+                const padding = 10
+
+                const itemColor = RARITY_COLORS[item.item.rarity.toLowerCase() as RarityTypes]
+
+                // Get the param to display
+                const attribute: string[] = [
+                    // name
+                    `[rarity]${item.item.name}[/rarity]`,
+                    // Rarity + type,
+                    `${item.item.rarity} ${itemSubType[item.item.type]}`,
+                    // Desc
+                    item.item.desc
+                ]
+
+                
+                // Attribute
+                if(item.item.attribute){
+                    Object.entries(item.item.attribute).forEach(([key, value]) => {
+                        attribute.push(`${key.charAt(0).toUpperCase() + key.slice(1)} ${Number(value) < 0? `-${value}` : `+${value}`}`)
+                    })
+                }
+
+                // Secondary
+                if(item.item.secondary){
+                    Object.entries(item.item.secondary).forEach(([key, value]) => {
+                        attribute.push(`${key.charAt(0).toUpperCase() + key.slice(1)} ${Number(value) < 0? `-${value}` : `+${value}`}`)
+                    })
+                }
+                
+                // Resist
+                if(item.item.resist){
+                    Object.entries(item.item.resist).forEach(([key, value]) => {
+                        attribute.push(`${key.charAt(0).toUpperCase() + key.slice(1)} ${Number(value) < 0? `-${value}` : `+${value}`}%`)
+                    })
+                }
+
+                // effect
+                if(item.item.effect){
+                    Object.entries(item.item.effect).forEach(([key, value]) => {
+                        attribute.push(`${key.charAt(0).toUpperCase() + key.slice(1)} ${Number(value) < 0? `-${value}` : `+${value}`}`)
+                    })
+                }                
+
+                // Requirement
+                if(item.item.required){
+                    attribute.push(`Require:`)
+                    Object.entries(item.item.required).forEach(([key, value]) => {
+                        attribute.push(` ${key.charAt(0).toUpperCase() + key.slice(1)} ${value}`)
+                    })
+                }                
+
+                drawRect({
+                    width: tileWidth * 5,
+                    height: ((tileWidth / 3) * attribute.length) + (padding * (attribute.length + 1)),
+                    pos: vec2(tileWidth / 2, -tileWidth / 2),
+                    color: rgb(0, 0, 0),
+                    opacity: 0.9,
+                    radius: tileWidth / 4
+                })
+
+                // Outline
+                drawRect({
+                    width: tileWidth * 5,
+                    height: ((tileWidth / 3) * attribute.length) + (padding * (attribute.length + 1)),
+                    pos: vec2(tileWidth / 2, -tileWidth / 2),
+                    fill: false,
+                    outline: {
+                        width: 2,
+                        color: Color.fromHex(itemColor),
+                    },
+                    radius: tileWidth / 4
+                })                
+
+                attribute.forEach((param, i) => {
+                    drawText({
+                        text: param,
+                        size: tileWidth / 3,
+                        pos: vec2(tileWidth / 2 + padding, -tileWidth / 2 + ((tileWidth / 3) * i) + (padding * (i + 1))),
+                        styles: {
+                            'red': color(150, 0, 0),
+                            'rarity': color(Color.fromHex(itemColor))
+                        }
+                    })                    
+                })
+            }
+        })
     }    
 }
 

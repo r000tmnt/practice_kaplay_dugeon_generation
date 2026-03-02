@@ -108,6 +108,7 @@ export type {
     item,
     pickableItem,
     EquipField,
+    RarityTypes
 }
 
 export {
