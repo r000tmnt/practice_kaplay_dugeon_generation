@@ -21,6 +21,8 @@ const {
     fixed,
     get,
     // mousePos,
+    opacity,
+    outline,
     pos,
     rgb,
     readd,
@@ -173,7 +175,7 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                         space[block],
                         spawn,
                         tileWidth,
-                        spawnedItems
+                        spawnedItems,
                     )
                 }
             }else{
@@ -214,7 +216,6 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                 },
                 tileWidth,
                 player.equip[field],
-                'equipment',
                 field
             )                 
         }         
@@ -228,18 +229,16 @@ const placeItemInGrid = (
     spawn: { x: number, y: number },  
     tileWidth: number,
     spawnedItems: GameObj[],
-    spriteName?: string,
     tag?: string
 ) => {
     const item = inventory.add([
-        sprite(spriteName?? "item", { frame: data.frame }),
+        sprite(Number(data.item.type) <= 17? "equipment" : "item", { frame: data.frame }),
         area(),
         anchor('center'),
         fixed(),
         pos(spawn.x, spawn.y),
         {
             index: data.index,
-            hovering: false,
             item: { ...data.item },
             spawn
         },
@@ -287,7 +286,6 @@ const placeItemInGrid = (
     if(isPickable(item)){
         item.onDrag(() => {
             if('dragging' in item && item.dragging === true){
-                item.hovering = false
                 readd(item)
             }
         })      
@@ -326,7 +324,7 @@ const placeItemInGrid = (
                 const player = get('player')[0]
                 dropItem(
                     player, 
-                    [{ name: item.item.name, item: JSON.parse(JSON.stringify(item.item)), frame: item.frame }]
+                    [{ name: item.item.name, item: JSON.parse(JSON.stringify(item.item)), sprite: equipment? 'equipment' : 'item', frame: item.frame }]
                 )
 
                 if(block >= 0){
@@ -473,21 +471,12 @@ const placeItemInGrid = (
             gameStore.set(inventoryUI, storedInventory)
         })
 
+
+        // #region item on hover
         item.onHoverUpdate(() => {
             // If not dragging
             if('dragging' in item && item.dragging === false){
                 // Display detail
-                item.hovering = true
-            }
-        })
-
-        item.onHoverEnd(() => {
-            // Hide detail
-            item.hovering = false
-        })
-
-        item.onDraw(() => {
-            if(item.hovering){
                 const equipment = isEquipment(item.item)
 
                 // Get dist from inventory pos
@@ -500,14 +489,14 @@ const placeItemInGrid = (
 
                 const padding = 10
 
-                const itemColor = RARITY_COLORS[item.item.rarity.toLowerCase() as RarityTypes]
+                const itemColor = RARITY_COLORS[item.item.rarity? item.item.rarity.toLowerCase() as RarityTypes : 'common']
 
                 // Get the param to display
                 const attribute: string[] = [
                     // name
                     `[rarity]${item.item.name}[/rarity]`,
                     // Rarity + type,
-                    `${item.item.rarity} ${itemSubType[item.item.type]}`,
+                    `${item.item.rarity} ${item.item.type? itemSubType[item.item.type] : ''}`,
                     // Desc
                     item.item.desc
                 ]
@@ -536,7 +525,7 @@ const placeItemInGrid = (
                 // effect
                 if(item.item.effect){
                     Object.entries(item.item.effect).forEach(([key, value]) => {
-                        attribute.push(`${key.charAt(0).toUpperCase() + key.slice(1)} ${Number(value) < 0? `-${value}` : `+${value}`}`)
+                        attribute.push(`${key.charAt(0).toUpperCase() + key.slice(1)} ${value}`)
                     })
                 }                
 
@@ -548,12 +537,18 @@ const placeItemInGrid = (
                     })
                 }                
 
-                const dw = tileWidth * 5
-                const dh = ((tileWidth / 3) * attribute.length) + (padding * (attribute.length + 1))
+                const maxTextARow = 23
+                const desc = attribute[2]
+                const textRow = (desc.length % maxTextARow) > 0? Math.floor(desc.length / maxTextARow) + 1 : Math.floor(desc.length / maxTextARow)                  
 
-                let dx = tileWidth / 2
-                let dy = -tileWidth / 2
-                let anchor : Anchor = 'topleft'
+                const dw = tileWidth * 5
+                let dh = ((tileWidth / 3) * attribute.length) + (padding * (attribute.length + 1))
+
+                if(textRow > 1) dh += (tileWidth / 3) * textRow
+
+                let dx = item.pos.x + (tileWidth / 2)
+                let dy = item.pos.y - (tileWidth / 2)
+                let origin : Anchor = 'topleft'
 
                 if( 
                     equipment &&
@@ -562,63 +557,123 @@ const placeItemInGrid = (
                 ){
                     // Hovering on equipment slot. Do nothing
                 }else{
-                    if(dist.x > (inventory.itemCol / 2)) dx = 0 - dx
-                    if(dist.y > (inventory.itemRow / 2)) dy = 0 - dy
+                    if(dist.x > (inventory.itemCol / 2)) dx = dx - tileWidth
+                    if(dist.y > (inventory.itemRow / 2)) dy = dy + tileWidth
 
-                    anchor = dx < 0 && dy > 0 ? 'botright':
-                                dx < 0 && dy < 0 ? 'topright':
-                                dx > 0 && dy > 0 ? 'botleft' :
-                                dx > 0 && dy < 0 ? 'topleft' : 'topleft'                    
+                    origin = `${dist.y > (inventory.itemRow / 2)? 'bot' : 'top'}${dist.x > (inventory.itemCol / 2)? 'right' : 'left' }`
+
+                    // origin = dist.x > 0 && dy > 0 ? 'botright':
+                    //             dx < 0 && dy < 0 ? 'topright':
+                    //             dx > 0 && dy > 0 ? 'botleft' :
+                    //             dx > 0 && dy < 0 ? 'topleft' : 'topleft'                    
                 }        
 
-                drawRect({
-                    width: dw,
-                    height: dh,
-                    pos: vec2(dx, dy),
-                    color: rgb(0, 0, 0),
-                    opacity: 0.75,
-                    radius: tileWidth / 4,
-                    anchor,
-                })
+                const detail = inventory.get('detail')
 
-                // Outline
-                drawRect({
-                    width: dw,
-                    height: dh,
-                    pos: vec2(dx, dy),
-                    fill: false,
-                    outline: {
-                        width: 2,
-                        color: Color.fromHex(itemColor),
-                    },
-                    radius: tileWidth / 4,
-                    anchor,
-                })                
+                if(detail.length){
+                    console.log('change detail position', origin)
+                    // Change position
+                    detail[0].height = dh
+                    detail[0].anchor = origin
+                    detail[0].pos = vec2(dx, dy)
+                    detail[0].children[0].height = dh
+                    detail[0].children[0].textRow = textRow
+                    detail[0].children[0].anchor = origin
+                    detail[0].children[0].attribute = attribute
+                    detail[0].hidden = false
 
-                attribute.forEach((param, i) => {
-                    let tx = tileWidth / 2 + padding
-                    let ty = -tileWidth / 2 + ((tileWidth / 3) * i) + (padding * (i + 1))
+                    // Keep the detail as the last child
+                    readd(detail[0])
+                    // readd(detail[0].children[0])
+                }else{
+                    // outline first
+                    const detail = inventory.add([
+                        rect(dw, dh, { radius: tileWidth / 4, fill: false }),
+                        outline(2, Color.fromHex(itemColor)),
+                        pos(dx, dy),
+                        anchor(origin),
+                        // tags
+                        "detail"
+                    ])
 
-                    if(anchor.includes('bot')){
-                        ty = ty - (dh - tileWidth)
-                    }
+                    detail.add([
+                        rect(dw, dh, { radius: tileWidth / 4 }),
+                        pos(0, 0),
+                        color(0, 0, 0),
+                        opacity(0.75),
+                        anchor(origin), 
+                        {
+                            attribute,
+                            textRow
+                        }                  
+                    ])
 
-                    if(anchor.includes('right')){
-                        tx = tx - tileWidth - (dw - padding)
-                    }
+                    detail.children[0].onDraw(() => {    
+                        detail.children[0].attribute.forEach((param: string, i: number) => {
+                            let tx = padding
+                            let ty = ((tileWidth / 3) * i) + (padding * (i + 1))
 
-                    drawText({
-                        text: param,
-                        size: tileWidth / 3,
-                        pos: vec2(tx, ty),
-                        styles: {
-                            'red': color(150, 0, 0),
-                            'rarity': color(Color.fromHex(itemColor))
-                        },
-                    })                    
-                })
+                            if(i > 2 && detail.children[0].textRow > 1){
+                                ty = ty + ((tileWidth / 3) * textRow)
+                            }
+
+                            if(detail.children[0].anchor.includes('bot')){
+                                ty = ty - padding - (dh - padding)
+                            }
+
+                            if(detail.children[0].anchor.includes('right')){
+                                tx = tx - padding - (dw - padding)
+                            }
+
+                            drawText({
+                                text: param,
+                                size: tileWidth / 3,
+                                width: dw - (padding * 2),
+                                pos: vec2(tx, ty),
+                                styles: {
+                                    'red': color(150, 0, 0),
+                                    'rarity': color(Color.fromHex(itemColor))
+                                },
+                                anchor: 'topleft'
+                            })                    
+                        })
+                    })             
+                }
+
+                // drawRect({
+                //     width: dw,
+                //     height: dh,
+                //     pos: vec2(dx, dy),
+                //     color: rgb(0, 0, 0),
+                //     opacity: 0.75,
+                //     radius: tileWidth / 4,
+                //     anchor,
+                // })
+
+                // // Outline
+                // drawRect({
+                //     width: dw,
+                //     height: dh,
+                //     pos: vec2(dx, dy),
+                //     fill: false,
+                //     outline: {
+                //         width: 2,
+                //         color: Color.fromHex(itemColor),
+                //     },
+                //     radius: tileWidth / 4,
+                //     anchor,
+                // })                
             }
         })
+
+        item.onHoverEnd(() => {
+            // Hide detail
+            const detail = inventory.get('detail')
+
+            if(detail.length) detail[0].hidden = true
+        })
+
+        // #endregion
     }    
 }
 
