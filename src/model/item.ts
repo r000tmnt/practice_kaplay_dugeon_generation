@@ -37,7 +37,7 @@ const itemSubType = [
     // feet,
     'Booth', 'Sandal',  // 13
     // accessory,
-    'Jewel', 'Charm', 'Ring', 'Badge', // 117
+    'Jewel', 'Charm', 'Ring', 'Badge', // 17
     // potion
     'Potion', // 18
     // cards
@@ -68,10 +68,10 @@ interface base {
 
 interface item {
     id: string,
-    rarity: RarityTypes,
+    rarity?: string,
     name: string,
     desc: string,
-    type: number,
+    type?: number,
     stackable: boolean,
     oneHanded?: boolean,
     attribute?: object | null,
