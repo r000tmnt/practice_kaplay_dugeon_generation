@@ -1,4 +1,4 @@
-import type { Color, GameObj, Vec2 } from "kaplay"
+import type { Color, GameObj, KEventController, Vec2 } from "kaplay"
 import k from "../lib/kaplay"
 import type { rectGaugeOption, ringGaugeOption } from "../model/UI"
 
@@ -98,8 +98,10 @@ export const rectangleGauge = (rectGaugeOption: rectGaugeOption) => {
         option
     } = rectGaugeOption
 
+    let controller : KEventController
+
     if(parent){
-        parent.onDraw(() => {
+        controller = parent.onDraw(() => {
             drawRectGauge(
                 width,
                 height,
@@ -113,7 +115,7 @@ export const rectangleGauge = (rectGaugeOption: rectGaugeOption) => {
             )
         })          
     }else{
-        onDraw(() => {
+        controller = onDraw(() => {
             drawRectGauge(
                 width,
                 height,
@@ -160,8 +162,10 @@ export const rectangleGauge = (rectGaugeOption: rectGaugeOption) => {
             bar.use(outline(border.width, border.color))
         }
 
-        return bar
-    }    
+        return { bar, controller }
+    }else{
+        return { bar: reference.unit, controller }
+    }
 }
 
 

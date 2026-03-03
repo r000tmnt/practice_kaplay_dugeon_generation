@@ -12,7 +12,8 @@ import {
     setDirection, 
     getPathAndFollow,
     steering
-} from './pathFinding'; 
+} from './pathFinding';
+// import { displayTargetBar } from '../components/UI' 
 
 const GROWTH = [0, 1, 3]
 
@@ -33,7 +34,7 @@ const {
     RNG,
     // rgb,
     // rotate,
-    // setData,
+    setData,
     state,
     sentry,
     sprite,
@@ -96,7 +97,7 @@ const stayOrNot = (enemy: GameObj) => {
             }
         }
     }
-    console.log('tilesInRange', tilesInRange)
+    // console.log('tilesInRange', tilesInRange)
     if(tilesInRange.length && enemy.state !== 'chase'){
         const randomPos = Math.floor(Math.random() * (tilesInRange.length - 1))
 
@@ -134,6 +135,8 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             Object.entries(data.attribute).forEach(([key, value]) => {
                 data.attribute[key as keyof { hp: number, mp: number, physique: number, mentality: number, agility: number }] = value + GROWTH[Math.floor(Math.random() * GROWTH.length)]
                 console.log(key, data.attribute[key as keyof { hp: number, mp: number, physique: number, mentality: number, agility: number }])
+
+                if(key === 'hp' || key === 'mp') data.max[key] = data.attribute[key as keyof { hp: number, mp: number, physique: number, mentality: number, agility: number }]
             })
     }
 
@@ -141,7 +144,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
     // const map = get('map')[0]
     // const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
 
-    if(count.length){
+    if(count.length && data){
         const { nav } = await import('../utils/bspDungeonGenerator');
         // console.log('nav in enemy', nav)
         count.forEach((e: prop, i: number) => {
@@ -232,7 +235,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                 const ObjectInSight = objs.find(o => o.is('pot') || o.is('chest'))
 
                 if(playerInSight && enemy.state !== 'attack'){
-                    console.log('playerInSight', playerInSight)
+                    // console.log('playerInSight', playerInSight)
                     const chase = chaseOrNot(enemy, playerInSight)
 
                     if(!chase){
@@ -269,12 +272,12 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             })
 
             enemy.onStateEnter('move', (obj) => {
-                console.log('move to', obj)
+                // console.log('move to', obj)
                 getPathAndFollow(enemy, obj.pos)
             })
 
             enemy.onStateEnter('chase', (obj) => {
-                console.log('chase to', obj)
+                // console.log('chase to', obj)
                 getPathAndFollow(enemy, obj.pos)
             })            
 
@@ -294,7 +297,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                     enemy.waypoints?.splice(0)
                     // Direction to player
                     setDirection(enemy, player.pos)
-                    console.log('enter from chase')
+                    // console.log('enter from chase')
                     if(enemy.hp > 0) enemy.enterState('attack', player)
                 }
                 
@@ -327,7 +330,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             })      
             
             enemy.onStateEnter('pause', () => {
-                console.log('enter pause')
+                // console.log('enter pause')
                 enemy.waypoints?.splice(0)
                 enemy.stop()
                 enemy.frame = 0
@@ -337,7 +340,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             enemy.onHurt(() => {
                 enemy.play('hurt', {
                     onEnd: () => {
-                        console.log('enemy hp', enemy.hp)
+                        // console.log('enemy hp', enemy.hp)
                         if(enemy.state === 'attack'){
                             enemy.clearHitBox('attack')
                             wait(0.2, () => enemy.checkDistanceToPlayer(getPlayers()[0]))
@@ -348,6 +351,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
 
             enemy.onDeath(() => {
                 console.log('enter onDeath')
+                localStorage.removeItem('targeting')
                 enemy.defeat = true
                 enemy.unuse('patrol')
                 enemy.unuse('pathfinder')
@@ -457,6 +461,19 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                     }
                     break;
                 }
+            })
+
+            enemy.onHoverUpdate(() => {
+                setData('targeting', JSON.stringify({
+                    name: enemy.name,
+                    current: enemy.hp,
+                    max: enemy.max.hp
+                }))
+                // displayTargetBar(enemy, k.width() / 4, k.height() / 20, tileWidth)
+            })
+
+            enemy.onHoverEnd(() => {
+                localStorage.removeItem('targeting')
             })
         })
     }

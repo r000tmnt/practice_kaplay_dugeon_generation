@@ -1,4 +1,4 @@
-import type { GameObj } from "kaplay";
+import type { GameObj, KEventController } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 // import { getGameStoreValue } from "../store/game";
@@ -10,8 +10,10 @@ import { createToolBar } from "./toolBar";
 const {
     area,
     drawText,
+    drawRect,
     fixed,
     getData,
+    get,
     layer,
     pos,
     Rect,
@@ -19,6 +21,11 @@ const {
     setData,
     vec2,
 } = k
+
+let targetBar : {
+    bar: GameObj,
+    controller: KEventController
+} | null
 
 const displayTextOnBar = (bar:GameObj, barHeight: number, tileWidth: number ) => {
     const { unit, attribute, worldPos, area } = bar
@@ -53,6 +60,48 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         if(!isHovering) setData('listOpen', false)
     })
 
+    // #region Enemy Health bar
+    ui.onDraw(() => {
+        const targeting = getData('targeting', null)
+
+        if(!targeting) return
+
+        const target = JSON.parse(targeting)
+
+        const barX = (k.width() / 2) - (barWidth / 2)
+        const barY = tileWidth / 2
+
+        const percentage = target.current / target.max      
+
+        // outer bar
+        drawRect({
+            width: barWidth,
+            height: barHeight,
+            pos: vec2(barX, barY),
+            color: rgb(50, 50 ,50),
+            // radius
+        })
+        
+        // Inner bar
+        drawRect({
+            width: barWidth * percentage,
+            height: barHeight,
+            pos: vec2(barX + barWidth, barY),
+            color: rgb(150, 0 ,0),
+            // radius,
+            anchor: 'topright'
+        })       
+
+        drawText({
+            text: `${target.current}/${target.max}`,
+            pos: vec2(barX, barY + ((barHeight - (tileWidth / 2)) / 2)),
+            align: 'center',
+            width: barWidth,
+            size: tileWidth / 2
+        })            
+    })
+    // #endregion
+
     // #region HP, MP, LV UI
     // Place invisible area for both HP and MP bar.
     const hpBar = rectangleGauge({
@@ -78,8 +127,8 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         action: {
             event: 'draw',
             call: () => {
-                if(hpBar?.displayText){
-                    displayTextOnBar(hpBar, barHeight, tileWidth)
+                if(hpBar.bar?.displayText){
+                    displayTextOnBar(hpBar.bar, barHeight, tileWidth)
                 }
             }
         },        
@@ -104,8 +153,8 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         action: {
             event: 'draw',
             call: () => {
-                if(mpBar?.displayText){
-                    displayTextOnBar(mpBar, barHeight, tileWidth)       
+                if(mpBar.bar?.displayText){
+                    displayTextOnBar(mpBar.bar, barHeight, tileWidth)       
                 }
             }
         },          
@@ -116,20 +165,20 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         option: { displayText: false }        
     })
 
-    hpBar?.onClick(() => {
+    hpBar.bar?.onClick(() => {
         const isHovering = getData('hovering') 
         if(isHovering) return
 
         console.log('hp', isHovering)
-        hpBar.displayText = !hpBar.displayText
+        hpBar.bar.displayText = !hpBar.bar.displayText
     }, 'left')
 
-    mpBar?.onClick(() => {
+    mpBar.bar?.onClick(() => {
         const isHovering = getData('hovering') 
         if(isHovering) return
                 
         console.log('mp')
-        mpBar.displayText = !mpBar.displayText
+        mpBar.bar.displayText = !mpBar.bar.displayText
     }, 'left')      
 
     // const hpBar = ui.add([
