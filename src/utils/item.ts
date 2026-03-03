@@ -83,7 +83,7 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
                         desc: "",
                         stackable: true,
                         quantity: goldAmount
-                    }, sprite: '', frame: 0 })
+                    }, sprite: 'item', frame: 0 })
                 }
                 break;
                 case 'potion':{
@@ -149,45 +149,46 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
     const map = get('map')[0]
 
     // Check the space around the obj to drop the item
-    const range = obj.width
-    const dropX = { start: obj.pos.x - range, end: obj.pos.x + obj.width + range } 
-    const dropY = { start: obj.pos.y - range, end: obj.pos.y + obj.width + range }    
+    const range = obj.width * 1.5
+    const dropX = { start: obj.pos.x - range, end: obj.pos.x + range } 
+    const dropY = { start: obj.pos.y - range, end: obj.pos.y + range }    
     
     const currentPos = {
         x: Math.floor(obj.pos.x / tileWidth),
         y: Math.floor(obj.pos.y / tileWidth)
     }
 
-    // Top
+    console.log('currentPos', currentPos)
+
+    // Top is blocked
     if(level[currentPos.y -1] && level[currentPos.y -1][currentPos.x] === 1) {
-        dropY.start = obj.pos.y + obj.width
-        dropY.end = obj.pos.y + obj.width + range
+        dropY.start = obj.pos.y + (obj.width / 2)
     }
 
-    // Down
+    // Down is blocked
     if(level[currentPos.y +1] && level[currentPos.y +1][currentPos.x] === 1){
-        dropY.start =  obj.pos.y - obj.width
-        dropY.end = obj.pos.y - (obj.width + range)
+        dropY.end = obj.pos.y - (obj.width / 2)
     }
-    // Right
+
+    // Right is blocked
     if(level[currentPos.y][currentPos.x +1] && level[currentPos.y][currentPos.x +1] === 1){
-        dropX.start =  obj.pos.x
-        dropX.end = obj.pos.x - (obj.width + range)            
+        dropX.end =  obj.pos.x - (obj.width / 2)
     }
-    // Left
+
+    // Left is blocked
     if(level[currentPos.y][currentPos.x -1] && level[currentPos.y][currentPos.x -1] === 1){
-        dropX.start =  obj.pos.x + obj.width
-        dropX.end = obj.pos.x + obj.width + range
+        dropX.start = obj.pos.x + (obj.width / 2)
     }
 
     items.forEach(item => {
         // Drop item logic here
         console.log('item:', item)
+        const rng = Math.random()
+        const x = Math.floor((rng * (dropX.end - dropX.start + 1))) + dropX.start
+        const y = Math.floor((rng * (dropY.end - dropY.start + 1))) + dropY.start
 
-        const x = Math.floor(Math.random() * (dropX.end - dropX.start) + dropX.start) 
-        const y = Math.floor(Math.random() * (dropY.end - dropY.start) + dropY.start)
-
-        console.log('possible x and y', x, y)
+        console.log('possible x and y', Math.floor(x / tileWidth), Math.floor(y / tileWidth))
+        console.log(level[Math.floor(y / tileWidth)][Math.floor(x / tileWidth)])
 
         // If the tile is a floor
         if(level[Math.floor(y / tileWidth)] && level[Math.floor(y / tileWidth)][Math.floor(x / tileWidth)] === 0){
@@ -196,7 +197,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                 const dropped = map.add([
                     sprite(item.sprite, { frame: item.frame }),
                     area(),
-                    pos(obj.pos.x, obj.pos.y),
+                    pos(obj.pos.x, obj.pos.y), // starting position
                     {
                         item: item.item
                     },
@@ -205,8 +206,13 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                 ])
 
                 // Get control point between start and finish
-                const arcHeight = Math.floor(Math.random() * (60 - 20) + 20)
-                const lift = vec2((dropped.pos.x + x) / 2, Math.min(dropped.pos.y, y) - arcHeight)
+                const arcHeight = Math.floor(rng * (60 - 20) + 20)
+                const lift = vec2(
+                    (dropX.end < obj.pos.x)?
+                    (dropped.pos.x - x) / 2 :
+                    (dropped.pos.x + x) / 2, 
+                    Math.min(dropped.pos.y, y) - arcHeight
+                )
 
                 console.log('dropped item', dropped)
 
@@ -252,7 +258,11 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                             // If item is stackable
                             // Find the same item first
                             if(item.item.stackable){
-                                const sameItem = inventory.space.findIndex(stored => stored.item.id === item.item.id)
+                                const sameItem = inventory.space.findIndex(stored => {
+                                    if(stored){
+                                        if(stored.item.id === item.item.id) return
+                                    }
+                                })
 
                                 if(sameItem >= 0){
                                     const { quantity, limit } = inventory.space[sameItem].item
