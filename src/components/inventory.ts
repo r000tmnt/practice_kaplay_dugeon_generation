@@ -141,31 +141,22 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
     // const page = Math.floor(getGameStoreValue().inventory.limit / (itemRow * itemCol))
     const space = getGameStoreValue().inventory.space 
     const spawnedItems = inventory.get('item')
-    const { height, itemRow, itemCol } = inventory
+    const { itemRow, itemCol } = inventory
     const player = get('player')[0]
 
     for(let row=0; row < itemRow; row++){
         for(let col=0; col < itemCol; col++){
             // If item exist
             const block = col + (itemCol * row)
-            if(space[block] !== undefined){
-
+            if(space[block]){
                 // TODO: If item took the space already
                 const placedItem = spawnedItems.find(item => item.index === block)
                 if(!placedItem){
+                    console.log(`item ${block} not found, spawning...`)
+                    // Anchor center
                     const spawn = {
-                        x: // If index point to the center col
-                            (col + 1) >= (itemCol / 2)?
-                            // ((col - halfCol) * tileWidth) - (halfTile)                  
-                            (((col + 1) - (itemCol / 2)) * tileWidth) - (tileWidth / 2):
-                            // relativeX - ((halfCol - col) * tileWodth) + (halfTile)
-                            0 - (((itemCol / 2) - col) * tileWidth) + (tileWidth / 2),
-                        y: // If index point to the center row
-                            ((row + 1) >= (itemRow / 2))?
-                            // relativeY + ((row - halfRow) * tileWidth) - (halfTile)
-                            (height / 4) + (((row + 1) - (itemRow / 2)) * tileWidth) - (tileWidth / 2):
-                            // relativeY - ((halfRow - row) * tileWidth) - (halfTile)
-                            (height / 4) - ((((itemRow / 2) - row) * tileWidth) - (tileWidth / 2)),   
+                        x: range.items.left + (col * tileWidth) + (tileWidth / 2),
+                        y: range.items.top + (row * tileWidth) + (tileWidth / 2),   
                     }
 
                     // Add sprite
@@ -297,7 +288,6 @@ const placeItemInGrid = (
                 y: Math.floor(Math.abs(item.pos.y - range.items.top) / tileWidth)
             }
 
-
             console.log('dist', dist)
 
             const equipment = isEquipment(item.item)
@@ -317,7 +307,7 @@ const placeItemInGrid = (
 
                 if(item.index >= 0){
                     // Remove item in gameStore
-                    storedInventory.space.splice(item.index, 1)
+                    storedInventory.space[item.index] = null
                     // Update gameStore
                     gameStore.set(inventoryUI, storedInventory)
                 
@@ -350,32 +340,32 @@ const placeItemInGrid = (
                         // Swap position
                         if(item.index >= 0){
                             gear.pos = vec2(item.spawn.x, item.spawn.y)
-                            gear.item.index = item.index
+                            gear.index = item.index
                             gear.spawn = JSON.parse(JSON.stringify({
                                 x: item.spawn.x,
                                 y: item.spawn.y
                             }))
-
-                            equip = equipItem(player, equipment, item.item)
 
                             storedInventory.space[item.index] = {
                                 index: item.index,
                                 item: gear.item,
                                 frame: gear.frame
                             }
-
-                            item.pos = vec2(range.equip[equipment].left + (tileWidth / 2), range.equip[equipment].top + (tileWidth / 2))
                         }
                     }else{
-                        equip = equipItem(player, equipment, item.item)
-                        item.pos = vec2(range.equip[equipment].left + (tileWidth / 2), range.equip[equipment].top + (tileWidth / 2))
-                        item.untag('item')
-                        item.tag('equipment')
-
-                        if(item.index >= 0) storedInventory.space.splice(item.index, 1)
-
-                        item.index = -1
+                        if(item.index >= 0) storedInventory.space[item.index] = null
                     }
+
+                    equip = equipItem(player, equipment, item.item)
+
+                    item.pos = vec2(range.equip[equipment].left + (tileWidth / 2), range.equip[equipment].top + (tileWidth / 2))
+                    item.spawn = JSON.parse(JSON.stringify({
+                        x: item.pos.x,
+                        y: item.pos.y
+                    }))                    
+                    item.untag('item')
+                    item.tag(equipment)
+                    item.index = -1                    
                 }else{
                     // Put the item back to the spawn position
                     item.pos = vec2(item.spawn.x, item.spawn.y)
@@ -398,7 +388,9 @@ const placeItemInGrid = (
 
                     spawnedItems[targetBlock].children[0].text = spawnedItems[targetBlock].item.item.quantity
 
-                    if(storedInventory.space[targetBlock].item.quantity) storedInventory.space[targetBlock].item.quantity += 1
+                    if(storedInventory.space[targetBlock] && storedInventory.space[targetBlock].item.quantity){
+                        storedInventory.space[targetBlock].item.quantity += 1
+                    }
 
                     // Destroy dragging item
                     item.destroy()
@@ -406,16 +398,21 @@ const placeItemInGrid = (
                     // if Overlapping item is an equipment
                     const overlaps = isEquipment(spawnedItems[targetBlock].item)
 
-                    // If the dragging item is an equipment
+                    // If the dragging item is an equipment but not the same type
                     if(equipment && equipment !== overlaps){
                         // No more space
                         if(storedInventory.space.length === storedInventory.limit) return
 
                         // Find another space
                         const empty = storedInventory.space.findIndex(s => !s)
-
+                        
+                        item.index = empty
                         item.tag('item')
                         item.untag(equipment)
+                        item.spawn = JSON.parse(JSON.stringify({
+                            x: range.items.left + (Math.floor(empty % inventory.itemCols) * tileWidth) + (tileWidth / 2),
+                            y: range.items.top + (Math.floor(empty / inventory.itemCols) * tileWidth) + (tileWidth / 2)
+                        }))     
 
                         storedInventory.space[empty] = {
                             index: empty,
@@ -436,10 +433,12 @@ const placeItemInGrid = (
                         }
 
                         // Update store value
-                        storedInventory.space[targetBlock].index = item.index   
+                        if(storedInventory.space[targetBlock]) storedInventory.space[targetBlock].index = item.index   
                     }
                 }
             }else{
+                console.log(`Block ${targetBlock} is empty`)
+
                 item.pos = vec2(
                     range.items.left + (tileWidth * dist.x) + (tileWidth / 2),
                     range.items.top + (tileWidth * dist.y) + (tileWidth / 2)
@@ -447,7 +446,6 @@ const placeItemInGrid = (
                 
                 // Update spawn position
                 item.spawn = JSON.parse(JSON.stringify({ x: item.pos.x, y: item.pos.y }))   
-                item.index = targetBlock
                 
                 // Add tags
                 if(equipment){
@@ -462,9 +460,12 @@ const placeItemInGrid = (
                     frame: item.frame
                 }          
                 
-                // if(item.index){
-                //     storedInventory.space.splice(item.index, 1)                    
-                // }      
+                if(item.index >= 0){
+                    storedInventory.space[item.index] = null       
+                }      
+
+                // Update index
+                item.index = targetBlock
             }
 
             gameStore.set(inventoryUI, storedInventory)
@@ -473,6 +474,8 @@ const placeItemInGrid = (
 
         // #region item on hover
         item.onHoverUpdate(() => {
+            const detail = inventory.get('detail')
+
             // If not dragging
             if('dragging' in item && item.dragging === false){
                 // Display detail
@@ -567,8 +570,6 @@ const placeItemInGrid = (
                     //             dx > 0 && dy < 0 ? 'topleft' : 'topleft'                    
                 }        
 
-                const detail = inventory.get('detail')
-
                 if(detail.length){
                     console.log('change detail position', origin)
                     // Change position
@@ -613,7 +614,7 @@ const placeItemInGrid = (
                             let ty = ((tileWidth / 3) * i) + (padding * (i + 1))
 
                             if(i > 2 && detail.children[0].descRow > 1){
-                                ty += (tileWidth / 3) * descRow
+                                ty += (tileWidth / 3) * detail.children[0].descRow
                             }
 
                             if(detail.children[0].anchor.includes('bot')){
@@ -662,6 +663,8 @@ const placeItemInGrid = (
                 //     radius: tileWidth / 4,
                 //     anchor,
                 // })                
+            }else{
+                if(detail.length) detail[0].hidden = true
             }
         })
 

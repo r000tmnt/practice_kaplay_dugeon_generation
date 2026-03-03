@@ -264,7 +264,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                                     }
                                 })
 
-                                if(sameItem >= 0){
+                                if(sameItem >= 0 && inventory.space[sameItem]){
                                     const { quantity, limit } = inventory.space[sameItem].item
                                     if(quantity && limit){
                                         if(quantity < limit){
@@ -284,16 +284,13 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                             if(stacked) return
 
                             for(let i=0; i < inventory.limit; i++){
-                                if(inventory.space[i] === undefined){
+                                if(!inventory.space[i] || inventory.space[i] === undefined){
                                     availableIndex = i
-                                    inventory.space.push({
+                                    inventory.space[i] = {
                                         index: i,
                                         item: item.item,
                                         frame: item.frame
-                                    })
-
-                                    // Sort by index
-                                    inventory.space.sort((a, b) => a.index - b.index)
+                                    }
 
                                     console.log('added item to inventory', inventory.space)
 
