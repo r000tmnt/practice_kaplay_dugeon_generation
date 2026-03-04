@@ -1,6 +1,7 @@
 import { createStore, atom } from "jotai";
 import type { chunk, prop, roomNode } from "../model/map";
 import type { note } from "../model/item";
+import type { effect } from '../model/effect'
 import { focusAtom } from 'jotai-optics'
 
 export const gameState = atom({
@@ -18,12 +19,14 @@ export const gameState = atom({
         gold: 0,
         limit: 12 * 6
     },
+    effect: [] as effect[],
     danger: 1,
     cleared: 0
 })
 
 export const enemyAtom = focusAtom(gameState, (optic) => optic.prop('enemies'))
 export const inventoryUI = focusAtom(gameState, (optic) => optic.prop('inventory'))
+export const effectAtom = focusAtom(gameState, (optic) => optic.prop('effect'))
 
 export const gameStore = createStore()
 
