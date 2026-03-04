@@ -432,6 +432,8 @@ const placeItemInGrid = (
                         spawnedItem.spawn = JSON.parse(JSON.stringify(item.spawn))
                         spawnedItem.index = item.index
 
+                        item.index = targetBlock
+
                         item.pos = vec2(
                             range.items.left + (tileWidth * dist.x) + (tileWidth / 2),
                             range.items.top + (tileWidth * dist.y) + (tileWidth / 2)
