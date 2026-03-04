@@ -33,6 +33,8 @@ const {
 } = k
 
 // #region inventory 
+let currentDragging: GameObj | null
+
 const equipFields: EquipField[] = ['head', 'body', 'feet', 'accessory1', 'rightHand', 'leftHand', 'accessory2', 'ring' ]
 
 const range = {
@@ -249,9 +251,13 @@ const placeItemInGrid = (
     
     item.onMousePress(() => {
         if('dragging' in item && item.dragging === true) return
+        if(currentDragging && currentDragging.id !== item.id) return
         console.log('item on mouse press')
         if(item.isHovering()){
-            if(isPickable(item)) item.pick()     
+            if(isPickable(item)) {
+                item.pick()
+                currentDragging = item
+            }     
             // If item is drag from equipment slot
             const equipment = isEquipment(item.item)
 
@@ -266,6 +272,7 @@ const placeItemInGrid = (
 
     item.onMouseRelease(() => {
         if('dragging' in item && item.dragging === true){
+            currentDragging = null
             console.log('item on drag end')
             item.trigger("dragEnd");
             item.dragging = false                             
