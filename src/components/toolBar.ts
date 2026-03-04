@@ -3,6 +3,7 @@ import k from "../lib/kaplay"
 import { getOptionValue } from "../store/setting"
 import { gameStore, getGameStoreValue, inventoryUI } from "../store/game"
 import { setInventoryUI } from "./inventory"
+import { defineItemSprite } from '../utils/item'
 
 const {
     area,
@@ -144,12 +145,16 @@ export const createToolBar = (
                 // TODO: Display available item and skill
                 const list = tool.get('list')
 
-                const potions = inventory.space.filter(stored => stored.item.id.includes('potion'))
+                // const items = parent.get('inventory')[0].get('item')
+
+                // const potions = items.filter(item => item.item.id.includes('potion'))
+
+                const potions = inventory.space.filter(stored => stored?.item.id.includes('potion'))
 
                 // Skill list
-                const skill = [{ index: 0, skill: { id: 'skill_000', name: 'placeHolder' }, frame: 0 }]
+                // const skill = [{ index: 0, skill: { id: 'skill_000', name: 'placeHolder' }, frame: 0 }]
 
-                const options = [ ...potions, ...skill, { index: -1, item: { id: 'clear' } } ]
+                const options = [{index: -1, item: { id: '-1' }}, ...potions ]
 
                 let listHeight = 0
 
@@ -172,22 +177,24 @@ export const createToolBar = (
                         'list',
                     ])
 
-                    onHover('list', () => { setData('hovering', true) })
+                    list.onHover(() => { setData('hovering', true) })
 
-                    onHoverEnd('list', () => { setData('hovering', false) })
+                    list.onHoverEnd(() => { setData('hovering', false) })
 
                     list.onUpdate(() => {
                         const open = getData('listOpen')
                         list.hidden = !open
-                    })
+                    })                
 
                     options.forEach((opt, i) => {
                         // const type = 'item' in opt? 'potion' : 'skill'
+                        if(!opt) return
                         const index = i + 1
                         const ox = (index % 2 === 0)? tileWidth: 10
                         const oy = 0 - ((tileWidth / 2) * ((options.length / 2) - Math.floor((index % 2 === 0)? (index - 1) / 2 : index / 2)))
 
-                        if('item' in opt && opt.item.id.includes('clear')){
+                        if(opt.index < 0){
+                            // Create clear button first
                             const clear = list.add([
                                 text("CLEAR", { size: tileWidth / 3 }),
                                 area(),
@@ -198,12 +205,17 @@ export const createToolBar = (
                             ])
 
                             clear.onClick(() => { 
-                                console.log('clear cliked')
+                                console.log('clear clicked')
                                 slot.bind = {} 
-                            })
+                            })                                
                         }else{
+                            const itemSprite = defineItemSprite(opt.item.id.split('_')[0])
+
                             const option = list.add([
-                                sprite('item', { frame: 0 }),
+                                sprite(
+                                    itemSprite.sprite, 
+                                    { frame: itemSprite.frame }
+                                ),
                                 area(),
                                 anchor('botleft'),
                                 pos(ox, oy),
@@ -217,19 +229,28 @@ export const createToolBar = (
 
                             // Assign options to slot
                             option.onClick(() => {
-                                console.log('option cliked')
+                                console.log('option clicked')
+                                // If item is bounded already
+                                const slots = tool.get('slot')
 
-                                if('item' in opt){
+                                const bounded = slots.find(s => {
+                                    if('item' in opt && s.bind.id === opt.item.id) return s
+                                    // if('skill' in opt && s.bind.id === opt.skill.id) return s
+                                })
+
+                                if(bounded) bounded.bind = {}
+
+                                if('item' in opt){    
                                     slot.bind = opt.item
                                 }
 
-                                if('skill' in opt){
-                                    slot.bind = opt.skill
-                                }
+                                // if('skill' in opt){
+                                //     slot.bind = opt.skill
+                                // }
 
                                 setData('listOpen', false)
-                            })                            
-                        }
+                            })                                   
+                        }   
                     })                    
                 }
             }             
