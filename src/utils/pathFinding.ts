@@ -9,7 +9,7 @@ export const setDirection = (unit: GameObj, destination: Vec2) => {
         y: destination.y - unit.pos.y
     }
 
-    console.log('setDirection dist', dist)
+    // console.log('setDirection dist', dist)
 
     unit.facing = dist.x > 0? 'right' : 'left'
 
@@ -34,8 +34,9 @@ export const getPathAndFollow = (unit: GameObj, destination: Vec2) => {
             // if(dist.y < 0 && dist.x < 0 ) unit.facing = 'upleft'
             unit.play('walk')        
         }           
-    } catch (error) {
-        console.warn('pathfinding error', error)
+    } catch {
+        // k.debug.error(error)
+        // console.warn('pathfinding error', error)
         unit.waypoints = [destination]
         setDirection(unit, destination)
         unit.play('walk')  
@@ -66,7 +67,7 @@ export const steering = (unit: GameObj, ObjectInSight: GameObj, tileWidth: numbe
 
         const distanceToTiles = Math.floor(200/tileWidth)
 
-        console.log('dist to object', dist)
+        // console.log('dist to object', dist)
 
         if(dist.x <= tileWidth && dist.y <= tileWidth){
             switch(unit.facing){
