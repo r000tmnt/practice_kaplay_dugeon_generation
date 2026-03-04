@@ -1,4 +1,5 @@
 {
+    "name": "Skeleton",
     "attribute": {
         "hp": 10,
         "mp": 3,

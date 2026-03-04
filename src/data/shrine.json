@@ -1,7 +1,7 @@
 [
     {
         "id": "shrine_001",
-        "name": "Exprience shrine",
+        "name": "Experience shrine",
         "effect":{
             "exp": 1.3,
             "time": 10
