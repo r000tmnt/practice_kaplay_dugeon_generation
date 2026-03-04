@@ -474,10 +474,10 @@ const placeItemInGrid = (
 
         // #region item on hover
         item.onHoverUpdate(() => {
-            const detail = inventory.get('detail')
+            const detail = inventory.parent?.get('detail')
 
             // If not dragging
-            if('dragging' in item && item.dragging === false){
+            if('dragging' in item && item.dragging === false && !inventory.hidden){
                 // Display detail
                 const equipment = isEquipment(item.item)
 
@@ -548,8 +548,8 @@ const placeItemInGrid = (
 
                 if(descRow > 1) dh += (tileWidth / 3) * descRow
 
-                let dx = item.pos.x + (tileWidth / 2)
-                let dy = item.pos.y - (tileWidth / 2)
+                let dx = item.worldPos.x + (tileWidth / 2)
+                let dy = item.worldPos.y - (tileWidth / 2)
                 let origin : Anchor = 'topleft'
 
                 if( 
@@ -570,7 +570,7 @@ const placeItemInGrid = (
                     //             dx > 0 && dy < 0 ? 'topleft' : 'topleft'                    
                 }        
 
-                if(detail.length){
+                if(detail?.length){
                     console.log('change detail position', origin)
                     // Change position
                     detail[0].height = dh
@@ -587,7 +587,7 @@ const placeItemInGrid = (
                     // readd(detail[0].children[0])
                 }else{
                     // outline first
-                    const detail = inventory.add([
+                    const detail = inventory.parent?.add([
                         rect(dw, dh, { radius: tileWidth / 4, fill: false }),
                         outline(2, Color.fromHex(itemColor)),
                         pos(dx, dy),
@@ -596,7 +596,7 @@ const placeItemInGrid = (
                         "detail"
                     ])
 
-                    detail.add([
+                    detail?.add([
                         rect(dw, dh, { radius: tileWidth / 4 }),
                         pos(0, 0),
                         color(0, 0, 0),
@@ -608,7 +608,7 @@ const placeItemInGrid = (
                         }                  
                     ])
 
-                    detail.children[0].onDraw(() => {    
+                    detail?.children[0].onDraw(() => {    
                         detail.children[0].attribute.forEach((param: string, i: number) => {
                             let tx = padding
                             let ty = ((tileWidth / 3) * i) + (padding * (i + 1))
@@ -638,41 +638,17 @@ const placeItemInGrid = (
                             })                    
                         })
                     })             
-                }
-
-                // drawRect({
-                //     width: dw,
-                //     height: dh,
-                //     pos: vec2(dx, dy),
-                //     color: rgb(0, 0, 0),
-                //     opacity: 0.75,
-                //     radius: tileWidth / 4,
-                //     anchor,
-                // })
-
-                // // Outline
-                // drawRect({
-                //     width: dw,
-                //     height: dh,
-                //     pos: vec2(dx, dy),
-                //     fill: false,
-                //     outline: {
-                //         width: 2,
-                //         color: Color.fromHex(itemColor),
-                //     },
-                //     radius: tileWidth / 4,
-                //     anchor,
-                // })                
+                }     
             }else{
-                if(detail.length) detail[0].hidden = true
+                if(detail?.length) detail[0].hidden = true
             }
         })
 
         item.onHoverEnd(() => {
             // Hide detail
-            const detail = inventory.get('detail')
+            const detail = inventory.parent?.get('detail')
 
-            if(detail.length) detail[0].hidden = true
+            if(detail?.length && !inventory.hidden) detail[0].hidden = true
         })
 
         // #endregion
