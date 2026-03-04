@@ -59,6 +59,43 @@ const continuousTween = (sequence: Vec2[]|number[], obj: GameObj, target: string
     })
 }
 
+export const defineItemSprite = (key: string) => {
+    switch(key){
+        case 'gold':
+            return { sprite: 'item', frame: 0 }
+
+        case 'potion':
+            return { sprite: 'item', frame: 1 }
+
+        case 'other':
+            return { sprite: 'item', frame: 2 }
+
+        case 'card':
+            return { sprite: 'item', frame: 5  }
+
+        case 'head':
+            return { sprite: 'equipment', frame: 5 }
+
+        case 'body':
+            return { sprite: 'equipment', frame: 2 }
+
+        case 'hand':
+            return { sprite: 'equipment', frame: 0 }
+
+        case 'feet':
+            return { sprite: 'equipment', frame: 3 }
+
+        case 'accessory':
+            return { sprite: 'equipment', frame: 4 }
+
+        case 'ring':
+            return { sprite: 'equipment', frame: 6 }
+
+        default:
+            return { sprite: 'item', frame: 0 }
+    }    
+}
+
 export const prepareItemsToDrop = (obj: GameObj, base: base = { 
     count: { min: 1, max: 1 }, 
     item: { gold: 0.5 }, 
@@ -83,57 +120,51 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
                         desc: "",
                         stackable: true,
                         quantity: goldAmount
-                    }, sprite: 'item', frame: 0 })
+                    }, ...defineItemSprite(key) })
                 }
                 break;
                 case 'potion':{
                     // Randomly select a potion from potionData
                     const potionIndex = Math.floor(rng * potionData.length)
-                    items.push({ name: 'potion', item: potionData[potionIndex], sprite: 'item', frame: 1 })
+                    items.push({ name: 'potion', item: potionData[potionIndex], ...defineItemSprite(key) })
                 }
                 break;
                 case 'other':{
                     // Randomly select an other item from otherData
                     const otherIndex = Math.floor(rng * otherData.length)
-                    items.push({ name: 'other', item: otherData[otherIndex], sprite: 'item', frame: 2 })
+                    items.push({ name: 'other', item: otherData[otherIndex], ...defineItemSprite(key) })
                 }
                 break;
                 case 'card':{
                     const cardIndex = Math.floor(rng * cardData.length)
-                    items.push({ name: 'other', item: cardData[cardIndex], sprite: 'item', frame: 5 })
+                    items.push({ name: 'other', item: cardData[cardIndex], ...defineItemSprite(key) })
                 }
                 break;
                 default:{
                     let equipment
-                    let frame = 0
                     switch(key){
                         case 'head':
                             equipment = headData[Math.floor(rng * headData.length)]
-                            frame = 1
                         break;
                         case 'body':
                             equipment = bodyData[Math.floor(rng * bodyData.length)]
-                            frame = 2
                         break;
                         case 'hand':
                             equipment = handData[Math.floor(rng * handData.length)]
                         break;
                         case 'feet':
                             equipment = feetData[Math.floor(rng * feetData.length)]
-                            frame = 3
                         break;
                         case 'accessory':
                             equipment = accessoryData[Math.floor(rng * accessoryData.length)]
-                            frame = 4
                         break;
                         case 'ring':
                             equipment = accessoryData[Math.floor(rng * accessoryData.length)]
-                            frame = 6
                         break;
                     }
                     // TODO: Modify item     
                     
-                    if(equipment) items.push({ name: key, item: equipment, sprite: 'equipment', frame })
+                    if(equipment) items.push({ name: key, item: equipment, ...defineItemSprite(key) })
                 }              
                 break;
             }
