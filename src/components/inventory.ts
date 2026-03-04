@@ -167,7 +167,6 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                         space[block],
                         spawn,
                         tileWidth,
-                        spawnedItems,
                     )
                 }
             }else{
@@ -207,7 +206,6 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                     y: -((itemRow - (0.5 + (1.5 * index))) * tileWidth)
                 },
                 tileWidth,
-                player.equip[field],
                 field
             )                 
         }         
@@ -219,7 +217,6 @@ const placeItemInGrid = (
     data: note, 
     spawn: { x: number, y: number },  
     tileWidth: number,
-    spawnedItems: GameObj[],
     tag?: string
 ) => {
     const item = inventory.add([
@@ -387,13 +384,15 @@ const placeItemInGrid = (
             const targetBlock = (inventory.itemCol * dist.y) + dist.x
 
             // TODO: If overlap with item
-            if(spawnedItems[targetBlock] !== undefined){
+            if(storedInventory.space[targetBlock]){
                 // TODO: If item is stackable
-                if(spawnedItems[targetBlock].item.id === item.item.id && item.item.stackable){
-                    // Stack up
-                    spawnedItems[targetBlock].item.item.quantity += 1
+                const spawnedItem = inventory.get('item').find(spawned => spawned.index === targetBlock)
 
-                    spawnedItems[targetBlock].children[0].text = spawnedItems[targetBlock].item.item.quantity
+                if(spawnedItem && spawnedItem.item.id === item.item.id && item.item.stackable){
+                    // Stack up
+                    spawnedItem.item.quantity += 1
+
+                    spawnedItem.children[0].text = spawnedItem.item.quantity 
 
                     if(storedInventory.space[targetBlock] && storedInventory.space[targetBlock].item.quantity){
                         storedInventory.space[targetBlock].item.quantity += 1
@@ -401,9 +400,9 @@ const placeItemInGrid = (
 
                     // Destroy dragging item
                     item.destroy()
-                }else{
+                }else if(spawnedItem){
                     // if Overlapping item is an equipment
-                    const overlaps = isEquipment(spawnedItems[targetBlock].item)
+                    const overlaps = isEquipment(spawnedItem.item)
 
                     // If the dragging item is an equipment but not the same type
                     if(equipment && equipment !== overlaps){
@@ -429,18 +428,28 @@ const placeItemInGrid = (
                         
                     }else{
                         // swap position
-                        spawnedItems[targetBlock].pos = vec2(item.spawn.x, item.spawn.y)
-                        spawnedItems[targetBlock].spawn = JSON.parse(JSON.stringify(item.spawn))
-                        spawnedItems[targetBlock].index = item.index
+                        spawnedItem.pos = vec2(item.spawn.x, item.spawn.y)
+                        spawnedItem.spawn = JSON.parse(JSON.stringify(item.spawn))
+                        spawnedItem.index = item.index
+
+                        item.pos = vec2(
+                            range.items.left + (tileWidth * dist.x) + (tileWidth / 2),
+                            range.items.top + (tileWidth * dist.y) + (tileWidth / 2)
+                        )
+                        
+                        // Update spawn position
+                        item.spawn = JSON.parse(JSON.stringify({ x: item.pos.x, y: item.pos.y }))                           
 
                         // If Overlapping item is the same type as dragging item
                         if(equipment && equipment === overlaps){
                             // Equip item
-                            equipItem(getPlayers()[0], equipment, spawnedItems[targetBlock].item)
+                            equipItem(getPlayers()[0], equipment, spawnedItem.item)
                         }
 
                         // Update store value
-                        if(storedInventory.space[targetBlock]) storedInventory.space[targetBlock].index = item.index   
+                        const toSwap = JSON.parse(JSON.stringify(storedInventory.space[targetBlock]))  
+                        storedInventory.space[targetBlock] = JSON.parse(JSON.stringify(storedInventory.space[item.index]))   
+                        storedInventory.space[item.index] = toSwap 
                     }
                 }
             }else{
