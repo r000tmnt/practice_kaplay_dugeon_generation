@@ -1,12 +1,13 @@
 import type { GameObj, SpriteCurAnim } from "kaplay";
 import k  from '../lib/kaplay'
-import { gameState, gameStore, getGameStoreValue } from '../store/game';
+import { gameState, gameStore, getGameStoreValue, effectAtom } from '../store/game';
 import { setting, getOptionValue } from '../store/setting';
 import { prepareItemsToDrop } from './item'
 import { getPlayers } from "./player";
 import { calculateDamage } from './battle'
 import potData from '../data/pot.json'
 import chestData from '../data/chest.json'
+import { setEffectTimer } from '../components/UI'
 
 const { 
     add,
@@ -121,7 +122,7 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
         "hitBox"
     ])
 
-    console.log('hitBox created', hitBox)
+    // console.log('hitBox created', hitBox)
 
     if(type === 'collide') setCollision(hitBox, anim)
     // if(type === 'overlap') setOverlap(hitBox, anim)
@@ -188,12 +189,21 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
             // Update props
             const shrine = props.findIndex(prop => prop.type === 'shrine' && prop.x === ((obj.pos.x - (tileWidth /2)) / tileWidth) && prop.y === ((obj.pos.y - (tileWidth / 2)) / tileWidth))
             props[shrine].active = true
-            gameStore.set(gameState, prve => ({
-                ...prve,
+            gameStore.set(gameState, prev => ({
+                ...prev,
                 props: props
             }))
 
-            // And more            
+            // And more       
+            if(obj.shrine.effect){
+                const { effect } = getGameStoreValue()
+
+                effect.push(JSON.parse(JSON.stringify(obj.shrine.effect)))
+
+                gameStore.set(effectAtom, effect)
+
+                setEffectTimer(obj.shrine.effect)
+            }
         }        
     })        
 
