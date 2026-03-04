@@ -68,6 +68,7 @@ export const isPickable = (obj: unknown): obj is pickableItem => {
 export const getTextWidth = (text: string, font?: string) => {
     let tempCanvas : HTMLCanvasElement | null = document.createElement('canvas')
     const ctx = tempCanvas.getContext('2d')
+    if(ctx) ctx.font = font? font : '16px monospace'
     const measure = ctx?.measureText(text)
     tempCanvas = null // Remove element
 
