@@ -59,6 +59,7 @@ export default function initGame(){
 
         loadSprite('item', 'map/demo_item.png', {
             sliceX: 5,
+            sliceY: 2,
             anims: {
                 open: { from: 3, to: 4, loop: false }
             }
