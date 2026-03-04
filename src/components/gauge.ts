@@ -1,4 +1,4 @@
-import type { Color, GameObj, KEventController, Vec2 } from "kaplay"
+import type { GameObj, KEventController, Vec2 } from "kaplay"
 import k from "../lib/kaplay"
 import type { rectGaugeOption, ringGaugeOption } from "../model/UI"
 
@@ -142,7 +142,9 @@ export const rectangleGauge = (rectGaugeOption: rectGaugeOption) => {
                 {
                     ...reference,
                     ...option
-                }
+                },
+                // tags
+                reference.attribute
             ])              
         }else{
             bar = add([
@@ -154,7 +156,9 @@ export const rectangleGauge = (rectGaugeOption: rectGaugeOption) => {
                 {
                     ...reference,
                     ...option
-                }
+                },
+                // tags
+                reference.attribute                
             ])    
         }
 
@@ -202,7 +206,9 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
                 {
                     ...reference,
                     ...option
-                }        
+                },
+                // tags
+                reference.attribute                   
             ])
     }else{
         ring = add([
@@ -212,7 +218,9 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
             {
                 ...reference,
                 ...option
-            }        
+            },
+            // tags
+            reference.attribute                   
         ])        
     }
 
