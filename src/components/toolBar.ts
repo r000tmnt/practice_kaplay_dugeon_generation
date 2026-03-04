@@ -158,7 +158,7 @@ export const createToolBar = (
 
                 let listHeight = 0
 
-                listHeight = ((options.length / 2) + (options.length % 2)) * tileWidth
+                listHeight = options.length * (tileWidth / 2) + 20 // plus gap
 
                 if(list.length){
                     list[0].height = listHeight
@@ -190,8 +190,9 @@ export const createToolBar = (
                         // const type = 'item' in opt? 'potion' : 'skill'
                         if(!opt) return
                         const index = i + 1
-                        const ox = (index % 2 === 0)? tileWidth: 10
-                        const oy = 0 - ((tileWidth / 2) * ((options.length / 2) - Math.floor((index % 2 === 0)? (index - 1) / 2 : index / 2)))
+                        // const ox = (index % 2 === 0)? tileWidth: 10
+                        const ox = 10
+                        const oy = 0 - ((tileWidth / 2) * index) + 10
 
                         if(opt.index < 0){
                             // Create clear button first
