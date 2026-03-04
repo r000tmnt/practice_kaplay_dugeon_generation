@@ -1,16 +1,21 @@
 import k from "../lib/kaplay"
 import { type GameObj, type Rect } from "kaplay";
 import type { prop } from "../model/map"
-// import { setting, getOptionValue } from '../store/setting';
+import shrineData from '../data/shrine.json'
+import { getOptionValue } from '../store/setting';
+import { getTextWidth } from './UI'
 
 const { 
     area,
     anchor,
     body,
+    drawRect,
+    drawText,
     get,
     layer,
     sprite,
     pos,
+    rgb,
     vec2,
  } = k
 
@@ -65,7 +70,10 @@ export const spawnObject = (prop: prop, tileWidth: number, shape?: Rect) => {
                 ])
             }
             break;
-        case 'shrine':
+        case 'shrine':{
+            // TODO: Decide what kind of shrine to spawn
+            const rng = Math.random()
+            const shrineDetail = shrineData[Math.floor(rng * shrineData.length)]
             obj = map[0].add([
                 sprite('shrine', { frame: prop.active? 1 : 0 }),
                 pos((prop.x * tileWidth) + (tileWidth / 2), (prop.y * tileWidth) + (tileWidth / 2)),
@@ -79,10 +87,12 @@ export const spawnObject = (prop: prop, tileWidth: number, shape?: Rect) => {
                 body({ isStatic: true }),
                 {
                     active: prop.active,
+                    shrine: JSON.parse(JSON.stringify(shrineDetail))
                 },
                 // Tags
                 "shrine"
-            ])  
+            ])              
+        }
         break;            
         case 'wall': case 'entrance': case 'exit':
             obj = map[0].add([
@@ -104,7 +114,7 @@ export const spawnObject = (prop: prop, tileWidth: number, shape?: Rect) => {
 const setObjectEvents = (obj: GameObj, prop: prop) => {
 
     obj.onCollide('enemy', (enemy: GameObj) => {
-        console.log('object collide with enemy', enemy)
+        // console.log('object collide with enemy', enemy)
         // If enemy is moving
         if(enemy.path.length || enemy.waypoints?.length){
             enemy.steering(obj)
@@ -116,7 +126,7 @@ const setObjectEvents = (obj: GameObj, prop: prop) => {
 
     obj.onCollide('player', (player: GameObj) => {
         if(obj.sprite === 'shrine'){
-            console.log('shrine', obj)
+            // console.log('shrine', obj)
             if(player.pos.y >= obj.pos.y){
                 obj.layer = 'game'
             }else{
@@ -132,4 +142,32 @@ const setObjectEvents = (obj: GameObj, prop: prop) => {
             // And More
         }
     })
+
+    if(obj.is('shrine')){
+        obj.onDraw(() => {
+            if(obj.isHovering()){
+                const { tileWidth } = getOptionValue()
+
+                const textWidth = getTextWidth(obj.shrine.name)
+
+                if(textWidth){
+                    // Display the name of shrine
+                    drawRect({
+                        width: tileWidth,
+                        height: tileWidth / 2,
+                        pos: vec2(0, -obj.height / 2),
+                        anchor: 'center',
+                        color: rgb(0, 0, 0)
+                    })
+
+                    drawText({
+                        text: obj.shrine.name,
+                        pos: vec2(0 - (textWidth / 2), -obj.height / 2),
+                        size: tileWidth / 3,
+                        align: "center",
+                    })                      
+                }
+            }
+        })        
+    }
 }
