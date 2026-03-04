@@ -1,11 +1,12 @@
-import type { GameObj, KEventController } from "kaplay";
+import type { GameObj, TimerController } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
-// import { getGameStoreValue } from "../store/game";
+import { getGameStoreValue, gameStore, effectAtom } from "../store/game";
 // import type { uiOwner } from "../model/UI"
 
 import { rectangleGauge, ringGauge } from "./gauge";
 import { createToolBar } from "./toolBar";
+import type { effect } from "../model/effect";
 
 const {
     area,
@@ -14,18 +15,17 @@ const {
     fixed,
     getData,
     get,
+    loop,
     layer,
     pos,
     Rect,
     rgb,
     setData,
     vec2,
+    // wait
 } = k
 
-let targetBar : {
-    bar: GameObj,
-    controller: KEventController
-} | null
+const effectTimer: TimerController[] = []
 
 const displayTextOnBar = (bar:GameObj, barHeight: number, tileWidth: number ) => {
     const { unit, attribute, worldPos, area } = bar
@@ -37,6 +37,52 @@ const displayTextOnBar = (bar:GameObj, barHeight: number, tileWidth: number ) =>
         width: area.shape.width,
         size: tileWidth / 2
     })         
+}
+
+export const setEffectTimer = (effect: effect) => {
+    const { tileWidth } = getOptionValue()
+
+    const index = effectTimer.length > 0? effectTimer.length - 1 : 0
+    const time = effect.time * 10
+    const barHeight = k.height() / 20
+    const hpBar = get('map')[0].get('ui')[0].get('hp')[0]
+
+    let percentage = 0
+
+    effectTimer[index] = loop(0.1, () => {
+        const add = Math.floor(100/time)
+        percentage = (percentage + add > 100)? 100 : percentage + add
+
+        const newHeight =  (tileWidth / 2) * (percentage/100)
+
+        const onDrawEvent = hpBar.onDraw(() => {
+            drawRect({
+                width: tileWidth / 2,
+                height: tileWidth / 2,
+                pos: vec2(((tileWidth / 2) * index) + (10 * index), -barHeight),
+                color: rgb(50, 50, 50)
+            })
+
+            drawRect({
+                width: tileWidth / 2,
+                height: newHeight,
+                pos: vec2(((tileWidth / 2) * index) + (10 * index), -barHeight + (tileWidth / 2)),
+                color: rgb(133, 188, 233),
+                anchor: 'botleft'
+            })              
+
+            if(percentage === 100) onDrawEvent.cancel()
+        })
+    }, time)
+    
+    effectTimer[index].onEnd(() => {
+        // Remove effect
+        const { effect } = getGameStoreValue()
+
+        effect.splice(index, 1)
+
+        gameStore.set(effectAtom, effect)
+    })
 }
 
 export const setUIElements = (player: GameObj, map: GameObj) => {
