@@ -69,9 +69,18 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
         const target = JSON.parse(targeting)
 
         const barX = (k.width() / 2) - (barWidth / 2)
-        const barY = tileWidth / 2
+        const barY = tileWidth
 
         const percentage = target.current / target.max      
+
+        // Enemy name
+        drawText({
+            text: `LV${target.lv} ${target.name}`,
+            pos: vec2(barX, tileWidth / 2),
+            align: 'left',
+            width: barWidth,
+            size: tileWidth / 2
+        })  
 
         // outer bar
         drawRect({
@@ -92,6 +101,7 @@ export const setUIElements = (player: GameObj, map: GameObj) => {
             anchor: 'topright'
         })       
 
+        // HP number
         drawText({
             text: `${target.current}/${target.max}`,
             pos: vec2(barX, barY + ((barHeight - (tileWidth / 2)) / 2)),
