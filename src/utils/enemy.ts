@@ -465,6 +465,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
 
             enemy.onHoverUpdate(() => {
                 setData('targeting', JSON.stringify({
+                    lv: enemy.lv,
                     name: enemy.name,
                     current: enemy.hp,
                     max: enemy.max.hp
