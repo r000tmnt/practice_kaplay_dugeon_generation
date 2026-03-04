@@ -64,4 +64,13 @@ export const isPickable = (obj: unknown): obj is pickableItem => {
         
     return result
 }
+
+export const getTextWidth = (text: string, font?: string) => {
+    let tempCanvas : HTMLCanvasElement | null = document.createElement('canvas')
+    const ctx = tempCanvas.getContext('2d')
+    const measure = ctx?.measureText(text)
+    tempCanvas = null // Remove element
+
+    return measure?.width
+}
 // #endregion  
