@@ -100,7 +100,7 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
                 break;
                 case 'card':{
                     const cardIndex = Math.floor(rng * cardData.length)
-                    items.push({ name: 'other', item: cardData[cardIndex], sprite: 'item', frame: 0 })
+                    items.push({ name: 'other', item: cardData[cardIndex], sprite: 'item', frame: 5 })
                 }
                 break;
                 default:{
@@ -258,11 +258,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                             // If item is stackable
                             // Find the same item first
                             if(item.item.stackable){
-                                const sameItem = inventory.space.findIndex(stored => {
-                                    if(stored){
-                                        if(stored.item.id === item.item.id) return
-                                    }
-                                })
+                                const sameItem = inventory.space.findIndex(stored => stored?.item.id === item.item.id)
 
                                 if(sameItem >= 0 && inventory.space[sameItem]){
                                     const { quantity, limit } = inventory.space[sameItem].item
