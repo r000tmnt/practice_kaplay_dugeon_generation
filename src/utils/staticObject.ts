@@ -15,6 +15,7 @@ const {
     layer,
     sprite,
     pos,
+    Rect,
     rgb,
     vec2,
  } = k
@@ -144,27 +145,35 @@ const setObjectEvents = (obj: GameObj, prop: prop) => {
     })
 
     if(obj.is('shrine')){
+        const { tileWidth } = getOptionValue()
+
+        const textWidth = getTextWidth(obj.shrine.name, `${tileWidth / 3}px monospace`)
+
+        // if(textWidth)
+        //     obj.add([
+        //         area({ shape: new Rect(vec2(0), textWidth, tileWidth / 2) }),
+        //         pos(0 - (textWidth / 2), -obj.height / 2)
+        //     ])
+
         obj.onDraw(() => {
             if(obj.isHovering()){
-                const { tileWidth } = getOptionValue()
-
-                const textWidth = getTextWidth(obj.shrine.name)
-
                 if(textWidth){
                     // Display the name of shrine
                     drawRect({
-                        width: tileWidth,
+                        width: textWidth,
                         height: tileWidth / 2,
                         pos: vec2(0, -obj.height / 2),
                         anchor: 'center',
-                        color: rgb(0, 0, 0)
+                        color: rgb(50, 50, 50)
                     })
 
                     drawText({
                         text: obj.shrine.name,
-                        pos: vec2(0 - (textWidth / 2), -obj.height / 2),
+                        pos: vec2(0, -obj.height / 2),
+                        width: textWidth,
                         size: tileWidth / 3,
                         align: "center",
+                        anchor: 'center'
                     })                      
                 }
             }
