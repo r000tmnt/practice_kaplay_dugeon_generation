@@ -58,13 +58,14 @@ export const calculateDamage = (attacker: GameObj, defender: GameObj) => {
     }
 
     for(let i=0, chances=Object.entries(sorted); i < chances.length; i++){
+        const key = chances[i][0]
         if(rate <= chances[i][1]){
-            if(chances[i][0] === 'toHit'){
+            if(key.includes('Hit')){
                 result.hit = true
                 result.dmg = finalNumber
             }
 
-            if(chances[i][0] === 'toCrit'){
+            if(key.includes('Crit')){
                 result.hit = true
                 result.crit = true
                 result.dmg = Math.floor(finalNumber * 1.5)
