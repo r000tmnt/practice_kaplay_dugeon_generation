@@ -4,7 +4,7 @@ import type { roomNode } from '../model/map'
 import handData from '../data/hand.json'
 import { setCameraPosition } from './camera';
 import { createHitBox } from './hitBox'
-import { gameStore, getGameStoreValue, inventoryUI } from '../store/game';
+import { gameStore, getGameStoreValue, inventoryUI, quickSlots } from '../store/game';
 import { RoomState } from '../model/map'
 import type { item } from '../model/item';
 // import { getOptionValue } from '../store/setting';
@@ -180,12 +180,12 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
             path: [],
             ...data,
             gainExp: (exp: number) => {
-                player.exp += player.lv === player.max.level? player.max.exp : exp
+                player.exp += player.lv === player.max.lv? player.max.exp : exp
                 // Check if player need to levelup
                 player.levelUp()
             },
             levelUp: () => {
-                if(player.exp >= player.max.exp && player.lv < player.max.level){
+                if(player.exp >= player.max.exp && player.lv < player.max.lv){
                     // Level up
                     player.lv += 1
                     player.pt += 3
@@ -437,10 +437,53 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         keys.quick_slot_10,
     ], (key) => {
         // toggle quick slot 
+        if(!get('ready')) return
+        
         const { quickSlot } = getGameStoreValue()
 
-        if(quickSlot[Number(key)]){
+        const index = Number(key) - 1
+
+        if(quickSlot[index]){
             // use item or case skill
+            const item = quickSlot[index];
+            if(item?.quantity !== undefined){
+                item.quantity -= 1
+
+                const { attribute, resist, secondary } = item
+
+                if(attribute){
+                    for(const [key, value] of Object.entries(attribute)){
+                        switch(key){
+                            case 'hp':{
+                                const realValue = value > (player.max.hp - player.hp)? player.max.hp - player.hp : value 
+                                player.hp += realValue
+                                player.attribute.hp += realValue                                
+                            }
+                            break;
+                            case 'mp':
+                                player.attribute.mp += value > (player.max.mp - player.attribute.mp)? player.max.mp - player.attribute.mp : value 
+                            break;                            
+                            case 'physique':
+                            case 'mentality':
+                            case 'agility':
+                                player.attribute[key] += value
+                            break;
+                        }
+                    }                   
+                }
+
+                if(resist){
+                    //
+                }
+
+                if(secondary){
+                    //
+                }
+
+                if(!item.quantity) quickSlot.splice(index, 1)
+
+                gameStore.set(quickSlots, quickSlot)
+            }
         }
     })
 
