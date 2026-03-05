@@ -187,10 +187,10 @@ export const createToolBar = (
                         list.hidden = !open
                     })                
 
-                    options.forEach((opt, i) => {
+                    options.forEach((opt, optIndex) => {
                         // const type = 'item' in opt? 'potion' : 'skill'
                         if(!opt) return
-                        const index = i + 1
+                        const index = optIndex + 1
                         // const ox = (index % 2 === 0)? tileWidth: 10
                         const ox = 10
                         const oy = 0 - ((tileWidth / 2) * index) + 10
@@ -236,7 +236,7 @@ export const createToolBar = (
 
                                 if('item' in opt){    
                                     slot.bind = opt.item
-                                    quickSlot[index] = opt.item as item
+                                    quickSlot[i] = opt.item as item
                                 }
 
                                 // if('skill' in opt){
@@ -249,6 +249,16 @@ export const createToolBar = (
                     })                    
                 }
             }             
+        })
+
+        slot.onUpdate(() => {
+            const { quickSlot } = getGameStoreValue()
+            if(quickSlot[i]?.quantity !== undefined){
+                if(quickSlot[i]?.quantity === 0)
+                    // Remove binding
+                    slot.bind = {}
+                    quickSlot[i] = null
+            }
         })
 
         slot.onDraw(() => {
