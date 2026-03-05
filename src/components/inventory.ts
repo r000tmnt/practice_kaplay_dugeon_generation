@@ -169,11 +169,11 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                         tileWidth,
                     )
                 }
-            }else{
-                // Hide sprite if exist
-                // if(spawnedItems[block] !== undefined){
-                //     spawnedItems[block].hidden = true
-                // }
+            }
+
+            if(!space[block] && spawnedItems[block]){
+                // Remove spawned item
+                spawnedItems[block].destroy()
             }
         }
     } 
