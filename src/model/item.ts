@@ -1,4 +1,5 @@
 import type { KEventController } from "kaplay";
+import type { Attribute, Secondary, Element, MaxStats, Require, Effect } from './stat'
 
 type ItemTypes =
   | 'head'
@@ -74,13 +75,13 @@ interface item {
     type?: number,
     stackable: boolean,
     oneHanded?: boolean,
-    attribute?: object | null,
-    secondary?: object | null,
-    element?: object | null,
-    resist?: object | null,
-    max?: object | null,
-    required?: object | null
-    effect?: object | null
+    attribute?: Attribute | null,
+    secondary?: Secondary | null,
+    element?: Element | null,
+    resist?: Element | null,
+    max?: MaxStats | null,
+    required?: Require | null
+    effect?: Effect | null
     quantity?: number
     price?: number
     limit?: number
