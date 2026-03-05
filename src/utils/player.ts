@@ -1,5 +1,5 @@
 import k from '../lib/kaplay'
-import type { GameObj } from "kaplay";
+import type { GameObj, MouseButton } from "kaplay";
 import type { roomNode } from '../model/map'
 import handData from '../data/hand.json'
 import { setCameraPosition } from './camera';
@@ -161,6 +161,8 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
     if(!data) data = playerData
     const { nav } = await import('../utils/bspDungeonGenerator');
     const sizeWithPadding = map.tileWidth + 10 // 5px for padding on each side
+    const { keys } = getOptionValue()
+
     const player = add([
         sprite("player"), 
         anchor('center'),
@@ -321,7 +323,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                 // Reference: https://jslegenddev.substack.com/p/how-to-fix-diagonal-movement-in-2d
                 const diagonalFactor = vec2(0, 0)
 
-                if (isKeyDown("a")){
+                if (isKeyDown(keys.left)){
                     player.facing = 'left'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
@@ -329,7 +331,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                     diagonalFactor.x = -1
                 }
                 
-                if (isKeyDown("d")){
+                if (isKeyDown(keys.right)){
                     player.facing = 'right'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
@@ -337,14 +339,14 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                     diagonalFactor.x = 1
                 }        
 
-                if (isKeyDown("w")){
+                if (isKeyDown(keys.up)){
                     player.facing = 'top'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
                     diagonalFactor.y = -1
                 }     
                 
-                if (isKeyDown("s")){
+                if (isKeyDown(keys.down)){
                     player.facing = 'down'
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
@@ -363,7 +365,11 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
 
                 if(room) onEnterRoom(room)
 
-                if (isKeyDown('z') || isMousePressed('left')){
+                if ( 
+                    keys.main_attack.includes('mouse')? 
+                        isMousePressed(keys.main_attack.split('_')[1] as MouseButton) : 
+                        isKeyDown(keys.main_attack)
+                ){
                     const listOpen = getData('listOpen')
                     const { inventory } = getGameStoreValue()
                     if(currentAnim?.name !== 'attack' && !inventory.open && !listOpen) {
@@ -380,21 +386,61 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                             }
                         })
                     }
-                }       
+                }
             }
             break;
         }        
     })  
 
-    player.onKeyRelease('i', async(key) => {
+    // inventory, option, skill, map
+    player.onKeyRelease([
+        keys.inventory,
+        keys.option,
+        keys.skill,
+        keys.map
+    ], (key) => {
         if(getData('ready') !== false){
-            console.log('release key', key)
-            const { inventory } = getGameStoreValue()
-            inventory.open = !inventory.open
+            if(key === keys.inventory){
+                const { inventory } = getGameStoreValue()
+                inventory.open = !inventory.open
 
-            setInventoryUI(map.get('ui')[0], player, inventory.open).then(() => {
-                gameStore.set(inventoryUI, inventory)              
-            })     
+                setInventoryUI(map.get('ui')[0], player, inventory.open).then(() => {
+                    gameStore.set(inventoryUI, inventory)              
+                })   
+            }
+            // console.log('release key', key)
+            if(key === keys.option){
+                // Open game settings
+            }
+
+            if(key === keys.skill){
+                // Open skill menu
+            }
+
+            if(key === keys.map){
+                // Toggle mini map
+            }
+        }
+    })
+
+    // Quick slots
+    player.onKeyRelease([
+        keys.quick_slot_1,
+        keys.quick_slot_2,
+        keys.quick_slot_3,
+        keys.quick_slot_4,
+        keys.quick_slot_5,
+        keys.quick_slot_6,
+        keys.quick_slot_7,
+        keys.quick_slot_8,
+        keys.quick_slot_9,
+        keys.quick_slot_10,
+    ], (key) => {
+        // toggle quick slot 
+        const { quickSlot } = getGameStoreValue()
+
+        if(quickSlot[Number(key)]){
+            // use item or case skill
         }
     })
 

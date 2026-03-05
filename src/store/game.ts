@@ -1,6 +1,6 @@
 import { createStore, atom } from "jotai";
 import type { chunk, prop, roomNode } from "../model/map";
-import type { note } from "../model/item";
+import type { item, note } from "../model/item";
 import type { effect } from '../model/effect'
 import { focusAtom } from 'jotai-optics'
 
@@ -20,6 +20,7 @@ export const gameState = atom({
         limit: 12 * 6
     },
     effect: [] as effect[],
+    quickSlot: [] as item[],
     danger: 1,
     cleared: 0
 })
