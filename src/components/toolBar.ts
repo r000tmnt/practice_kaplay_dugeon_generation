@@ -4,6 +4,7 @@ import { getOptionValue } from "../store/setting"
 import { gameStore, getGameStoreValue, inventoryUI } from "../store/game"
 import { setInventoryUI } from "./inventory"
 import { defineItemSprite } from '../utils/item'
+import type { item } from "../model/item"
 
 const {
     area,
@@ -26,7 +27,7 @@ const {
     vec2
 } = k
 
-const shortCut = ['I', 'S', 'C', 'Q', 'M', 'O']
+const shortCut = ['I', 'S', 'Q', 'M', 'O']
 
 /**
  * Create a set of short cuts to use item etc...
@@ -65,10 +66,10 @@ export const createToolBar = (
 
     // 10 slots for key binding
     // 6 slots for inventory, skill, character, quest, map, option
-    const slotWidth = tool.width / 16 
+    const slotWidth = tool.width / 15
 
-    for(let i=0; i < 16; i++){
-        const px = (i >= 8)? 0 + ((i - 8) * slotWidth) : 0 - ((8 - i) * slotWidth)
+    for(let i=0; i < 15; i++){
+        const px = (i >= 7.5)? 0 + ((i - 7.5) * slotWidth) : 0 - ((7.5 - i) * slotWidth)
         const py = 0 - (height / 2)
 
         const slot = tool.add([
@@ -114,7 +115,7 @@ export const createToolBar = (
 
             if(isNaN(Number(key))){
                 switch(key){
-                    case 'I': case 'C':{
+                    case 'I':{
                         const { inventory } = getGameStoreValue()
                         if(inventory.open) return
                         inventory.open = !inventory.open
@@ -230,19 +231,12 @@ export const createToolBar = (
 
                             // Assign options to slot
                             option.onClick(() => {
+                                const { quickSlot } = getGameStoreValue()
                                 console.log('option clicked')
-                                // If item is bounded already
-                                const slots = tool.get('slot')
-
-                                const bounded = slots.find(s => {
-                                    if('item' in opt && s.bind.id === opt.item.id) return s
-                                    // if('skill' in opt && s.bind.id === opt.skill.id) return s
-                                })
-
-                                if(bounded) bounded.bind = {}
 
                                 if('item' in opt){    
                                     slot.bind = opt.item
+                                    quickSlot[index] = opt.item as item
                                 }
 
                                 // if('skill' in opt){
