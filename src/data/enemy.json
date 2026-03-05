@@ -37,7 +37,7 @@
         "confusion": 80,
         "numb": 80,
         "bleeding": 80,
-        "level": 100
+        "lv": 100
     },
     "equip": {
         "head": {},

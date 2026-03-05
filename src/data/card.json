@@ -21,7 +21,7 @@
         "type": 19,
         "stackable": true,
         "effect": {
-            "treasure_find_rate": 0.15,
+            "item_find_rate": 0.15,
             "room": 1
         },
         "limit": 10
