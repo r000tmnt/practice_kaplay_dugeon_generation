@@ -20,7 +20,7 @@ export const gameState = atom({
         limit: 12 * 6
     },
     effect: [] as effect[],
-    quickSlot: [] as item[],
+    quickSlot: [] as (item | null)[],
     danger: 1,
     cleared: 0
 })
@@ -28,6 +28,7 @@ export const gameState = atom({
 export const enemyAtom = focusAtom(gameState, (optic) => optic.prop('enemies'))
 export const inventoryUI = focusAtom(gameState, (optic) => optic.prop('inventory'))
 export const effectAtom = focusAtom(gameState, (optic) => optic.prop('effect'))
+export const quickSlots = focusAtom(gameState, (optic) => optic.prop('quickSlot'))
 
 export const gameStore = createStore()
 
