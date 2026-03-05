@@ -253,11 +253,17 @@ export const createToolBar = (
 
         slot.onUpdate(() => {
             const { quickSlot } = getGameStoreValue()
+            const { inventory } = getGameStoreValue()
             if(quickSlot[i]?.quantity !== undefined){
-                if(quickSlot[i]?.quantity === 0)
+                if(quickSlot[i]?.quantity === 0){
+                    // Remove item in inventory       
+                    const index = inventory.space.findIndex(s => s?.item.id === quickSlot[i]?.id)
+                    if(index >= 0) inventory.space.splice(index, 1)
+                
                     // Remove binding
                     slot.bind = {}
-                    quickSlot[i] = null
+                    quickSlot[i] = null                    
+                }                    
             }
         })
 
