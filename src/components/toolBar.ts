@@ -29,6 +29,81 @@ const {
 
 const shortCut = ['I', 'S', 'Q', 'M', 'O']
 
+const setToolBarOptions = (
+    slots: GameObj[], 
+    list: GameObj,
+    tileWidth: number, 
+    opt: (note | {
+                index: number;
+                item: {
+                    id: string;
+                };
+            } | null),
+    index: number
+) => {
+    // const type = 'item' in opt? 'potion' : 'skill'
+    if(!opt) return
+    // const ox = (index % 2 === 0)? tileWidth: 10
+    const ox = 10
+    const oy = 0 - ((tileWidth / 2) * index) + 10
+
+    if(opt.index < 0){
+        // Create clear button first
+        const clear = list.add([
+            text("CLEAR", { size: tileWidth / 3 }),
+            area(),
+            anchor('botleft'),
+            pos(ox, oy),
+            fixed(),
+            'option'                            
+        ])
+
+        clear.onClick(() => { 
+            console.log('clear clicked')
+            slots[list.index].bind = {} 
+        })                                
+    }else{
+        const itemSprite = defineItemSprite(opt.item.id.split('_')[0])
+
+        const option = list.add([
+            sprite(
+                itemSprite.sprite, 
+                { frame: itemSprite.frame }
+            ),
+            area(),
+            anchor('botleft'),
+            pos(ox, oy),
+            fixed(),
+            'option'
+        ])
+
+        onHover('option', () => { setData('hovering', true) })
+
+        onHoverEnd('option', () => { setData('hovering', false) })
+
+        // Assign options to slot
+        option.onClick(() => {
+            const { quickSlot } = getGameStoreValue()
+            console.log('option clicked')
+
+            if('item' in opt){    
+                slots[list.index].bind = {
+                    ...opt.item,
+                    sprite: option.sprite,
+                    frame: option.frame
+                }
+                quickSlot[list.index] = opt.item as item
+            }
+
+            // if('skill' in opt){
+            //     slot.bind = opt.skill
+            // }
+
+            setData('listOpen', false)
+        })                                   
+    } 
+}
+
 /**
  * Create a set of short cuts to use item etc...
  * @param parent - The wrapper of the element.
@@ -79,7 +154,8 @@ export const createToolBar = (
             color(50, 50, 50),
             fixed(),
             {
-                bind: {}
+                bind: {},
+                index: (i < 10)? i : shortCut[i - 10]
             }, 
             'slot'           
         ])
@@ -94,16 +170,12 @@ export const createToolBar = (
                     size: tileWidth / 3,
                 })
             ])  
-            
-            slot.tag(String(i))
         }else{                 
             slot.add([
                 text(shortCut[i - 10], {
                     size: tileWidth / 3,
                 })
-            ])         
-            
-            slot.tag(shortCut[i - 10])
+            ])
         }              
 
         // slot.onHoverUpdate(() => { console.log('slot hovered') })
@@ -111,7 +183,7 @@ export const createToolBar = (
         slot.onClick(() => {
             console.log('slot clicked')
 
-            const key = slot.tags[2]
+            const key = slot.index
 
             if(isNaN(Number(key))){
                 switch(key){
@@ -162,8 +234,33 @@ export const createToolBar = (
                 listHeight = options.length * (tileWidth / 2) + 20 // plus gap
 
                 if(list.length){
+                    list[0].index = slot.index
                     list[0].height = listHeight
                     list[0].pos = vec2(slot.pos.x, slot.pos.y)
+                    
+                    const oldOptions = list[0].get('option')
+                    // If options exist
+                    if(oldOptions.length !== options.length){
+                        for(let i=1; i < options.length; i++){
+                            const opt = options[i]
+                            // Replace option
+                            if(oldOptions[i] && opt){
+                                const itemSprite = defineItemSprite(opt.item.id.split('_')[0])
+                                oldOptions[i].sprite = itemSprite.sprite                
+                                oldOptions[i].frame = itemSprite.frame                
+                            }else{
+                                // Create option
+                                setToolBarOptions(
+                                    tool.get('slot'),
+                                    list[0],
+                                    tileWidth,
+                                    opt,
+                                    i + 1
+                                )
+                            }
+                        }
+                    }
+
                 }else{
                     const lx = 0 - (slotWidth * (9 - (Number(key) + 1)))
 
@@ -175,6 +272,9 @@ export const createToolBar = (
                         fixed(),
                         outline(4, rgb(75, 75, 75)),
                         color(0, 0, 0),
+                        {
+                            index: i
+                        },
                         'list',
                     ])
 
@@ -186,71 +286,15 @@ export const createToolBar = (
                         const open = getData('listOpen')
                         list.hidden = !open
                     })                
-
                     options.forEach((opt, optIndex) => {
-                        // const type = 'item' in opt? 'potion' : 'skill'
-                        if(!opt) return
-                        const index = optIndex + 1
-                        // const ox = (index % 2 === 0)? tileWidth: 10
-                        const ox = 10
-                        const oy = 0 - ((tileWidth / 2) * index) + 10
-
-                        if(opt.index < 0){
-                            // Create clear button first
-                            const clear = list.add([
-                                text("CLEAR", { size: tileWidth / 3 }),
-                                area(),
-                                anchor('botleft'),
-                                pos(ox, oy),
-                                fixed(),
-                                'option'                            
-                            ])
-
-                            clear.onClick(() => { 
-                                console.log('clear clicked')
-                                slot.bind = {} 
-                            })                                
-                        }else{
-                            const itemSprite = defineItemSprite(opt.item.id.split('_')[0])
-
-                            const option = list.add([
-                                sprite(
-                                    itemSprite.sprite, 
-                                    { frame: itemSprite.frame }
-                                ),
-                                area(),
-                                anchor('botleft'),
-                                pos(ox, oy),
-                                fixed(),
-                                'option'
-                            ])
-
-                            onHover('option', () => { setData('hovering', true) })
-
-                            onHoverEnd('option', () => { setData('hovering', false) })
-
-                            // Assign options to slot
-                            option.onClick(() => {
-                                const { quickSlot } = getGameStoreValue()
-                                console.log('option clicked')
-
-                                if('item' in opt){    
-                                    slot.bind = {
-                                        ...opt.item,
-                                        sprite: option.sprite,
-                                        frame: option.frame
-                                    }
-                                    quickSlot[i] = opt.item as item
-                                }
-
-                                // if('skill' in opt){
-                                //     slot.bind = opt.skill
-                                // }
-
-                                setData('listOpen', false)
-                            })                                   
-                        }   
-                    })                    
+                        setToolBarOptions(
+                            tool.get('slot'),
+                            list,
+                            tileWidth,
+                            opt,
+                            optIndex + 1
+                        )
+                    })                 
                 }
             }             
         })
