@@ -1,4 +1,4 @@
-import type { GameObj, TimerController } from "kaplay";
+import type { GameObj, KEventController, TimerController } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 import { getGameStoreValue, gameStore, effectAtom } from "../store/game";
@@ -15,17 +15,18 @@ const {
     fixed,
     getData,
     get,
-    loop,
+    // loop,
     layer,
     pos,
     Rect,
     rgb,
     setData,
+    tween,
     vec2,
     // wait
 } = k
 
-const effectTimer: TimerController[] = []
+const effectTimer: KEventController[] = []
 
 const displayTextOnBar = (bar:GameObj, barHeight: number, tileWidth: number ) => {
     const { unit, attribute, worldPos, area } = bar
@@ -42,46 +43,100 @@ const displayTextOnBar = (bar:GameObj, barHeight: number, tileWidth: number ) =>
 export const setEffectTimer = (effect: effect) => {
     const { tileWidth } = getOptionValue()
 
-    const index = effectTimer.length > 0? effectTimer.length - 1 : 0
-    const time = effect.time * 10
+    const time = effect.time * 60 // frames
+    const index = effectTimer.length > 0? effectTimer.length : 0
     const barHeight = k.height() / 20
     const hpBar = get('map')[0].get('ui')[0].get('hp')[0]
+    const player = get('player')[0]
 
     let percentage = 0
 
-    effectTimer[index] = loop(0.1, () => {
-        const add = Math.floor(100/time)
-        percentage = (percentage + add > 100)? 100 : percentage + add
+    // Apply effect
+    Object.entries(effect).forEach(([key, value]) => {
+        const isInt = Number.isInteger(value)
 
-        const newHeight =  (tileWidth / 2) * (percentage/100)
+        if(player.secondary[key]){
+            player.secondary[key] += 
+                (isInt)?
+                    value :    
+                    player.secondary[key] * value
+        }
 
-        const onDrawEvent = hpBar.onDraw(() => {
-            drawRect({
-                width: tileWidth / 2,
-                height: tileWidth / 2,
-                pos: vec2(((tileWidth / 2) * index) + (10 * index), -barHeight),
-                color: rgb(50, 50, 50)
-            })
+        if(player.resist[key]) player.resist[key] += value
 
-            drawRect({
-                width: tileWidth / 2,
-                height: newHeight,
-                pos: vec2(((tileWidth / 2) * index) + (10 * index), -barHeight + (tileWidth / 2)),
-                color: rgb(133, 188, 233),
-                anchor: 'botleft'
-            })              
+        if(key === 'hp' || key === 'mp'){
+            player.max[key] +=                 
+                (isInt)?
+                    value : 
+                    player.max[key] * value
+        }else
+        if(player.attribute[key]){
+            player.attribute[key] += 
+                (isInt)?
+                    value : 
+                    player.attribute[key] * value
+        }
+    });
 
-            if(percentage === 100) onDrawEvent.cancel()
-        })
-    }, time)
+    effectTimer[index] = hpBar.onDraw(() => {
+        const add = 1/time
+        percentage = (percentage + add > 1)? 1 : percentage + add       
+
+        console.log(percentage)
     
-    effectTimer[index].onEnd(() => {
-        // Remove effect
-        const { effect } = getGameStoreValue()
+        drawRect({
+            width: tileWidth / 2,
+            height: tileWidth / 2,
+            pos: vec2(((tileWidth / 2) * index) + (10 * index), -barHeight),
+            color: rgb(50, 50, 50)
+        })
 
-        effect.splice(index, 1)
+        drawRect({
+            width: tileWidth / 2,
+            height: (tileWidth / 2) * percentage,
+            pos: vec2(((tileWidth / 2) * index) + (10 * index), -barHeight + (tileWidth / 2)),
+            color: rgb(133, 188, 233),
+            anchor: 'botleft'
+        })              
 
-        gameStore.set(effectAtom, effect)
+        if(percentage === 1){ 
+            effectTimer[index].cancel()  
+        
+            // Remove effect
+            const storedEffect = getGameStoreValue().effect
+
+            storedEffect.splice(index, 1)
+
+            gameStore.set(effectAtom, storedEffect)    
+            
+            Object.entries(effect).forEach(([key, value]) => {
+                const isInt = Number.isInteger(value)
+
+                if(player.secondary[key]){
+                    player.secondary[key] = 
+                        (isInt)?
+                            player.secondary[key] - value :
+                            player.secondary[key] / (1 + value)
+                }
+
+                if(player.resist[key]) player.resist[key] -= value
+
+                if(key === 'hp' || key === 'mp'){
+                    player.max[key] = 
+                        (isInt)?
+                            player.max[key] - value:
+                            player.max[key] / (1 + value)
+
+                    if(player.attribute[key] > player.max[key]) player.attribute[key] = player.max[key]
+                }else
+                if(player.attribute[key]){
+                    player.attribute[key] += 
+                        (isInt)?
+                            player.attribute[key] - value :
+                            player.attribute[key] / (1 + value)
+                }                
+            });            
+        }      
     })
 }
 
