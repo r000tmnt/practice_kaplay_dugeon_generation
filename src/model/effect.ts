@@ -4,6 +4,7 @@ type attribute =
 'physique' |
 'mentality' |
 'agility' |
+'move_speed' |
 'attack_speed' |
 'cast_speed' |
 'fire' |
@@ -16,6 +17,7 @@ type attribute =
 'confusion' |
 'numb' |
 'bleeding' |
+'dmg' |
 'exp'
 
 type effectParam = Record<attribute, number>
