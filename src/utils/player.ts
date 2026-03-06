@@ -457,7 +457,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                             case 'hp':{
                                 const realValue = value > (player.max.hp - player.hp)? player.max.hp - player.hp : value 
                                 player.hp += realValue
-                                player.attribute.hp += realValue                                
+                                player.attribute.hp = player.hp                                
                             }
                             break;
                             case 'mp':
@@ -479,10 +479,6 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                 if(secondary){
                     //
                 }
-
-                if(!item.quantity) quickSlot.splice(index, 1)
-
-                gameStore.set(quickSlots, quickSlot)
             }
         }
     })
