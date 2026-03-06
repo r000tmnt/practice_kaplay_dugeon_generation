@@ -235,7 +235,11 @@ export const createToolBar = (
                                 console.log('option clicked')
 
                                 if('item' in opt){    
-                                    slot.bind = opt.item
+                                    slot.bind = {
+                                        ...opt.item,
+                                        sprite: option.sprite,
+                                        frame: option.frame
+                                    }
                                     quickSlot[i] = opt.item as item
                                 }
 
@@ -268,20 +272,20 @@ export const createToolBar = (
         })
 
         slot.onDraw(() => {
-            if(Object.entries(slot.bind).length){
+            if('sprite' in slot.bind && 'frame' in slot.bind){
                 drawSprite({
-                    sprite: 'item', // TODO: Need another sprite
-                    frame: 0,
+                    sprite: String(slot.bind.sprite), // TODO: Need another sprite
+                    frame: Number(slot.bind.frame),
+                    pos: vec2(slotWidth / 2, height / 2),
                     anchor: 'center',
-                    pos: vec2(slotWidth / 2, height / 2)
                 })
 
                 if('quantity' in slot.bind){
                     drawText({
                         text: String(slot.bind.quantity),
                         size: tileWidth / 3,
+                        pos: vec2(slotWidth, height),
                         anchor: 'botright',
-                        pos: vec2(slotWidth, height)
                     })
                 }
             }
