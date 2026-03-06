@@ -56,7 +56,7 @@ const onHitEvent = (hitBox: GameObj, attacker: GameObj, defender: GameObj) => {
         if(hit){
             // Do not let hp go below 0
             defender.hp -= (dmg > defender.hp)? defender.hp : dmg
-            defender.attribute.hp -= (dmg > defender.attribute.hp)? defender.attribute.hp : dmg
+            defender.attribute.hp = defender.hp
             // Display dmg number
             if(crit){
                 textHolder.text = `[yellow]${dmg}[/yellow]`
