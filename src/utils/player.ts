@@ -180,6 +180,12 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
             path: [],
             ...data,
             gainExp: (exp: number) => {
+                const { effect } = getGameStoreValue()
+
+                const boost = effect.find(e => e.exp)
+
+                exp = (boost)? Math.floor(exp * boost.exp) : exp
+
                 player.exp += player.lv === player.max.lv? player.max.exp : exp
                 // Check if player need to levelup
                 player.levelUp()
@@ -351,10 +357,15 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                     setCameraPosition(player, mapWidth, mapHeight)
                     if(currentAnim?.name !== 'walk') player.play("walk")
                     diagonalFactor.y = 1
-                }     
+                }                    
 
                 const unitVector = diagonalFactor.unit()
-                player.move(unitVector.scale(player.secondary.move_speed))
+
+                const { effect } = getGameStoreValue()
+
+                const boost = effect.find(e => e.move_speed)
+
+                player.move(unitVector.scale((boost)? player.secondary.move_speed + boost.move_speed : player.secondary.move_speed))
 
                 // Get current room
                 const { roomNodes } = getGameStoreValue()

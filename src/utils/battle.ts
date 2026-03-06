@@ -1,5 +1,6 @@
 import type { GameObj } from "kaplay";
 import k from "../lib/kaplay";
+import { getGameStoreValue } from '../store/game'
 
 const { RNG } = k
 
@@ -23,7 +24,14 @@ export const calculateDamage = (attacker: GameObj, defender: GameObj) => {
         dmg += rng.genNumber(min, max)
     }
 
-    // Calculate defence
+    // If effect activating
+    const { effect } = getGameStoreValue()
+
+    const boost = effect.find(e => e.dmg)
+
+    dmg = (boost)? dmg + (dmg * boost.dmg) : dmg        
+
+    // Calculate defense
     const baseDef = Math.floor(defender.attribute.physique * 1/10)
 
     const finalNumber = baseDef >= dmg? 1 : Math.floor(dmg - baseDef)
