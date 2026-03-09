@@ -65,8 +65,6 @@ export const getPlayers = () => {
 }
 
 export const equipItem = (player: GameObj, key: string, item: item, ) => {
-    const { secondary, resist, max } = player
-
     // Check item requirements
     const { required } = item
     let conditionMeet = true
@@ -98,19 +96,19 @@ export const equipItem = (player: GameObj, key: string, item: item, ) => {
     }
 
     if(item.secondary){
-        Object.entries(secondary).forEach(([key, value]) => {
+        Object.entries(item.secondary).forEach(([key, value]) => {
             player.secondary[key] += Number(value)
         })           
     }
 
     if(item.resist){
-        Object.entries(resist).forEach(([key, value]) => {
+        Object.entries(item.resist).forEach(([key, value]) => {
             player.resist[key] += Number(value)
         })            
     }
 
     if(item.max){
-        Object.entries(max).forEach(([key, value]) => {
+        Object.entries(item.max).forEach(([key, value]) => {
             player.max[key] += Number(value)
             if(key.includes('hp')){
                 player.maxHp += Number(value)
@@ -415,7 +413,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                 const { inventory } = getGameStoreValue()
                 inventory.open = !inventory.open
 
-                setInventoryUI(map.get('ui')[0], player, inventory.open).then(() => {
+                setInventoryUI(get('ui')[0], player, inventory.open).then(() => {
                     gameStore.set(inventoryUI, inventory)              
                 })   
             }
@@ -506,6 +504,6 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         }
     })    
 
-    setUIElements(player, map)
+    setUIElements(player)
     // #endregion  
 }
