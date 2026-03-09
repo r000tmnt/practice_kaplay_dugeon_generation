@@ -74,7 +74,7 @@ export const defineItemSprite = (key: string) => {
             return { sprite: 'item', frame: 5  }
 
         case 'head':
-            return { sprite: 'equipment', frame: 5 }
+            return { sprite: 'equipment', frame: 1 }
 
         case 'body':
             return { sprite: 'equipment', frame: 2 }
@@ -239,8 +239,8 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                 // Get control point between start and finish
                 const arcHeight = Math.floor(rng * (60 - 20) + 20)
                 const lift = vec2(
-                    (dropX.end < obj.pos.x)?
-                    (dropped.pos.x - x) / 2 :
+                    // (dropX.end < obj.pos.x)?
+                    // (dropped.pos.x - x) / 2 :
                     (dropped.pos.x + x) / 2, 
                     Math.min(dropped.pos.y, y) - arcHeight
                 )
@@ -324,7 +324,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                                     // If inventory is opened
                                     if(inventory.open){
                                         // Display pushed item
-                                        const inventoryUI = map.get('ui')[0].get('inventory')[0]
+                                        const inventoryUI = get('ui')[0].get('inventory')[0]
                                         displayItemsInGrid(inventoryUI, tileWidth)
                                     }
 
