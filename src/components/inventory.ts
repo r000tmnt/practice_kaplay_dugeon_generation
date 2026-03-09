@@ -247,6 +247,7 @@ const placeItemInGrid = (
     console.log('item placed', item)
     
     item.onMousePress(() => {
+        if(inventory.hidden) return
         if('dragging' in item && item.dragging === true) return
         if(currentDragging && currentDragging.id !== item.id) return
         console.log('item on mouse press')
@@ -732,7 +733,7 @@ const displayAttributeButtons = (
 export const setInventoryUI = async(parent: GameObj, player: GameObj, open = false) => {
     const { tileWidth } = getOptionValue()
     // If UI created
-    const inventory = parent.get('inventory')
+    const inventory = get('inventory')
     const inventoryWidth = k.width() / 2
     const inventoryHeight = k.height() * 19/20
     const itemRow = 6
@@ -760,6 +761,7 @@ export const setInventoryUI = async(parent: GameObj, player: GameObj, open = fal
                 itemRow,
                 itemCol
             },
+            fixed(),
             anchor('center'),
             'inventory'
         ])
