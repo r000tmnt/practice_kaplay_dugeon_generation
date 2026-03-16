@@ -9,6 +9,7 @@ import { createToolBar } from "./toolBar";
 import type { effect } from "../model/effect";
 
 const {
+    add,
     area,
     drawText,
     drawRect,
@@ -21,7 +22,7 @@ const {
     Rect,
     rgb,
     setData,
-    tween,
+    // tween,
     vec2,
     // wait
 } = k
@@ -46,7 +47,7 @@ export const setEffectTimer = (effect: effect) => {
     const time = effect.time * 60 // frames
     const index = effectTimer.length > 0? effectTimer.length : 0
     const barHeight = k.height() / 20
-    const hpBar = get('map')[0].get('ui')[0].get('hp')[0]
+    const hpBar = get('ui')[0].get('hp')[0]
     const player = get('player')[0]
 
     let percentage = 0
@@ -140,10 +141,10 @@ export const setEffectTimer = (effect: effect) => {
     })
 }
 
-export const setUIElements = (player: GameObj, map: GameObj) => {
+export const setUIElements = (player: GameObj) => {
     const { tileWidth } = getOptionValue()
 
-    const ui = map.add([
+    const ui = add([
         area({ shape: new Rect(vec2(0), k.width(), k.height()) }),
         pos(0, 0),
         fixed(),
