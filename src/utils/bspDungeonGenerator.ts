@@ -37,7 +37,7 @@ The algorithm works like this:
        → split → [ right-left ] + [ right-right ]       
  */
 import k from '../lib/kaplay';
-import type { room, roomNode, corridor, prop } from "../model/map";
+import type { room, roomNode, corridor, prop, rng } from "../model/map";
 import { RoomState } from '../model/map'
 import type { Vec2 } from 'kaplay';
 
@@ -45,12 +45,6 @@ import type { Vec2 } from 'kaplay';
 import { getOptionValue } from '../store/setting';
 import { gameState, gameStore } from "../store/game";
 
-const MAP_WIDTH = 40;
-const MAP_HEIGHT = 35;
-const MIN_LEAF_SIZE = 12;
-const MAX_LEAF_SIZE = 24;
-const MIN_ROOM_SIZE = 6;
-const MAX_ROOM_SIZE = 20;
 const CORRIDOR_WIDTH = 2;   // tiles
 const EDGE_TABLE : Record<number, number[][][]> = {
   1:  [[[0,0.5],[0.5,0]]],
@@ -97,28 +91,71 @@ const RoomType = {
     DeadEndReward: 4,    
 }
 
-const { NavMesh, RNG, vec2, } = k
+const { NavMesh, vec2, } = k
 
 export const nav = new NavMesh();
 
 //#region Utils
-const randBetween = (a: number, b: number) => {
-    return Math.floor(Math.random() * (b - a + 1)) + a;
+const hashString = (str: string) => {
+
+  let hash = 0
+
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) >>> 0
+  }
+
+  return hash
+
 }
 
-const setCorridor = (leaf: Leaf, roomA: roomNode, roomB: roomNode, grid: number[][]) => {
+const createLCG = (hashed: number) => {
+  const A = 1664525
+  const C = 1013904223
+  const M = 4294967296
+
+  return function rng() {
+    hashed = (A * hashed + C) % M
+    return hashed / M
+  }       
+}
+
+const createSeededRNG = (seed: number) => {
+
+  const baseSeed = hashString(seed.toString())
+
+  return {
+    map: createLCG(baseSeed + hashString("map")),
+    room: createLCG(baseSeed + hashString("room")),
+    corridor: createLCG(baseSeed + hashString("corridor")),
+    enemy: createLCG(baseSeed + hashString("enemy")),
+    loot: createLCG(baseSeed + hashString("loot")),
+    props: createLCG(baseSeed + hashString("props"))
+  } as rng
+}
+
+const randBetween = (rng: number, a: number, b: number) => {
+    return Math.floor(rng * (b - a + 1)) + a;
+}
+
+const setCorridor = (
+    leaf: Leaf, 
+    roomA: roomNode, 
+    roomB: roomNode, 
+    grid: number[][], 
+    rng: rng
+) => {
     const pointA = {
-        x: randBetween(roomA.x, roomA.x + roomA.w - 1),
-        y: randBetween(roomA.y, roomA.y + roomA.h - 1)
+        x: randBetween(rng.corridor(), roomA.x, roomA.x + roomA.w - 1),
+        y: randBetween(rng.corridor(), roomA.y, roomA.y + roomA.h - 1)
     };
 
     const pointB = {
-        x: randBetween(roomB.x, roomB.x + roomB.w - 1),
-        y: randBetween(roomB.y, roomB.y + roomB.h - 1)
+        x: randBetween(rng.corridor(), roomB.x, roomB.x + roomB.w - 1),
+        y: randBetween(rng.corridor(), roomB.y, roomB.y + roomB.h - 1)
     };
 
     // L-shaped corridor
-    if (Math.random() > 0.5) {
+    if (rng.corridor() > 0.5) {
         leaf.corridors.push({ x1: pointA.x, y1: pointA.y, x2: pointB.x, y2: pointA.y });
         leaf.corridors.push({ x1: pointB.x, y1: pointA.y, x2: pointB.x, y2: pointB.y });
     } else {
@@ -139,16 +176,20 @@ const setCorridor = (leaf: Leaf, roomA: roomNode, roomB: roomNode, grid: number[
     });
 }
 
-const createCorridors = (leaf: Leaf, grid: number[][]) => {
+const createCorridors = (
+    leaf: Leaf, 
+    grid: number[][], 
+    rng: rng
+) => {
     if (leaf.left && leaf.right) {
         const roomA = leaf.left.getRoom();
         const roomB = leaf.right.getRoom();
 
-        if(roomA && roomB) setCorridor(leaf, roomA, roomB, grid)
+        if(roomA && roomB) setCorridor(leaf, roomA, roomB, grid, rng)
     }
 
-    if (leaf.left) createCorridors(leaf.left, grid);
-    if (leaf.right) createCorridors(leaf.right, grid);   
+    if (leaf.left) createCorridors(leaf.left, grid, rng);
+    if (leaf.right) createCorridors(leaf.right, grid, rng);   
 }
 
 const carveHorizontal = (map: number[][], y: number, x1: number, x2: number) => {
@@ -247,7 +288,7 @@ const checkDoorPosition = async(tilemap: number[][], door: { x: number, y: numbe
     }
 }
 
-const getValidDoorTiles = (room: room, tilemap: number[][]) => {
+const getValidDoorTiles = (room: room, tilemap: number[][], rng: rng) => {
     const candidates: {x: number, y: number}[] = [];
 
     // Directions for adjacency: up, down, left, right
@@ -302,7 +343,7 @@ const getValidDoorTiles = (room: room, tilemap: number[][]) => {
 
     if (candidates.length === 0) return null; // No valid door
 
-    return candidates[Math.floor(Math.random() * candidates.length)];    
+    return candidates[Math.floor(rng.room() * candidates.length)];    
 }
 
 const bfs = (startId: number, rooms: roomNode[]) => {
@@ -364,7 +405,8 @@ const findRoomAt = (x: number, y: number, graph: Map<number, RoomNode>): number 
 
 const findConnectedRooms = (
     grid: number[][],
-    leaves: Leaf[]
+    leaves: Leaf[],
+    rng: rng
 ) => {
     // const visited = new Set<number>();
     // const queue = [startId];
@@ -433,14 +475,14 @@ const findConnectedRooms = (
                  console.log(`Connecting room ${node.id} to nearest reachable room ${connId}`)
                 if(connId) {
                     const leaf = leaves.find(l => l.room?.id === connId)
-                    setCorridor(leaf!, node, ROOMNODES[connId], grid)
+                    setCorridor(leaf!, node, ROOMNODES[connId], grid, rng)
                 }
             }
             else{
                 node.connections.forEach(connId => {
                     console.log(`Connecting room ${node.id} to connected room ${connId}`)
                     const leaf = leaves.find(l => l.room?.id === connId)
-                    setCorridor(leaf!, node, ROOMNODES[connId], grid)
+                    setCorridor(leaf!, node, ROOMNODES[connId], grid, rng)
                  
                 })
             }
@@ -482,8 +524,8 @@ const findDeadEnds = (graph: Map<number, RoomNode>) => {
     return deadEnds;
 }
 
-const rollDeadEndType = () => {
-    const r = Math.random();
+const rollDeadEndType = (rng: rng) => {
+    const r = rng.room();
 
     switch(r){
         case DeadEndType.Treasure:
@@ -556,10 +598,11 @@ const getEnemySpawnRule = (roomNode: RoomNode) => {
     }
 }
 
-const scaleEnemies = (base: { min: number, max: number }, depth: number) => {
-    return Math.min(
-        base.max,
-        base.min + depth)
+const scaleEnemies = (base: { min: number, max: number }, depth: number, rng: rng) => {
+    // return Math.min(
+    //     base.max,
+    //     base.min + depth)
+    return randBetween(rng.enemy(), base.max, base.min + depth)
 }
 
 const buildSpawnGrid = (room: roomNode, tilemap: number[][]) => {
@@ -578,17 +621,17 @@ const buildSpawnGrid = (room: roomNode, tilemap: number[][]) => {
 }
 
 // Reference: https://stackoverflow.com/a/46545530/14173422
-const shuffle = (array: any[]) => {
-    const shuffled = array.map(value => ({ value, sort: Math.random() }))
+const shuffle = (array: any[], rng: rng) => {
+    const shuffled = array.map(value => ({ value, sort: rng.enemy() }))
                     .sort((a, b) => a.sort - b.sort)
                     .map(({ value }) => value)
 
     return shuffled
 }
 
-const placeEnemies = (room: roomNode, count: number, tilemap: number[][]) => {
+const placeEnemies = (room: roomNode, count: number, tilemap: number[][], rng: rng) => {
     let candidates = buildSpawnGrid(room, tilemap);
-    candidates = shuffle(candidates)
+    candidates = shuffle(candidates, rng)
 
     for (let i = 0; i < count && candidates.length; i++) {
         // Add props
@@ -714,10 +757,10 @@ class Leaf{
     }
 
     // Try splitting the leaf into two smaller leaves
-    split() {
+    split(rng: number, MIN_LEAF_SIZE: number) {
         if (this.left !== null || this.right !== null) return false; // already split
 
-        let splitH = Math.random() > 0.5; // split horizontally or vertically
+        let splitH = rng > 0.5; // split horizontally or vertically
 
         if (this.w > this.h && this.w / this.h >= 1.25) {
             splitH = false; // force vertical
@@ -728,7 +771,7 @@ class Leaf{
         const max = (splitH ? this.h : this.w) - MIN_LEAF_SIZE;
         if (max <= MIN_LEAF_SIZE) return false; // too small to split    
         
-        const splitPos = Math.floor(Math.random() * (max - MIN_LEAF_SIZE)) + MIN_LEAF_SIZE;
+        const splitPos = Math.floor(rng * (max - MIN_LEAF_SIZE)) + MIN_LEAF_SIZE;
 
         if (splitH) {
             this.left = new Leaf(this.x, this.y, this.w, splitPos);
@@ -742,12 +785,12 @@ class Leaf{
     }
 
     // Randomly create a room within this leaf
-    createRoom(grid: number[][]) {
-        const roomW = randBetween(MIN_ROOM_SIZE, Math.min(MAX_ROOM_SIZE, this.w - 2));
-        const roomH = randBetween(MIN_ROOM_SIZE, Math.min(MAX_ROOM_SIZE, this.h - 2));
+    createRoom(grid: number[][], rng: number, MIN_ROOM_SIZE: number, MAX_ROOM_SIZE: number) {
+        const roomW = randBetween(rng, MIN_ROOM_SIZE, Math.min(MAX_ROOM_SIZE, this.w - 2));
+        const roomH = randBetween(rng, MIN_ROOM_SIZE, Math.min(MAX_ROOM_SIZE, this.h - 2));
 
-        const roomX = randBetween(this.x + 1, this.x + this.w - roomW - 1);
-        const roomY = randBetween(this.y + 1, this.y + this.h - roomH - 1);
+        const roomX = randBetween(rng, this.x + 1, this.x + this.w - roomW - 1);
+        const roomY = randBetween(rng, this.y + 1, this.y + this.h - roomH - 1);
 
         this.room = { 
             id: ROOMNODES.length,
@@ -793,7 +836,27 @@ class Leaf{
 //#endregion
 
 //#region DUNGEON GENERATION
-export const generateBSPDungeon = async() => {
+export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
+    let seed = 0
+
+    if(predefinedSeed){
+        if(typeof predefinedSeed === 'string') seed = hashString(predefinedSeed)
+        else seed = predefinedSeed
+    }else{
+        seed = hashString('test' + Date.now())
+    }
+
+    const rng = createSeededRNG(seed)
+    
+    const MAP_WIDTH  = randBetween(rng.map(), 30, 60)
+    const MAP_HEIGHT = randBetween(rng.map(), 30, 60)
+
+    const MIN_LEAF_SIZE = randBetween(rng.map(), 12, 18)
+    const MAX_LEAF_SIZE = randBetween(rng.map(), 22, 32)
+
+    const MIN_ROOM_SIZE = randBetween(rng.map(), 6, 10)
+    const MAX_ROOM_SIZE = randBetween(rng.map(), 12, 16)
+
     const root = new Leaf(0, 0, MAP_WIDTH, MAP_HEIGHT);
     const leaves = [root];
 
@@ -809,8 +872,8 @@ export const generateBSPDungeon = async() => {
         for (let i = 0; i < leaves.length; i++) {
             const leaf = leaves[i];
             if (leaf.left === null && leaf.right === null) {
-                if (leaf.w > MAX_LEAF_SIZE || leaf.h > MAX_LEAF_SIZE || Math.random() > 0.75) {
-                    const splitted = leaf.split()
+                if (leaf.w > MAX_LEAF_SIZE || leaf.h > MAX_LEAF_SIZE || rng.map() > 0.75) {
+                    const splitted = leaf.split(rng.map(), MIN_LEAF_SIZE)
                     if (!splitted) break
 
                     if(leaf.left && leaf.right){
@@ -827,7 +890,7 @@ export const generateBSPDungeon = async() => {
 
     // 3. Create rooms
     leaves.forEach(leaf => {
-        if (!leaf.left && !leaf.right) leaf.createRoom(grid);
+        if (!leaf.left && !leaf.right) leaf.createRoom(grid, rng.room(), MIN_ROOM_SIZE, MAX_ROOM_SIZE);
     }); 
 
     // 4. Collect all rooms
@@ -836,7 +899,7 @@ export const generateBSPDungeon = async() => {
         .map(l => l.room as room);
     
     // 5. Connect rooms with corridors
-    createCorridors(root, grid)
+    createCorridors(root, grid, rng)
 
     // 6. Draw graph
     for (const room of ROOMNODES) {
@@ -852,7 +915,7 @@ export const generateBSPDungeon = async() => {
         );
     }
 
-    const randomRoomId = Math.floor(Math.random() * rooms.length);
+    const randomRoomId = Math.floor(rng.room() * rooms.length);
 
     const entranceSearch = findFarthestRoom(randomRoomId, ROOMNODES);
     const entranceId = entranceSearch.id;
@@ -927,7 +990,7 @@ export const generateBSPDungeon = async() => {
         }
     }    
 
-    findConnectedRooms(grid, leaves)
+    findConnectedRooms(grid, leaves, rng)
 
     // const reachable = findConnectedRooms(entranceId, graph)
 
@@ -992,7 +1055,7 @@ export const generateBSPDungeon = async() => {
         if (roomId === exitId) return;
 
         const room = graph.get(roomId)!.room;
-        const type = rollDeadEndType();
+        const type = rollDeadEndType(rng);
 
         const { innerSpace, tiles } = getInnerSpaceAndTiles(grid, room)
 
@@ -1000,10 +1063,10 @@ export const generateBSPDungeon = async() => {
         // Add props
         switch(type){
             case DeadEndType.Treasure:
-                placeChest(roomId, tiles, propRules.chest)
+                placeChest(roomId, tiles, propRules.chest, rng)
             break;
             case DeadEndType.Breakables:
-                placePot(innerSpace, roomId, tiles, propRules.pot)   
+                placePot(innerSpace, roomId, tiles, propRules.pot, rng)   
             break;
         }
     }
@@ -1012,12 +1075,12 @@ export const generateBSPDungeon = async() => {
     const entranceRoom = ROOMNODES[entranceId];
     const exitRoom = ROOMNODES[exitId];
 
-    const entrance = entranceRoom !== null ? getValidDoorTiles(entranceRoom, grid) : null
-    const exit = exitRoom !== null ? getValidDoorTiles(exitRoom, grid) : null
+    const entrance = entranceRoom !== null ? getValidDoorTiles(entranceRoom, grid, rng) : null
+    const exit = exitRoom !== null ? getValidDoorTiles(exitRoom, grid, rng) : null
 
     if(entrance) await checkDoorPosition(grid, entrance)
     if(exit) await checkDoorPosition(grid, exit)
-    await setProps(grid, rooms)
+    await setProps(grid, rooms, rng)
 
     //#region enemy spawn rule 
     // Compute room depth
@@ -1051,7 +1114,7 @@ export const generateBSPDungeon = async() => {
     const scaledEnemyRules = enemySpawnRule.map((rule, index) => {
         const depth = roomDepth.get(index)
         if(rule){
-            return scaleEnemies(rule, depth)
+            return scaleEnemies(rule, depth, rng)
         }else{
             return null
         }
@@ -1061,7 +1124,7 @@ export const generateBSPDungeon = async() => {
 
     // Build a room “spawn grid”
     ROOMNODES.forEach((room, index) => {
-        placeEnemies(room, scaledEnemyRules[index]?? 0, grid)
+        placeEnemies(room, scaledEnemyRules[index]?? 0, grid, rng)
     })
     //#endregion  
 
@@ -1093,24 +1156,24 @@ export const generateBSPDungeon = async() => {
     }
 
     // You can return these or store them globally
-    return { grid, entrance, exit, polygon };
+    return { seed, grid, entrance, exit, polygon };
 }
 //#endregion
 
 //#region Set props for chunks
-const setProps = async(grid: number[][], rooms: room[]) => {
+const setProps = async(grid: number[][], rooms: room[], rng: rng) => {
     // const allProps: prop[] = []
     const { propRules } = getOptionValue()
 
     rooms.map((room, index) => {
         const { innerSpace, tiles } = getInnerSpaceAndTiles(grid, room)
 
-        placePot(innerSpace, index, tiles, propRules.pot)
-        placeChest(index, tiles, propRules.chest)
-        placeShirne(index, tiles, propRules.shrine)
+        placePot(innerSpace, index, tiles, propRules.pot, rng)
+        placeChest(index, tiles, propRules.chest, rng)
+        placeShrine(index, tiles, propRules.shrine, rng)
     })
 
-    placeDecoration(grid, propRules.decoration)
+    placeDecoration(grid, propRules.decoration, rng)
 
     gameStore.set(gameState, prev => ({
         ...prev,
@@ -1122,62 +1185,72 @@ const placePot = (
     innerSpace: { x: number, y:number, w: number, h: number }, 
     roomId: number, 
     tiles: {x: number, y: number}[], 
-    rule: { density: number, min:number, max: number }
+    rule: { density: number, min:number, max: number },
+    rng: rng
 ) => {
     const { density, min, max } = rule
     const area = innerSpace.w * innerSpace.h
     const expected = area * density 
-    const possibleCount = expected + (Math.random() * (1 - -1) + -1)
+    const possibleCount = expected + (rng.props() * (1 - -1) + -1)
     const count = Math.min(Math.max(possibleCount, min), max)
-    pushProp(roomId, count, 'pot', tiles)
+    pushProp(roomId, count, 'pot', tiles, rng)
 }
 
 const placeChest = (
     roomId: number, 
     tiles: {x: number, y: number}[],
-    rule: { perRoomChance: number, maxPerRoom: number }
+    rule: { perRoomChance: number, maxPerRoom: number },
+    rng: rng
 ) => {
     const { perRoomChance, maxPerRoom } = rule
-    const canSpawn = Math.random() <= perRoomChance
+    const canSpawn = rng.props() <= perRoomChance
     const count = canSpawn? maxPerRoom : 0
-    pushProp(roomId, count, 'chest', tiles)
+    pushProp(roomId, count, 'chest', tiles, rng)
 }
 
 const placeDecoration = (
     grid: number[][], 
-    rule: { perRoomChance: number, density: number }
+    rule: { perRoomChance: number, density: number },
+    rng: rng
 ) => {
     const { density } = rule    
     const area = grid[0].length * grid.length
     const expected = area * density 
-    const possibleCount = expected + (Math.random() * (1 - -1) + -1)
+    const possibleCount = expected + (rng.props() * (1 - -1) + -1)
     const allFloorTiles = getFloorTiles(grid, { w: grid[0].length, h: grid.length, x:0, y: 0,  center: { x: 0, y: 0 } })
 
     for(let count=0; count < possibleCount; count++){
-        const rng = allFloorTiles[Math.floor(Math.random() * allFloorTiles.length)]
-        grid[rng.y][rng.x] = 3
+        const random = allFloorTiles[Math.floor(rng.props() * allFloorTiles.length)]
+        grid[random.y][random.x] = 3
     }
 }
 
-const placeShirne = (
+const placeShrine = (
     roomId: number, 
     tiles: {x: number, y: number}[], 
-    rule: { perFloorChance: number, maxPerRoom: number }
+    rule: { perFloorChance: number, maxPerRoom: number },
+    rng: rng
 ) => {
     const { perFloorChance, maxPerRoom } = rule
-    const canSpawn = Math.random() <= perFloorChance
+    const canSpawn = rng.props() <= perFloorChance
     const count = canSpawn? maxPerRoom : 0
-    pushProp(roomId, count, 'shrine', tiles)
+    pushProp(roomId, count, 'shrine', tiles, rng)
 }
 
-const pushProp = (roomId: number, count: number, type: string, tiles: {x: number, y: number}[]) => {
+const pushProp = (
+    roomId: number, 
+    count: number, 
+    type: string, 
+    tiles: {x: number, y: number}[],
+    rng: rng
+) => {
     for(let i=0; i < count; i++){
         console.log(`set ${type} prop`)
-        const rng = tiles[Math.floor(Math.random() * tiles.length)]
+        const random = tiles[Math.floor(rng.props() * tiles.length)]
         const prop = {
                 type,
-                x: rng.x,
-                y: rng.y,
+                x: random.x,
+                y: random.y,
                 roomId,
             } 
 

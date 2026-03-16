@@ -100,9 +100,10 @@ const setMap = async(name = 'testMap') => {
         initPlayer(level, entrance as { x: number, y: number }, tileWidth)        
     }else{
         // Generate the map
-        const dungeon = await generateBSPDungeon();
+        const dungeon = await generateBSPDungeon('Prototype');
 
         if(dungeon){
+            console.log('seed', dungeon.seed)
             const { grid, entrance, exit } = dungeon
 
             console.log(entrance, exit)
