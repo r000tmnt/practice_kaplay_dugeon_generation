@@ -42,6 +42,15 @@ interface chunk {
     objects: {x:number, y:number}[]
 }
 
+interface rng { 
+    map: () => number, 
+    room: () => number, 
+    corridor: () => number, 
+    loot: () => number, 
+    props: () => number, 
+    enemy: () => number 
+}
+
 const RoomState = {
     Unvisited: 0,
     Active: 1,
@@ -54,6 +63,7 @@ export type {
     corridor,
     chunk,
     prop,
+    rng
 }
 
 export {
