@@ -331,17 +331,19 @@ const getValidDoorTiles = (room: room, tilemap: number[][], rng: rng) => {
         }
     }
 
-    for (let x = room.x; x < (room.x + room.w); x++) {
+    for (let x = room.x + 1; x < (room.x + room.w); x++) {
         checkAndAdd(x, room.y); // TOP
         checkAndAdd(x, (room.y + room.h) - 1); // BOTTOM
     }
 
-    for (let y = room.y; y < (room.y + room.h); y++) {
+    for (let y = room.y + 1; y < (room.y + room.h); y++) {
         checkAndAdd(room.x, y); // LEFT
         checkAndAdd((room.x + room.w) - 1, y); // RIGHT
     }
 
     if (candidates.length === 0) return null; // No valid door
+    console.log(candidates)
+    console.log(Math.floor(rng.room() * candidates.length))
 
     return candidates[Math.floor(rng.room() * candidates.length)];    
 }
@@ -483,7 +485,6 @@ const findConnectedRooms = (
                     console.log(`Connecting room ${node.id} to connected room ${connId}`)
                     const leaf = leaves.find(l => l.room?.id === connId)
                     setCorridor(leaf!, node, ROOMNODES[connId], grid, rng)
-                 
                 })
             }
         }
