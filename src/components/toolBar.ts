@@ -310,7 +310,7 @@ export const createToolBar = (
             const { inventory } = getGameStoreValue()
             if(quickSlot[i]?.quantity !== undefined){
                 if(quickSlot[i]?.quantity === 0){
-                    // Remove item in inventory       
+                    // Remove item from inventory       
                     const index = inventory.space.findIndex(s => s?.item.id === quickSlot[i]?.id)
                     if(index >= 0) inventory.space.splice(index, 1)
                 
