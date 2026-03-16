@@ -125,7 +125,7 @@ export const createToolBar = (
     border?: {
         width: number,
         color: Color
-    }
+    },
 ) => {
     const { tileWidth } = getOptionValue()
 
@@ -189,9 +189,9 @@ export const createToolBar = (
                 switch(key){
                     case 'I':{
                         const { inventory } = getGameStoreValue()
-                        if(inventory.open) return
-                        inventory.open = !inventory.open
-                        setInventoryUI(get('map')[0].get('ui')[0], get('player')[0], inventory.open).then(() => {
+                        if(!inventory.hide) return
+                        inventory.hide = !inventory.hide
+                        setInventoryUI(get('ui')[0], get('player')[0], inventory.hide).then(() => {
                             gameStore.set(inventoryUI, inventory)            
                         })          
                     }
@@ -248,6 +248,7 @@ export const createToolBar = (
                                 const itemSprite = defineItemSprite(opt.item.id.split('_')[0])
                                 oldOptions[i].sprite = itemSprite.sprite                
                                 oldOptions[i].frame = itemSprite.frame                
+                                oldOptions[i].hidden = false             
                             }else{
                                 // Create option
                                 setToolBarOptions(
@@ -261,6 +262,11 @@ export const createToolBar = (
                         }
                     }
 
+                    if(oldOptions.length > options.length){
+                        for(let i=options.length; i < oldOptions.length; i++){
+                            oldOptions[i].hidden = true
+                        }
+                    }                    
                 }else{
                     const lx = 0 - (slotWidth * (9 - (Number(key) + 1)))
 
