@@ -322,7 +322,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                                     console.log('added item to inventory', inventory.space)
 
                                     // If inventory is opened
-                                    if(inventory.open){
+                                    if(!inventory.hide){
                                         // Display pushed item
                                         const inventoryUI = get('ui')[0].get('inventory')[0]
                                         displayItemsInGrid(inventoryUI, tileWidth)
