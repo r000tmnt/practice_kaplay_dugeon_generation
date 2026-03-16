@@ -381,7 +381,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
                 ){
                     const listOpen = getData('listOpen')
                     const { inventory } = getGameStoreValue()
-                    if(currentAnim?.name !== 'attack' && !inventory.open && !listOpen) {
+                    if(currentAnim?.name !== 'attack' && inventory.hide && !listOpen) {
                         player.play("attack", {
                             onEnd: () => {
                                 player.frame = 0
@@ -411,9 +411,9 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         if(getData('ready') !== false){
             if(key === keys.inventory){
                 const { inventory } = getGameStoreValue()
-                inventory.open = !inventory.open
+                inventory.hide = !inventory.hide
 
-                setInventoryUI(get('ui')[0], player, inventory.open).then(() => {
+                setInventoryUI(get('ui')[0], player, inventory.hide).then(() => {
                     gameStore.set(inventoryUI, inventory)              
                 })   
             }

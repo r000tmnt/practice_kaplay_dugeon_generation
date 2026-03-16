@@ -730,29 +730,31 @@ const displayAttributeButtons = (
  * @param open - The current open state of inventory
  * @returns 
  */
-export const setInventoryUI = async(parent: GameObj, player: GameObj, open = false) => {
+export const setInventoryUI = async(parent: GameObj, player: GameObj, hide = true) => {
     const { tileWidth } = getOptionValue()
     // If UI created
-    const inventory = get('inventory')
-    const inventoryWidth = k.width() / 2
-    const inventoryHeight = k.height() * 19/20
+    const inventory = parent.get('inventory')
     const itemRow = 6
     const itemCol = 12    
     const padding = 10
 
     if(inventory.length){
         console.log('toggle inventory')
-        inventory[0].hidden = !open
+        inventory[0].hidden = hide
 
-        // Place Items
-        displayItemsInGrid(inventory[0], tileWidth)
+        if(!hide){
+            // Place Items
+            displayItemsInGrid(inventory[0], tileWidth)
 
-        displayAttributeButtons(inventory[0], player, tileWidth, itemRow, itemCol, padding)
-
+            displayAttributeButtons(inventory[0], player, tileWidth, itemRow, itemCol, padding)
+        }
         return
     }else
-    if(open){
+    if(!hide){
         // Create ui
+        const inventoryWidth = k.width() / 2
+        const inventoryHeight = k.height() * 19/20
+
         const inventory = parent.add([
             pos(k.width() / 2, k.height() / 2),
             {

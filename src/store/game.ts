@@ -14,7 +14,7 @@ export const gameState = atom({
     roomNodes: [] as roomNode[],
     polygon: [] as { x: number, y: number }[][],
     inventory: {
-        open: false,
+        hide: true,
         space: [] as (note | null)[],
         gold: 0,
         limit: 12 * 6
