@@ -205,7 +205,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                         })
                     },
                     checkDistanceToPlayer: (player: GameObj) => {
-                        if(enemy.defeat) return
+                        if(enemy.defeat || enemy.state === 'pause') return
                         const distance = enemy.pos.dist(player.pos)
 
                         console.log('distance', distance)
@@ -229,7 +229,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             console.log('spawned enemy', enemy)
 
             enemy.onObjectsSpotted((objs) => {
-                if(enemy.defeat) return
+                if(enemy.defeat || enemy.state === 'pause') return
 
                 const playerInSight = objs.find(o => o.is('player'))
                 const ObjectInSight = objs.find(o => o.is('pot') || o.is('chest'))
@@ -251,17 +251,17 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             })
 
             enemy.onPatrolFinished(()=> {
-                if(enemy.defeat) return
+                if(enemy.defeat || enemy.state === 'pause') return
                 if(enemy.path?.length) {
                     enemy.waypoints = [enemy.path[0]]
                     enemy.path.splice(0, 1)
                 }else{
                     console.log('patrol finished')
-                    if(enemy.state === 'chase' || enemy.state === 'attack' || enemy.state === 'pause') return
+                    if(enemy.state === 'chase' || enemy.state === 'attack') return
                     enemy.stop()
                     enemy.frame = 0                    
                     wait(Math.random(), () => {
-                        if(enemy.state === 'chase' || enemy.state === 'attack' || enemy.state === 'pause') return
+                        if(enemy.state === 'chase' || enemy.state === 'attack') return
                         enemy.enterState('idle')
                     })
                 }
@@ -316,7 +316,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                 enemy.play('attack', {
                     onEnd: () => {
                         console.log('enemy attack animation ended', enemy.hp)
-                        if(enemy.hp <= 0) return
+                        if(enemy.hp <= 0 || enemy.state === 'pause') return
 
                         enemy.frame = 0
 

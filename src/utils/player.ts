@@ -4,7 +4,7 @@ import type { roomNode } from '../model/map'
 import handData from '../data/hand.json'
 import { setCameraPosition } from './camera';
 import { createHitBox } from './hitBox'
-import { gameStore, getGameStoreValue, inventoryUI, quickSlots } from '../store/game';
+import { gameStore, getGameStoreValue, inventoryUI } from '../store/game';
 import { RoomState } from '../model/map'
 import type { item } from '../model/item';
 // import { getOptionValue } from '../store/setting';
@@ -40,7 +40,7 @@ const {
     rgb,
     // rotate,
     setData,
-    // state,
+    state,
     sprite,
     text,
     tween,
@@ -172,6 +172,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         pathfinder({
             graph: nav
         }),
+        state("active", ["active", "pause"]),
         pos((x * map.tileWidth) + (sizeWithPadding / 2), (y * map.tileWidth) + (sizeWithPadding / 2)),
         {
             facing: 'left',
@@ -295,7 +296,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
 
     // #region Player control
     player.onUpdate(() => {
-        if(!getData('ready', false)) return
+        if(!getData('ready', false) || player.state === 'pause') return
 
         const currentAnim = player.getCurAnim()
 
@@ -408,28 +409,28 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         keys.skill,
         keys.map
     ], (key) => {
-        if(getData('ready') !== false){
-            if(key === keys.inventory){
-                const { inventory } = getGameStoreValue()
-                inventory.hide = !inventory.hide
+        if(!getData('ready')|| player.state === 'pause') return
 
-                setInventoryUI(get('ui')[0], player, inventory.hide).then(() => {
-                    gameStore.set(inventoryUI, inventory)              
-                })   
-            }
-            // console.log('release key', key)
-            if(key === keys.option){
-                // Open game settings
-            }
+        if(key === keys.inventory){
+            const { inventory } = getGameStoreValue()
+            inventory.hide = !inventory.hide
 
-            if(key === keys.skill){
-                // Open skill menu
-            }
-
-            if(key === keys.map){
-                // Toggle mini map
-            }
+            setInventoryUI(get('ui')[0], player, inventory.hide).then(() => {
+                gameStore.set(inventoryUI, inventory)              
+            })   
         }
+        // console.log('release key', key)
+        if(key === keys.option){
+            // Open game settings
+        }
+
+        if(key === keys.skill){
+            // Open skill menu
+        }
+
+        if(key === keys.map){
+            // Toggle mini map
+        }        
     })
 
     // Quick slots
@@ -446,11 +447,44 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         keys.quick_slot_10,
     ], (key) => {
         // toggle quick slot 
-        if(!get('ready')) return
+        if(!getData('ready') || player.state === 'pause') return
         
         const { quickSlot } = getGameStoreValue()
 
-        const index = Number(key) - 1
+        let index = -1
+
+        switch(true){
+            case key === keys.quick_slot_1:
+                index = 0
+            break;
+            case key === keys.quick_slot_2:
+                index = 1
+            break;
+            case key === keys.quick_slot_3:
+                index = 2
+            break;
+            case key === keys.quick_slot_4:
+                index = 3
+            break;
+            case key === keys.quick_slot_5:
+                index = 4
+            break;
+            case key === keys.quick_slot_6:
+                index = 5
+            break;
+            case key === keys.quick_slot_7:
+                index = 6
+            break;
+            case key === keys.quick_slot_8:
+                index = 7
+            break;
+            case key === keys.quick_slot_9:
+                index = 8
+            break;
+            case key === keys.quick_slot_10:
+                index = 9
+            break;                                                                                                            
+        }
 
         if(quickSlot[index]){
             // use item or case skill
@@ -493,7 +527,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
     })
 
     player.onPatrolFinished(()=> {
-        if(player.hp === 0) return
+        if(player.hp === 0 || player.state === 'pause') return
         if(player.path?.length) {
             player.waypoints = [player.path[0]]
             player.path.splice(0, 1)
@@ -503,6 +537,10 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
             player.frame = 0 
         }
     })    
+
+    player.enterState('pause', () => {
+        player.stop()
+    })
 
     setUIElements(player)
     // #endregion  
