@@ -1,13 +1,16 @@
 import { createStore, atom } from "jotai";
-import type { chunk, prop, roomNode } from "../model/map";
+import type { chunk, prop, rng, roomNode } from "../model/map";
 import type { item, note } from "../model/item";
 import type { effect } from '../model/effect'
+import type { door } from '../model/door'
 import { focusAtom } from 'jotai-optics'
 
 export const gameState = atom({
     level: [] as number[][],
     entrance: {} as { x: number, y: number },
     exit: {} as { x: number, y: number },
+    door: {} as door,
+    rng: {} as rng,
     props: [] as prop[],
     chunks: {} as Record<string, chunk>,
     enemies: [] as prop[],
