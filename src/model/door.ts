@@ -1,6 +1,6 @@
 type cardType = 'red' | 'blue' | 'green'
 
-type cardLimit = 5
+const cardLimit = 5
 
 interface door {
     card: number,
@@ -9,5 +9,7 @@ interface door {
 
 export type {
     door,
-    cardLimit
+    cardType
 }
+
+export { cardLimit }
