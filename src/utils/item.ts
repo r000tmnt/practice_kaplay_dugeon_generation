@@ -11,8 +11,9 @@ import type { GameObj, Vec2 } from 'kaplay'
 import k from '../lib/kaplay'
 import { gameStore, getGameStoreValue, inventoryUI } from '../store/game'
 import { getOptionValue } from '../store/setting'
-import type { base, item } from '../model/item'
+import type { base, item, baseDropRate } from '../model/item'
 import { displayItemsInGrid } from '../components/inventory'
+import type { cardType } from '../model/door'
 
 const { 
     area,
@@ -104,16 +105,17 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
     const items: { name: string, item: item, sprite: string, frame: number }[] = []
     
     // Decide how many items to drop
-    const count = Math.floor(Math.random() * (base.count.max - base.count.min + 1)) + base.count.min
+    const { rng } = getGameStoreValue()
 
     // Dice roll
-    const rng = new RNG(Date.now()).gen()
+    const roll = rng.map()
+    const count = Math.floor(roll * (base.count.max - base.count.min + 1)) + base.count.min
 
     for(const [key, value] of Object.entries(base.item)){
-        if(rng < value && items.length < count){
+        if(roll < value && items.length < count){
             switch(key){
                 case 'gold':{
-                    const goldAmount = Math.floor(rng * (base.gold.max - base.gold.min + 1)) + base.gold.min
+                    const goldAmount = Math.floor(roll * (base.gold.max - base.gold.min + 1)) + base.gold.min
                     items.push({ name: 'gold', item: {
                         id: 'gold',
                         name: 'gold',
@@ -125,41 +127,59 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
                 break;
                 case 'potion':{
                     // Randomly select a potion from potionData
-                    const potionIndex = Math.floor(rng * potionData.length)
+                    const potionIndex = Math.floor(roll * potionData.length)
                     items.push({ name: 'potion', item: potionData[potionIndex], ...defineItemSprite(key) })
                 }
                 break;
                 case 'other':{
                     // Randomly select an other item from otherData
-                    const otherIndex = Math.floor(rng * otherData.length)
+                    const otherIndex = Math.floor(roll * otherData.length)
                     items.push({ name: 'other', item: otherData[otherIndex], ...defineItemSprite(key) })
                 }
                 break;
                 case 'card':{
-                    const cardIndex = Math.floor(rng * cardData.length)
-                    items.push({ name: 'other', item: cardData[cardIndex], ...defineItemSprite(key) })
+                    // Get door info
+                    const { door } = getGameStoreValue()                    
+                    // const rate
+
+                    // Try to drop the required card types specifically
+                    if(door.type.length > 0 && roll < 0.7){
+                        const type = Math.floor(roll * door.type.length)
+                        const cardsOftheType = cardData.filter(c => c.cardType === door.type[type])
+                        const cardIndex = Math.floor(roll * cardsOftheType.length)
+
+                        if(['red', 'green', 'blue'].includes(cardData[cardIndex].cardType)){
+                            items.push({ name: 'card', item: { ...cardData[cardIndex], cardType: door.type[type]}, ...defineItemSprite(key) })
+                        }                       
+                    }else{
+                        // Select randomly
+                        const cardIndex = Math.floor(roll * cardData.length)
+                        if(['red', 'green', 'blue'].includes(cardData[cardIndex].cardType)){
+                            items.push({ name: 'other', item: { ...cardData[cardIndex], cardType: cardData[cardIndex].cardType as cardType}, ...defineItemSprite(key) })
+                        }                     
+                    }
                 }
                 break;
                 default:{
                     let equipment
                     switch(key){
                         case 'head':
-                            equipment = headData[Math.floor(rng * headData.length)]
+                            equipment = headData[Math.floor(roll * headData.length)]
                         break;
                         case 'body':
-                            equipment = bodyData[Math.floor(rng * bodyData.length)]
+                            equipment = bodyData[Math.floor(roll * bodyData.length)]
                         break;
                         case 'hand':
-                            equipment = handData[Math.floor(rng * handData.length)]
+                            equipment = handData[Math.floor(roll * handData.length)]
                         break;
                         case 'feet':
-                            equipment = feetData[Math.floor(rng * feetData.length)]
+                            equipment = feetData[Math.floor(roll * feetData.length)]
                         break;
                         case 'accessory':
-                            equipment = accessoryData[Math.floor(rng * accessoryData.length)]
+                            equipment = accessoryData[Math.floor(roll * accessoryData.length)]
                         break;
                         case 'ring':
-                            equipment = accessoryData[Math.floor(rng * accessoryData.length)]
+                            equipment = accessoryData[Math.floor(roll * accessoryData.length)]
                         break;
                     }
                     // TODO: Modify item     
@@ -363,4 +383,24 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
             }
         }
     })
+}
+
+export const defineDropRate = (base: baseDropRate) => {
+    // If the entity can drop cards
+    if(base.item.card){
+        // Checking how many and the type of cards the player possessed
+        const { space } = getGameStoreValue().inventory
+        const possessedCards = space.filter(item => item?.item.id.includes('card'))
+
+        // Get door info
+        const { door } = getGameStoreValue()
+        
+        if(possessedCards.length < door.card){
+            base.item.card = 0.6
+        }
+
+        // If map effect the drop rate
+    }
+
+    return base
 }
