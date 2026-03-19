@@ -1,5 +1,6 @@
 import type { KEventController } from "kaplay";
 import type { Attribute, Secondary, Element, MaxStats, Require, Effect } from './stat'
+import type { cardType } from "./door";
 
 type ItemTypes =
   | 'head'
@@ -73,6 +74,7 @@ interface item {
     name: string,
     desc: string,
     type?: number,
+    cardType?: cardType,
     stackable: boolean,
     oneHanded?: boolean,
     attribute?: Attribute | null,
@@ -103,13 +105,36 @@ interface note {
     frame: number
 }
 
+interface baseDropRate {
+    gold: {
+        min: number,
+        max: number
+    },
+    item: {
+        gold: number,
+        head?: number,
+        hand?: number,
+        body?: number,
+        feet?: number,
+        accessory?: number,        
+        potion: number,
+        card: number,
+        other: number
+    },
+    count: {
+        min: number,
+        max: number
+    }    
+}
+
 export type {
     base,
     note,
     item,
     pickableItem,
     EquipField,
-    RarityTypes
+    RarityTypes,
+    baseDropRate
 }
 
 export {
