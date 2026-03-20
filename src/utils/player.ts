@@ -538,7 +538,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         }
     })    
 
-    player.enterState('pause', () => {
+    player.onStateEnter('pause', () => {
         player.stop()
     })
 
