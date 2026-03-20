@@ -7,7 +7,7 @@ import { getPlayers } from "./player";
 import { calculateDamage } from './battle'
 import potData from '../data/pot.json'
 import chestData from '../data/chest.json'
-import { setEffectTimer } from '../components/UI'
+import { setEffectTimer, setCardUI } from '../components/UI'
 
 const { 
     add,
@@ -116,11 +116,16 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
         pos(size.x, size.y),
         rotate(size.angle),
         {
-            anim: anim.name
+            anim: anim.name,
+            limit: 0,
+            lockOn: '' as string | string[]
         },
         // Tags
         "hitBox"
-    ])
+    ]) as GameObj 
+
+    // Limit the number of target
+    if(anim.name === 'attack') hitBox.limit = 1
 
     // console.log('hitBox created', hitBox)
 
@@ -226,7 +231,15 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
         if(obj.hp <= 0) return
 
         if(hitBox.parent) onHitEvent(hitBox, hitBox.parent, obj)
-    })            
+    })    
+
+    hitBox.onCollide('exit', (obj: GameObj) => {
+        if(hitBox.anim === 'attack'){
+            // Display UI to set map card 
+            console.log('exit!')
+            setCardUI(true)
+        }
+    })
 }
 
 // const setOverlap = (hitBox: GameObj, anim: SpriteCurAnim) => {

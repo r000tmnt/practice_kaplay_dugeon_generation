@@ -1,8 +1,8 @@
-import type { GameObj, KEventController, TimerController } from "kaplay";
+import type { GameObj, KEventController } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 import { getGameStoreValue, gameStore, effectAtom } from "../store/game";
-// import type { uiOwner } from "../model/UI"
+// import { door, cardLimit } from "../model/door";
 
 import { rectangleGauge, ringGauge } from "./gauge";
 import { createToolBar } from "./toolBar";
@@ -11,14 +11,18 @@ import type { effect } from "../model/effect";
 const {
     add,
     area,
+    anchor,
     drawText,
     drawRect,
+    // drawLine,
+    drawSprite,
     fixed,
     getData,
     get,
     // loop,
     layer,
     pos,
+    rect,
     Rect,
     rgb,
     setData,
@@ -139,6 +143,132 @@ export const setEffectTimer = (effect: effect) => {
             });            
         }      
     })
+}
+
+export const setCardUI = (open: boolean) => {
+    const { door, inventory } = getGameStoreValue()
+
+    const cards = inventory.space.filter((s) => s && s.item.id.includes('card'))
+    
+    const cardsMenu = get('ui')[0].get('cards')
+
+    // Pause every thing
+    get('player')[0].enterState('pause')
+    get('enemy').forEach((e) => e.enterState('pause'))
+
+    setData('card_selecting', open)
+
+    // Display or create menu
+    if(cardsMenu.length){
+        cardsMenu[0].hidden = open
+    }else{
+        const ui = get('ui')[0]
+
+        const { tileWidth } = getOptionValue()
+
+        const wrapper = ui.add([
+            rect(k.width(), k.height(), { fill: false }),
+            pos(0, 0),
+            // tags
+            'cards'
+        ])
+
+        wrapper.onDraw(() => {
+            drawRect({
+                width: k.width(),
+                height: k.height(),
+                pos: vec2(0, 0),
+                color: rgb(0, 0, 0),
+                opacity: 0.75
+            })
+
+            // Door info
+            // Require cards (type)
+            drawText({
+                text: `Require cards: ${door.card}`,
+                pos: vec2(0, 0)
+            })
+
+            const gap = 10
+
+            for(let i=0; i < door.card; i++){
+                drawRect({
+                    width: tileWidth * 3,
+                    height: tileWidth * 5,
+                    pos: vec2(((tileWidth * 3) * (i + 1)) + (gap * (i + 1)) , (k.height() / 2) - (tileWidth * 2.5)),
+                    outline: { width: 4, color: k.rgb(door.type[i]) },
+                    fill: false
+                })
+            }
+
+            // Need sprites for cards
+
+            // Card grid
+            // Scrollable or pagination
+            // const deckWidth = k.width() * (2/3)
+            const deckHeight = k.height() * (8/10)
+
+            drawRect({
+                width: k.width() * 0.75,
+                height: k.height() * (2/10),
+                pos: vec2(k.width() / 2, deckHeight),
+                color: rgb(0, 0, 0),
+                anchor: "center",
+                outline: { width: 4, color: rgb(50, 50, 50) }
+            })      
+            
+            // Pagination
+            const maxCardsPerPage = 5
+            const pages = Math.floor(door.card / maxCardsPerPage)
+            let start = 0
+            let end = 4
+
+            const defaultX = (k.width() / 2) - ((k.width() * 0.75) / 2)
+
+            // Draw item blocks
+            for(let card=start; card < end; card++){
+                if(cards[card] && (card + 1) < door.card){
+                    drawRect({
+                        width: tileWidth * 1.5,
+                        height: tileWidth * 2.5,
+                        color: rgb(75, 75, 75),
+                        pos: vec2(defaultX + (tileWidth * 1.5) * card + (gap * (card + 1)), deckHeight - (k.height() * (1/10)) + gap)
+                    })
+                    // drawSprite
+                }
+            }
+            // for(let page=0; page < pages; page++){
+            //     // horizontal lines
+
+            //     const py =
+            //             // If index point to center row or deeper
+            //             ((row + 1) >= (10 / 2))?
+
+            //             // Y + ((row - halfRow) * tileWidth) + halfTile
+            //             deckHeight + ((row - (10 / 2)) * tileWidth):
+                        
+            //             // Y - ((halfRow - row) * tileWidth)
+            //             deckHeight - (((10 / 2) - row) * tileWidth)                 
+
+            //     drawLine({
+            //         // Start
+            //         p1: vec2(
+            //             // relativeX - (halfCol * tileWidth)
+            //             0 - ((5 / 2) * tileWidth), 
+            //             py
+            //         ),
+            //         // End
+            //         p2: vec2(
+            //             // halfCol * tileWidth
+            //             (5 / 2) * tileWidth, 
+            //             py
+            //         ),
+            //         width: tileWidth / 10,
+            //         color: rgb(75, 75, 75)
+            //     })
+            // }    
+        })
+    }
 }
 
 export const setUIElements = (player: GameObj) => {

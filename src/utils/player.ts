@@ -10,7 +10,7 @@ import type { item } from '../model/item';
 // import { getOptionValue } from '../store/setting';
 import { spawnEnemiesForRoom } from './enemy';
 import playerData from '../data/player.json'
-import { setUIElements } from '../components/UI';
+import { setCardUI, setUIElements } from '../components/UI';
 import { setInventoryUI } from '../components/inventory'
 import { getOptionValue } from '../store/setting';
 import { 
@@ -421,7 +421,12 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         }
         // console.log('release key', key)
         if(key === keys.option){
+            const cardSelecting = getData('card_selecting')
+
+            if(cardSelecting === true) setCardUI(false)
+            else{
             // Open game settings
+            }
         }
 
         if(key === keys.skill){
