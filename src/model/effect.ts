@@ -18,7 +18,8 @@ type attribute =
 'numb' |
 'bleeding' |
 'dmg' |
-'exp'
+'exp' |
+'item_find_rate'
 
 type effectParam = Record<attribute, number>
 
