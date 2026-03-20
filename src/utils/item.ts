@@ -107,6 +107,8 @@ export const prepareItemsToDrop = (obj: GameObj, base: base = {
     // Decide how many items to drop
     const { rng } = getGameStoreValue()
 
+    base = defineDropRate(base)
+
     // Dice roll
     const roll = rng.map()
     const count = Math.floor(roll * (base.count.max - base.count.min + 1)) + base.count.min
