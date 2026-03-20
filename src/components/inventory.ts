@@ -235,6 +235,10 @@ const placeItemInGrid = (
 
     item.use(drag(item))
 
+    if(data.item.id.includes('card') && data.item.cardType){
+        item.use(color(rgb(data.item.cardType)))
+    }
+
     if(data.item.stackable){
         item.add([
             text(data.item.quantity && data.item.quantity > 1? String(data.item.quantity) : ""),

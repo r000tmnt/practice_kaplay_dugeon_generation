@@ -256,6 +256,10 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                     "item"
                 ])
 
+                if(item.item.id.includes('card') && item.item.cardType){
+                    dropped.use(k.color(k.rgb(item.item.cardType)))
+                }                
+
                 // Get control point between start and finish
                 const arcHeight = Math.floor(rng * (60 - 20) + 20)
                 const lift = vec2(
@@ -386,6 +390,8 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
 }
 
 export const defineDropRate = (base: baseDropRate) => {
+    const { effect } = getGameStoreValue()
+
     // If the entity can drop cards
     if(base.item.card){
         // Checking how many and the type of cards the player possessed
@@ -398,8 +404,25 @@ export const defineDropRate = (base: baseDropRate) => {
         if(possessedCards.length < door.card){
             base.item.card = 0.6
         }
+    }
 
-        // If map effect the drop rate
+    // Apply item drop effect if any
+    const itemEffect = effect.filter(e => e.item_find_rate)
+
+    if(itemEffect.length){
+        Object.entries(base.item).forEach(([key, value]) => {
+            base.item[key as keyof { 
+                gold: number,
+                head?: number,
+                hand?: number,
+                body?: number,
+                feet?: number,
+                accessory?: number,        
+                potion: number,
+                card: number,
+                other: number
+             }] = value + itemEffect.reduce((prev, curr) => prev + curr.item_find_rate, 0)
+        })
     }
 
     return base
