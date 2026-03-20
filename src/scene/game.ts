@@ -40,6 +40,8 @@ export default function initGame(){
     if(!layers) setLayers(['bg', 'game', "fg"], "game")    
 
     scene('game', async(map = null) => {
+        // Clear localStorage
+        localStorage.clear()        
         // loadSprite('testMap', '', {
         //     sliceX: 2,
         //     sliceY: 2
@@ -82,7 +84,7 @@ export default function initGame(){
 }
 
 const setMap = async(name = 'testMap') => {
-    const {level} = store.get(gameState)
+    const {level, danger} = store.get(gameState)
     const { tileWidth } = store.get(setting)
 
     map = add([pos(0, 0), opacity(1), "map", { tileWidth }])
@@ -100,13 +102,14 @@ const setMap = async(name = 'testMap') => {
         initPlayer(level, entrance as { x: number, y: number }, tileWidth)        
     }else{
         // Generate the map
-        const dungeon = await generateBSPDungeon('Prototype');
+        const dungeon = await generateBSPDungeon('demo_player' + danger + Date.now());
 
         if(dungeon){
             console.log('seed', dungeon.seed)
-            const { grid, entrance, exit } = dungeon
+            const { grid, entrance, exit, door } = dungeon
 
             console.log(entrance, exit)
+            console.log(door)
 
             if(entrance) grid[entrance.y][entrance.x] = 2
 
@@ -165,7 +168,7 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, exit: { 
             }
         }
 
-        // Conver the canvas to an image
+        // Convert the canvas to an image
         const tempImg = tempCanvas.toDataURL()
         console.log(tempImg)
         // Draw the image with kaplay
@@ -223,7 +226,7 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, exit: { 
         )
 
         // Set rects for collision around the rooms
-        // Refernce: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Left_shift#using_left_shift
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Left_shift#using_left_shift
         getWallEdges(level, tileWidth).then(() => {
             setChunks().finally(() => {
                 console.log('init player')
@@ -404,7 +407,7 @@ const setChunks = async() => {
 
 
 const initPlayer = (grid: number[][], entrance: { x: number, y: number }, tileWidth: number) => {
-    // Set Player starting position by examing entrance
+    // Set Player starting position by examining entrance
     if(entrance && grid[entrance.y][entrance.x - 1] !== 1) {
         createPlayerSprite(map, entrance.x - 1, entrance.y, grid[0].length * tileWidth, grid.length * tileWidth)    
     }else
