@@ -44,7 +44,8 @@ interface chunk {
 
 interface rng { 
     map: () => number, 
-    room: () => number, 
+    room: (roomId: number) => () => number, 
+    door: () => number,
     corridor: () => number, 
     loot: () => number, 
     props: () => number, 
