@@ -111,15 +111,15 @@ interface baseDropRate {
         max: number
     },
     item: {
-        gold: number,
+        gold?: number,
         head?: number,
         hand?: number,
         body?: number,
         feet?: number,
         accessory?: number,        
-        potion: number,
-        card: number,
-        other: number
+        potion?: number,
+        card?: number,
+        other?: number
     },
     count: {
         min: number,
