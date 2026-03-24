@@ -13,7 +13,7 @@
     "@stanko/kaplay-inspector": "^0.1.4",
     "jotai": "^2.15.2",
     "jotai-optics": "^0.4.0",
-    "kaplay": "^4000.0.0-alpha.26",
+    "kaplay": "^4000.0.0-alpha.27",
     "optics-ts": "^2.4.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
