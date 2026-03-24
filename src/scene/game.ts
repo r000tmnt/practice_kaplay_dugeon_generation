@@ -48,8 +48,12 @@ export default function initGame(){
         // })
 
         // loadSpriteAtlas('player/demo_player_spritesheet.png', 'player/demo_player_spritesheet.json')
-        loadSpriteAtlas('player/demo_player_68x68_alter.png', 'player/demo_player_spritesheet.json')
+        const playerSprite = loadSpriteAtlas('player/demo_player_68x68_alter.png', 'player/demo_player_spritesheet.json')
         loadSpriteAtlas('enemy/demo_enemy_spritesheet.png', 'enemy/demo_enemy_spritesheet.json')
+
+        console.log('playerSprite', playerSprite)
+
+        loadSprite('card', 'map/card.png')
 
         loadSprite('pot', 'map/demo_pot_16x16.png', {
             sliceX: 2,
