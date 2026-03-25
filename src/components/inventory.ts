@@ -1,4 +1,4 @@
-import type { GameObj, Anchor } from "kaplay";
+import type { GameObj, Anchor, ColorComp } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
 import { getGameStoreValue, gameStore, inventoryUI } from "../store/game";
@@ -513,13 +513,13 @@ const placeItemInGrid = (
                 // console.log(dist)
 
                 const padding = 10
-
-                const itemColor = RARITY_COLORS[item.item.rarity? item.item.rarity.toLowerCase() as RarityTypes : 'common']
+                const rarity = item.item.rarity? item.item.rarity.toLowerCase() as RarityTypes : 'common'
+                const itemColor = RARITY_COLORS[rarity]
 
                 // Get the param to display
                 const attribute: string[] = [
                     // name
-                    `[rarity]${item.item.name}[/rarity]`,
+                    `[${rarity}]${item.item.name}[/${rarity}]`,
                     // Rarity + type,
                     `${item.item.rarity} ${item.item.type? itemSubType[item.item.type] : ''}`,
                     // Desc
@@ -604,6 +604,7 @@ const placeItemInGrid = (
                     detail[0].children[0].anchor = origin
                     detail[0].children[0].attribute = attribute
                     detail[0].hidden = false
+                    detail[0].outline.color = Color.fromHex(itemColor)
 
                     // Keep the detail as the last child
                     readd(detail[0])
@@ -648,14 +649,19 @@ const placeItemInGrid = (
                                 tx = tx - padding - (dw - padding)
                             }
 
+                            const colors: Record<string, ColorComp> = {}
+
+                            Object.entries(RARITY_COLORS).map((rarity) => {
+                                colors[rarity[0]] = color(Color.fromHex(rarity[1]))
+                            })
+
                             drawText({
                                 text: param,
                                 size: tileWidth / 3,
                                 width: dw - (padding * 2),
                                 pos: vec2(tx, ty),
                                 styles: {
-                                    'red': color(150, 0, 0),
-                                    'rarity': color(Color.fromHex(itemColor))
+                                    ...colors
                                 },
                                 anchor: 'topleft'
                             })                    
