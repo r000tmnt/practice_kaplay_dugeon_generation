@@ -7,25 +7,31 @@ import { getGameStoreValue, gameStore, effectAtom } from "../store/game";
 import { rectangleGauge, ringGauge } from "./gauge";
 import { createToolBar } from "./toolBar";
 import type { effect } from "../model/effect";
+import { drag, isPickable } from '../utils/UI'
 
 const {
     add,
     area,
     anchor,
+    color,
     drawText,
     drawRect,
     // drawLine,
-    drawSprite,
+    // drawSprite,
     fixed,
     getData,
     get,
     // loop,
     layer,
     pos,
+    polygon,
     rect,
     Rect,
     rgb,
+    readd,
     setData,
+    sprite,
+    scale,
     // tween,
     vec2,
     // wait
@@ -56,30 +62,39 @@ export const setEffectTimer = (effect: effect) => {
 
     let percentage = 0
 
+    const toCut: Record<string, number> = {}
+
     // Apply effect
     Object.entries(effect).forEach(([key, value]) => {
         const isInt = Number.isInteger(value)
 
         if(player.secondary[key]){
-            player.secondary[key] += 
-                (isInt)?
+            toCut[key] = (isInt)?
                     value :    
-                    player.secondary[key] * value
+                    Math.floor(player.secondary[key] * value)
+
+            player.secondary[key] += toCut[key]
         }
 
-        if(player.resist[key]) player.resist[key] += value
+        if(player.resist[key]) {
+            player.resist[key] += value
+            toCut[key] = value
+        }
 
         if(key === 'hp' || key === 'mp'){
-            player.max[key] +=                 
-                (isInt)?
+            toCut[key] = (isInt)?
                     value : 
-                    player.max[key] * value
+                    Math.floor(player.max[key] * value)
+
+            player.max[key] += toCut[key]       
         }else
         if(player.attribute[key]){
-            player.attribute[key] += 
+            toCut[key] = 
                 (isInt)?
                     value : 
-                    player.attribute[key] * value
+                    Math.floor(player.attribute[key] * value)   
+
+            player.attribute[key] += toCut[key]
         }
     });
 
@@ -118,27 +133,18 @@ export const setEffectTimer = (effect: effect) => {
                 const isInt = Number.isInteger(value)
 
                 if(player.secondary[key]){
-                    player.secondary[key] = 
-                        (isInt)?
-                            player.secondary[key] - value :
-                            player.secondary[key] / (1 + value)
+                    player.secondary[key] -= toCut[key]
                 }
 
-                if(player.resist[key]) player.resist[key] -= value
+                if(player.resist[key]) player.resist[key] -= toCut[key]
 
                 if(key === 'hp' || key === 'mp'){
-                    player.max[key] = 
-                        (isInt)?
-                            player.max[key] - value:
-                            player.max[key] / (1 + value)
+                    player.max[key] -= toCut[key]
 
                     if(player.attribute[key] > player.max[key]) player.attribute[key] = player.max[key]
                 }else
                 if(player.attribute[key]){
-                    player.attribute[key] += 
-                        (isInt)?
-                            player.attribute[key] - value :
-                            player.attribute[key] / (1 + value)
+                    player.attribute[key] -= toCut[key]
                 }                
             });            
         }      
@@ -152,15 +158,25 @@ export const setCardUI = (open: boolean) => {
     
     const cardsMenu = get('ui')[0].get('cards')
 
-    // Pause every thing
-    get('player')[0].enterState('pause')
-    get('enemy').forEach((e) => e.enterState('pause'))
+    const gap = 10
+
+    const deckHeight = k.height() * (8/10)
+
+    if(open){
+        // Pause every thing
+        get('player')[0].enterState('pause')
+        get('enemy').forEach((e) => e.paused = true)        
+    }else{
+        // Un-Pause every thing
+        get('player')[0].enterState('active')
+        get('enemy').forEach((e) => e.paused = false)
+    }
 
     setData('card_selecting', open)
 
     // Display or create menu
     if(cardsMenu.length){
-        cardsMenu[0].hidden = open
+        cardsMenu[0].hidden = !open
     }else{
         const ui = get('ui')[0]
 
@@ -186,10 +202,9 @@ export const setCardUI = (open: boolean) => {
             // Require cards (type)
             drawText({
                 text: `Require cards: ${door.card}`,
-                pos: vec2(0, 0)
+                size: tileWidth,
+                pos: vec2(tileWidth, tileWidth)
             })
-
-            const gap = 10
 
             for(let i=0; i < door.card; i++){
                 drawRect({
@@ -206,7 +221,6 @@ export const setCardUI = (open: boolean) => {
             // Card grid
             // Scrollable or pagination
             // const deckWidth = k.width() * (2/3)
-            const deckHeight = k.height() * (8/10)
 
             drawRect({
                 width: k.width() * 0.75,
@@ -216,58 +230,147 @@ export const setCardUI = (open: boolean) => {
                 anchor: "center",
                 outline: { width: 4, color: rgb(50, 50, 50) }
             })      
-            
-            // Pagination
-            const maxCardsPerPage = 5
-            const pages = Math.floor(door.card / maxCardsPerPage)
-            let start = 0
-            let end = 4
+        })
 
-            const defaultX = (k.width() / 2) - ((k.width() * 0.75) / 2)
+        // Pagination
+        const maxCardsPerPage = 10
+        // const pages = Math.floor(door.card / maxCardsPerPage)
+        let start = 0
+        let end = 9
 
+        const defaultX = (k.width() / 2) - ((k.width() * 0.75) / 2)
+
+        // If card objects created
+        const cardsObj = wrapper.get('card')
+
+        if(cardsObj.length){
+            // Replace or hide cards
+            for(let card=start; card <= end; card++){
+                if(cards[card] && (card + 1) <= door.card){
+                    // card
+                }
+            }
+        }else{
             // Draw item blocks
             for(let card=start; card < end; card++){
                 if(cards[card] && (card + 1) < door.card){
-                    drawRect({
-                        width: tileWidth * 1.5,
-                        height: tileWidth * 2.5,
-                        color: rgb(75, 75, 75),
-                        pos: vec2(defaultX + (tileWidth * 1.5) * card + (gap * (card + 1)), deckHeight - (k.height() * (1/10)) + gap)
+                    const mapCard = wrapper.add([
+                        sprite('card'),
+                        area(),
+                        pos(defaultX + (tileWidth * 1.5) * card + (gap * (card + 1)), deckHeight - (k.height() * (1/10)) + gap),
+                        scale(0.5),
+                        {
+                            spawn: { x: defaultX + (tileWidth * 1.5) * card + (gap * (card + 1)), y: deckHeight - (k.height() * (1/10)) + gap }
+                        },
+                        // tags
+                        'card'
+                    ])
+
+                    mapCard.use(drag(mapCard))
+
+                    mapCard.onMousePress(() => {
+                        if(wrapper.hidden) return
+                        if('dragging' in mapCard && mapCard.dragging === true) return
+
+                        if(mapCard.isHovering()){
+                            if(isPickable(mapCard)) {
+                                mapCard.pick()
+                            }    
+                        }                        
                     })
-                    // drawSprite
+
+                    mapCard.onMouseRelease(() => {
+                        if('dragging' in mapCard && mapCard.dragging === true){
+                            console.log('mapCard on drag end')
+                            mapCard.trigger("dragEnd");
+                            mapCard.dragging = false                             
+                        }
+                    }) 
+                    
+                    if(isPickable(mapCard)) {
+                        mapCard.onDrag(() => {
+                            if('dragging' in mapCard && mapCard.dragging === true){
+                                readd(mapCard)
+                            }
+                        }) 
+                        
+                        mapCard.onDragEnd(() => {
+                            // Check position
+                            let chosen = false
+
+                            for(let i=0; i < door.card; i++){
+                                const left = ((tileWidth * 3) * (i + 1)) + (gap * (i + 1))
+                                const right = left + (tileWidth * 3)
+                                const top = (k.height() / 2) - (tileWidth * 2.5)
+                                const down = top + (tileWidth * 5)
+
+                                const { x, y } = mapCard.worldPos
+
+                                if(
+                                    x >= left && x <= right &&
+                                    y >= top && y <= down
+                                ){
+                                    mapCard.pos = vec2(left, top)
+                                    mapCard.scale = vec2(1)
+                                    chosen = true
+                                    break
+                                }
+                            }
+                            
+                            if(!chosen){
+                                // Put the card back
+                                mapCard.pos = vec2(mapCard.spawn.x, mapCard.spawn.y)
+                            }
+                        })
+                    }                        
                 }
             }
-            // for(let page=0; page < pages; page++){
-            //     // horizontal lines
+            
+            // Place arrows 
+            // Left
+            wrapper.add([
+                polygon([
+                        vec2(defaultX - (tileWidth + gap), deckHeight),
+                        vec2(defaultX - gap, deckHeight - (tileWidth / 2)),
+                        vec2(defaultX - gap, deckHeight + (tileWidth / 2)),
+                    ],
+                    {
+                        colors: [
+                            rgb(50, 50, 50),
+                            rgb(75, 75, 75),
+                            rgb(75, 75, 75),
+                        ]
+                    }
+                ),
+                area(),
+                anchor('center'),
+                // tags
+                'page'                
+            ]) 
 
-            //     const py =
-            //             // If index point to center row or deeper
-            //             ((row + 1) >= (10 / 2))?
+            const rArrowX = defaultX + (k.width() * 0.75)
 
-            //             // Y + ((row - halfRow) * tileWidth) + halfTile
-            //             deckHeight + ((row - (10 / 2)) * tileWidth):
-                        
-            //             // Y - ((halfRow - row) * tileWidth)
-            //             deckHeight - (((10 / 2) - row) * tileWidth)                 
-
-            //     drawLine({
-            //         // Start
-            //         p1: vec2(
-            //             // relativeX - (halfCol * tileWidth)
-            //             0 - ((5 / 2) * tileWidth), 
-            //             py
-            //         ),
-            //         // End
-            //         p2: vec2(
-            //             // halfCol * tileWidth
-            //             (5 / 2) * tileWidth, 
-            //             py
-            //         ),
-            //         width: tileWidth / 10,
-            //         color: rgb(75, 75, 75)
-            //     })
-            // }    
-        })
+            // Right
+            wrapper.add([
+                polygon([
+                        vec2(rArrowX + gap + tileWidth, deckHeight),
+                        vec2(rArrowX + gap, deckHeight - (tileWidth / 2)),
+                        vec2(rArrowX + gap, deckHeight + (tileWidth / 2)),
+                    ],
+                    {
+                        colors: [
+                            rgb(50, 50, 50),
+                            rgb(75, 75, 75),
+                            rgb(75, 75, 75),
+                        ]
+                    }                    
+                ),
+                area(),
+                anchor('center'),
+                // tags
+                'page'
+            ])           
+        }       
     }
 }
 
