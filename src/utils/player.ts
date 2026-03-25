@@ -31,7 +31,7 @@ const {
     isMousePressed,
     layer,
     lifespan,
-    // onKeyRelease,
+    onKeyRelease,
     opacity,
     pathfinder,
     patrol,
@@ -360,11 +360,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
 
                 const unitVector = diagonalFactor.unit()
 
-                const { effect } = getGameStoreValue()
-
-                const boost = effect.find(e => e.move_speed)
-
-                player.move(unitVector.scale((boost)? player.secondary.move_speed + boost.move_speed : player.secondary.move_speed))
+                player.move(unitVector.scale(player.secondary.move_speed))
 
                 // Get current room
                 const { roomNodes } = getGameStoreValue()
@@ -403,15 +399,16 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
     })  
 
     // inventory, option, skill, map
-    player.onKeyRelease([
+    onKeyRelease([
         keys.inventory,
         keys.option,
         keys.skill,
         keys.map
     ], (key) => {
-        if(!getData('ready')|| player.state === 'pause') return
+        if(!getData('ready')) return
 
         if(key === keys.inventory){
+            if(player.state === 'pause') return
             const { inventory } = getGameStoreValue()
             inventory.hide = !inventory.hide
 
@@ -430,16 +427,18 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         }
 
         if(key === keys.skill){
+            if(player.state === 'pause') return
             // Open skill menu
         }
 
         if(key === keys.map){
+            if(player.state === 'pause') return
             // Toggle mini map
         }        
     })
 
     // Quick slots
-    player.onKeyRelease([
+    onKeyRelease([
         keys.quick_slot_1,
         keys.quick_slot_2,
         keys.quick_slot_3,
@@ -541,10 +540,14 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
             player.stop()
             player.frame = 0 
         }
+    })
+    
+    player.onStateEnter('active', () => {
+        player.paused = false
     })    
 
     player.onStateEnter('pause', () => {
-        player.stop()
+        player.paused = true
     })
 
     setUIElements(player)
