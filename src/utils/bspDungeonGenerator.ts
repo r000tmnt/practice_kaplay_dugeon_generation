@@ -315,14 +315,14 @@ const getValidDoorTiles = (room: roomNode, tilemap: number[][], rng: rng) => {
         if (tilemap[y][x] !== 1) return; // Your wall value (adjust as needed)
 
         // If is a corner
-        // Top left
-        if(tilemap[y - 1][x] === 0 && tilemap[y][x - 1] === 0) x += 1
-        // Top right
-        if(tilemap[y - 1][x] === 0 && tilemap[y][x + 1] === 0) x -= 1
-        // Down left
-        if(tilemap[y + 1][x] === 0 && tilemap[y][x - 1] === 0) x += 1
-        // Down right
-        if(tilemap[y + 1][x] === 0 && tilemap[y][x + 1] === 0) x -= 1
+        // // Top left
+        // if(tilemap[y - 1][x] === 0 && tilemap[y][x - 1] === 0) x += 1
+        // // Top right
+        // if(tilemap[y - 1][x] === 0 && tilemap[y][x + 1] === 0) x -= 1
+        // // Down left
+        // if(tilemap[y + 1][x] === 0 && tilemap[y][x - 1] === 0) x += 1
+        // // Down right
+        // if(tilemap[y + 1][x] === 0 && tilemap[y][x + 1] === 0) x -= 1
 
         // Check if one side is walkable (corridor)
         for (const d of dirs) {
@@ -1136,15 +1136,15 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
         type: Array.from({ length: card? card : 1 }).map((_, i) => {
             const rng = createLCG(hashString(seed + '_card_' + i))() 
 
-            const index = Math.floor(rng * CARDTYPE.length)
-
             if(i > 0 && rng > 0.5){
                 // Force to change card type
                 const newIndex = Math.floor(createLCG(hashString(rng + '_card_' + i))() * CARDTYPE.length)
 
-                console.log(index, newIndex)
+                console.log('newIndex', newIndex)
                 return CARDTYPE[newIndex]
             }else{
+                const index = Math.floor(rng * CARDTYPE.length)
+                console.log('index', index)
                return CARDTYPE[index] 
             }            
         }) 
