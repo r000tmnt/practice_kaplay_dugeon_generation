@@ -324,15 +324,20 @@ const getValidDoorTiles = (room: roomNode, tilemap: number[][], rng: rng) => {
         // // Down right
         // if(tilemap[y + 1][x] === 0 && tilemap[y][x + 1] === 0) x -= 1
 
+        const dir: boolean[] = []
+
         // Check if one side is walkable (corridor)
         for (const d of dirs) {
             const nx = x + d.dx;
             const ny = y + d.dy;
             if (isWalkable(nx, ny)) {
-                candidates.push({ x, y });
+                dir.push(true)
                 break;
             }
         }
+
+        // Limit the valid door tile to facing one direction only
+        if(dir.length === 1) candidates.push({ x, y });
     }
 
     for (let x = room.x + 1; x < (room.x + room.w) - 1; x++) {
