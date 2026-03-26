@@ -38,6 +38,8 @@ const {
 } = k
 
 let currentDragging: GameObj | null
+let cardPageStart = 0
+let cardPageEnd = 0
 
 const effectTimer: KEventController[] = []
 
@@ -51,6 +53,113 @@ const displayTextOnBar = (bar:GameObj, barHeight: number, tileWidth: number ) =>
         width: area.shape.width,
         size: tileWidth / 2
     })         
+}
+
+const placeCards = (
+    wrapper: GameObj, 
+    tileWidth: number, 
+    defaultX: number, 
+    deckHeight: number, 
+    gap: number, 
+    start = 0, 
+    end = 10
+) => {
+    const { door, inventory } = getGameStoreValue()
+
+    // Cards from inventory
+    const cards = inventory.space.filter((s) => s && s.item.id.includes('card'))
+
+    // Created sprites
+    const oldCards = wrapper.get('card')
+
+    // Pagination
+    // const pages = Math.floor(door.card / maxCardsPerPage)
+    const limit = 10
+    const page = limit * Math.floor((end + 1) / 10)
+
+    for(let card=start; card < end; card++){
+        const index = limit > (card + 1)? card : card - (limit * page)
+        if(oldCards[index] && oldCards[index].data.id !== cards[index]?.item.id){
+            // Replace sprite
+        }
+
+        if(!oldCards[index]){
+            // Create sprite
+            const mx = defaultX + ((tileWidth * 1.5) * (index + 1)) + (gap * (index + 1))
+            const my = deckHeight - (k.height() * (1/10)) + gap
+            const mapCard = wrapper.add([
+                sprite('card'),
+                area(),
+                pos(mx, my),
+                scale(0.5),
+                fixed(),
+                {
+                    spawn: { x: mx, y: my },
+                    data: cards[card]?.item
+                },
+                // tags
+                'card'
+            ])
+
+            mapCard.use(drag(mapCard))
+
+            mapCard.onMousePress(() => {
+                if(wrapper.hidden) return
+                if('dragging' in mapCard && mapCard.dragging === true) return
+                if(currentDragging && currentDragging.id === mapCard.id)
+                if(mapCard.isHovering() && isPickable(mapCard)){
+                    currentDragging = mapCard
+                    mapCard.pick()
+                }                        
+            })
+
+            mapCard.onMouseRelease(() => {
+                if('dragging' in mapCard && mapCard.dragging === true){
+                    currentDragging = null
+                    console.log('mapCard on drag end')
+                    mapCard.trigger("dragEnd");
+                    mapCard.dragging = false                             
+                }
+            }) 
+            
+            if(isPickable(mapCard)) {
+                mapCard.onDrag(() => {
+                    if('dragging' in mapCard && mapCard.dragging === true){
+                        readd(mapCard)
+                    }
+                }) 
+                
+                mapCard.onDragEnd(() => {
+                    // Check position
+                    let chosen = false
+
+                    for(let i=0; i < door.card; i++){
+                        const left = ((tileWidth * 3) * (i + 1)) + (gap * (i + 1))
+                        const right = left + (tileWidth * 3)
+                        const top = (k.height() / 2) - (tileWidth * 2.5)
+                        const down = top + (tileWidth * 5)
+
+                        const { x, y } = mapCard.worldPos
+
+                        if(
+                            x >= left && x <= right &&
+                            y >= top && y <= down
+                        ){
+                            mapCard.pos = vec2(left, top)
+                            mapCard.scale = vec2(1)
+                            chosen = true
+                            break
+                        }
+                    }
+                    
+                    if(!chosen){
+                        // Put the card back
+                        mapCard.pos = vec2(mapCard.spawn.x, mapCard.spawn.y)
+                    }
+                })
+            }                
+        }
+    }
 }
 
 export const setEffectTimer = (effect: effect) => {
@@ -235,12 +344,6 @@ export const setCardUI = (open: boolean) => {
             })      
         })
 
-        // Pagination
-        const maxCardsPerPage = 10
-        // const pages = Math.floor(door.card / maxCardsPerPage)
-        let start = 0
-        let end = 9
-
         const defaultX = (k.width() / 2) - ((k.width() * 0.75) / 2)
 
         // If card objects created
@@ -248,94 +351,25 @@ export const setCardUI = (open: boolean) => {
 
         if(cardsObj.length){
             // Replace or hide cards
-            for(let card=start; card <= end; card++){
-                if(cards[card] && (card + 1) <= door.card){
-                    // card
-                }
-            }
+            placeCards(
+                wrapper,
+                tileWidth,
+                defaultX,
+                deckHeight,
+                gap,
+            )
         }else{
-            // Draw item blocks
-            for(let card=start; card < end; card++){
-                if(cards[card] && (card + 1) < door.card){
-                    const index = card + 1
-                    const mx = defaultX + ((tileWidth * 1.5) * index) + (gap * index)
-                    const my = deckHeight - (k.height() * (1/10)) + gap
-                    const mapCard = wrapper.add([
-                        sprite('card'),
-                        area(),
-                        pos(mx, my),
-                        scale(0.5),
-                        fixed(),
-                        {
-                            spawn: { x: mx, y: my }
-                        },
-                        // tags
-                        'card'
-                    ])
-
-                    mapCard.use(drag(mapCard))
-
-                    mapCard.onMousePress(() => {
-                        if(wrapper.hidden) return
-                        if('dragging' in mapCard && mapCard.dragging === true) return
-                        if(currentDragging && currentDragging.id === mapCard.id)
-                        if(mapCard.isHovering() && isPickable(mapCard)){
-                            currentDragging = mapCard
-                            mapCard.pick()
-                        }                        
-                    })
-
-                    mapCard.onMouseRelease(() => {
-                        if('dragging' in mapCard && mapCard.dragging === true){
-                            currentDragging = null
-                            console.log('mapCard on drag end')
-                            mapCard.trigger("dragEnd");
-                            mapCard.dragging = false                             
-                        }
-                    }) 
-                    
-                    if(isPickable(mapCard)) {
-                        mapCard.onDrag(() => {
-                            if('dragging' in mapCard && mapCard.dragging === true){
-                                readd(mapCard)
-                            }
-                        }) 
-                        
-                        mapCard.onDragEnd(() => {
-                            // Check position
-                            let chosen = false
-
-                            for(let i=0; i < door.card; i++){
-                                const left = ((tileWidth * 3) * (i + 1)) + (gap * (i + 1))
-                                const right = left + (tileWidth * 3)
-                                const top = (k.height() / 2) - (tileWidth * 2.5)
-                                const down = top + (tileWidth * 5)
-
-                                const { x, y } = mapCard.worldPos
-
-                                if(
-                                    x >= left && x <= right &&
-                                    y >= top && y <= down
-                                ){
-                                    mapCard.pos = vec2(left, top)
-                                    mapCard.scale = vec2(1)
-                                    chosen = true
-                                    break
-                                }
-                            }
-                            
-                            if(!chosen){
-                                // Put the card back
-                                mapCard.pos = vec2(mapCard.spawn.x, mapCard.spawn.y)
-                            }
-                        })
-                    }                        
-                }
-            }
+            placeCards(
+                wrapper,
+                tileWidth,
+                defaultX,
+                deckHeight,
+                gap,
+            )
             
             // Place arrows 
             // Left
-            wrapper.add([
+            const left = wrapper.add([
                 polygon([
                         vec2(defaultX - (tileWidth + gap), deckHeight),
                         vec2(defaultX - gap, deckHeight - (tileWidth / 2)),
@@ -358,7 +392,7 @@ export const setCardUI = (open: boolean) => {
             const rArrowX = defaultX + (k.width() * 0.75)
 
             // Right
-            wrapper.add([
+            const right = wrapper.add([
                 polygon([
                         vec2(rArrowX + gap + tileWidth, deckHeight),
                         vec2(rArrowX + gap, deckHeight - (tileWidth / 2)),
@@ -376,7 +410,11 @@ export const setCardUI = (open: boolean) => {
                 anchor('center'),
                 // tags
                 'page'
-            ])           
+            ])
+            
+            left.onClick(() => {
+
+            })
         }       
     }
 }
