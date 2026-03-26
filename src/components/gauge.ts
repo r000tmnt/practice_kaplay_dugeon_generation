@@ -12,6 +12,7 @@ const {
     drawRect,
     drawCircle,
     drawPolygon,
+    drawEllipse,
     drawText,
     fixed,
     outline,
@@ -224,29 +225,54 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
         ])        
     }
 
+    let currentProgress = 0
+
     ring.onDraw(() => {
         const { unit, attribute } = reference
         const start = Math.floor(unit.max[attribute] / 2.5) * (unit.lv - 1)
         const ringLength = unit.max[attribute] - start 
-        const progress = (unit[attribute] - start) / ringLength
-        const steps = 60
+        // const steps = 40
         const thickness = 10
 
-        const outer = []
-        const inner = []
+        const progress = (unit[attribute] - start) / ringLength
 
-        for(let i=0; i <= steps * progress; i++){
-            const t = i / steps
-
-            // outer edge
-            outer.push(arcPoint(t, radius))
-
-            // inner edge
-            inner.push(arcPoint(t, radius - thickness))
+        if(currentProgress !== progress){
+            // If the player is going to level up
+            if(progress < currentProgress){
+                if(currentProgress >= 0.9999){
+                    // Reset the gauge
+                    currentProgress = 0
+                }else{
+                    // Fill up the gauge 
+                    currentProgress += (1 - currentProgress) * 0.1                    
+                }
+            }else{
+                currentProgress += (progress - currentProgress) * 0.1
+            }
         }
+        
+        // Clamp to avoid full-circle overlap bug
+        // const maxAngle = Math.min(progress, 0.9999) * Math.PI * 2
+
+        // const outer = []
+        // const inner = []
+
+        // for(let i=0; i <= steps * progress; i++){
+        //     const t = i / steps
+            
+        //     // outer edge
+        //     outer.push(arcPoint(t, middlePoint, maxAngle))
+        // }
+
+        // for(let i= steps * progress; i >= 0; i--){
+        //     const t = i / steps
+
+        //     // inner edge
+        //     inner.push(arcPoint(t, radius - thickness, maxAngle))            
+        // }
 
         // inner must reverse to close polygon properly
-        inner.reverse()   
+        // inner.reverse()   
 
         // const pts = [...outer, ...inner]
 
@@ -271,18 +297,39 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
                 width: thickness / 2,
                 color: color.outer
             }
-        })          
-
-        drawPolygon({ 
-            pts: [...outer, ...inner],
-            color: color.inner,
+        })    
+        
+        drawEllipse({
             pos: vec2(0, 0),
+            color: color.inner,
+            // gradient: [
+            //     color.inner,
+            //     k.rgb(200, 200, 0)
+            // ],
+            radiusX: radius,
+            radiusY: radius,
+            start: -90,
+            end: (360 * currentProgress) + -90
         })
+
+        // drawPolygon({ 
+        //     pts: [...outer, ...inner],
+        //     color: color.inner,
+        //     pos: vec2(0, 0),
+        // })
+        
+        // outer.forEach((point) => {
+        //     drawCircle({
+        //         pos: vec2(point.x, point.y),
+        //         radius: thickness / 2,
+        //         color: color.inner
+        //     })   
+        // });
 
         // Inner circle
         drawCircle({
             pos: vec2(0,0),
-            radius: radius -10,
+            radius: radius - thickness,
             color: color.outer
         })  
 
