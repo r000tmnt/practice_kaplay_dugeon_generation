@@ -332,7 +332,6 @@ const getValidDoorTiles = (room: roomNode, tilemap: number[][], rng: rng) => {
             const ny = y + d.dy;
             if (isWalkable(nx, ny)) {
                 dir.push(true)
-                break;
             }
         }
 
@@ -922,6 +921,39 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
         );
     }
 
+    await setProps(grid, rooms, rng)
+
+    const graph = new Map<number, RoomNode>()
+
+    ROOMNODES.forEach((room, index) => {
+        graph.set(index, {
+            id: index,
+            room : {
+                x: room.x,
+                y: room.y,
+                w: room.w,
+                h: room.h,
+                center: { ...room.center },
+            },
+            type: RoomType.SidePath,
+            neighbors: new Set()
+        })
+    })
+
+    console.log('graph', graph)
+
+    leaves.forEach(leaf => {
+        leaf.corridors.forEach(({x1, x2, y1, y2}) => {
+            const a = findRoomAt(x1, y1, graph);
+            const b = findRoomAt(x2, y2, graph);
+
+            if (a !== null && b !== null && a !== b) {
+                graph.get(a)!.neighbors.add(b);
+                graph.get(b)!.neighbors.add(a);
+            }
+        });
+    });
+
     const randomRoomId = Math.floor(rng.map() * rooms.length);
 
     const entranceSearch = findFarthestRoom(randomRoomId, ROOMNODES);
@@ -929,6 +961,17 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
 
     const exitSearch = findFarthestRoom(entranceId, ROOMNODES);
     const exitId = exitSearch.id;
+
+    // 7. Assign room type
+    graph.get(entranceId)!.type = RoomType.Entrance;
+    graph.get(exitId)!.type = RoomType.Exit; 
+
+    // Connect rooms if needed
+    findConnectedRooms(grid, leaves, rng)
+    // // Find dead-ends
+    const deadEnds = findDeadEnds(graph)
+
+    console.log('dead-ends', deadEnds)
 
     let entrance: { x: number, y: number } | null = { x: 0, y: 0 }
     let exit: { x: number, y: number } | null = { x: 0, y: 0 }
@@ -962,11 +1005,7 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
         entrance = entranceRoom !== null ? getValidDoorTiles(entranceRoom, grid, rng) : null
         exit = exitRoom !== null ? getValidDoorTiles(exitRoom, grid, rng) : null
     }
-
-    if(entrance) await checkDoorPosition(grid, entrance)
-    if(exit) await checkDoorPosition(grid, exit)
-    await setProps(grid, rooms, rng)
-
+    
     const criticalPath = reconstructPath(
         entranceId,
         exitId,
@@ -977,42 +1016,7 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
     
     console.log("Entrance:", entranceId);
     console.log("Exit:", exitId);
-    console.log("Critical path:", criticalPath.join(" → "));       
-
-    const graph = new Map<number, RoomNode>()
-
-    ROOMNODES.forEach((room, index) => {
-        graph.set(index, {
-            id: index,
-            room : {
-                x: room.x,
-                y: room.y,
-                w: room.w,
-                h: room.h,
-                center: { ...room.center },
-            },
-            type: RoomType.SidePath,
-            neighbors: new Set()
-        })
-    })
-
-    console.log('graph', graph)
-
-    leaves.forEach(leaf => {
-        leaf.corridors.forEach(({x1, x2, y1, y2}) => {
-            const a = findRoomAt(x1, y1, graph);
-            const b = findRoomAt(x2, y2, graph);
-
-            if (a !== null && b !== null && a !== b) {
-                graph.get(a)!.neighbors.add(b);
-                graph.get(b)!.neighbors.add(a);
-            }
-        });
-    });
-
-    // 7. Assign room type
-    graph.get(entranceId)!.type = RoomType.Entrance;
-    graph.get(exitId)!.type = RoomType.Exit;
+    console.log("Critical path:", criticalPath.join(" → "));               
 
     // 8. Mark critical path rooms
     for (const id of criticalPath) {
@@ -1032,13 +1036,7 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
         ) {
             node.type = RoomType.DeadEndReward;
         }
-    }    
-
-    findConnectedRooms(grid, leaves, rng)
-    // // Find dead-ends
-    const deadEnds = findDeadEnds(graph)
-
-    console.log('dead-ends', deadEnds)
+    }   
 
     // Exclude critical path rooms
     const rewardDeadEnds = deadEnds.filter(
@@ -1047,11 +1045,11 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
 
     console.log('rewardDeadEnds', rewardDeadEnds)
 
-    // TODO: Decorate dead-ends
+// TODO: Decorate dead-ends
 
     const { propRules } = getOptionValue()
 
-    // // Apply content per room (NOT per tile)
+    // Apply content per room (NOT per tile)
     for (const roomId of rewardDeadEnds) {
         if (roomId === entranceId) return;
         if (roomId === exitId) return;
@@ -1154,6 +1152,10 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
             }            
         }) 
     }
+
+    // Decide where to place doors
+    if(entrance) await checkDoorPosition(grid, entrance)
+    if(exit) await checkDoorPosition(grid, exit)    
 
     if(entrance && exit){
         gameStore.set(gameState, prev => ({
