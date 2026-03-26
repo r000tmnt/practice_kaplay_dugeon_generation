@@ -8,8 +8,9 @@ const {
 } = k
 
 // #region Utils
-export const arcPoint = (t: number, radius: number) => {
-    const angle = t * Math.PI * 2
+export const arcPoint = (t: number, radius: number, maxAngle: number) => {
+    const START_ANGLE = -Math.PI / 2
+    const angle = START_ANGLE + t * maxAngle
 
     return vec2(Math.cos(angle) * radius, Math.sin(angle) * radius)    
 }

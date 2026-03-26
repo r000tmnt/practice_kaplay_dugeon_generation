@@ -37,6 +37,8 @@ const {
     // wait
 } = k
 
+let currentDragging: GameObj | null
+
 const effectTimer: KEventController[] = []
 
 const displayTextOnBar = (bar:GameObj, barHeight: number, tileWidth: number ) => {
@@ -185,6 +187,7 @@ export const setCardUI = (open: boolean) => {
         const wrapper = ui.add([
             rect(k.width(), k.height(), { fill: false }),
             pos(0, 0),
+            fixed(),
             // tags
             'cards'
         ])
@@ -254,13 +257,17 @@ export const setCardUI = (open: boolean) => {
             // Draw item blocks
             for(let card=start; card < end; card++){
                 if(cards[card] && (card + 1) < door.card){
+                    const index = card + 1
+                    const mx = defaultX + ((tileWidth * 1.5) * index) + (gap * index)
+                    const my = deckHeight - (k.height() * (1/10)) + gap
                     const mapCard = wrapper.add([
                         sprite('card'),
                         area(),
-                        pos(defaultX + (tileWidth * 1.5) * card + (gap * (card + 1)), deckHeight - (k.height() * (1/10)) + gap),
+                        pos(mx, my),
                         scale(0.5),
+                        fixed(),
                         {
-                            spawn: { x: defaultX + (tileWidth * 1.5) * card + (gap * (card + 1)), y: deckHeight - (k.height() * (1/10)) + gap }
+                            spawn: { x: mx, y: my }
                         },
                         // tags
                         'card'
@@ -271,16 +278,16 @@ export const setCardUI = (open: boolean) => {
                     mapCard.onMousePress(() => {
                         if(wrapper.hidden) return
                         if('dragging' in mapCard && mapCard.dragging === true) return
-
-                        if(mapCard.isHovering()){
-                            if(isPickable(mapCard)) {
-                                mapCard.pick()
-                            }    
+                        if(currentDragging && currentDragging.id === mapCard.id)
+                        if(mapCard.isHovering() && isPickable(mapCard)){
+                            currentDragging = mapCard
+                            mapCard.pick()
                         }                        
                     })
 
                     mapCard.onMouseRelease(() => {
                         if('dragging' in mapCard && mapCard.dragging === true){
+                            currentDragging = null
                             console.log('mapCard on drag end')
                             mapCard.trigger("dragEnd");
                             mapCard.dragging = false                             
