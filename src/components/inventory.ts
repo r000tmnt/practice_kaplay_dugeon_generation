@@ -255,11 +255,10 @@ const placeItemInGrid = (
         if('dragging' in item && item.dragging === true) return
         if(currentDragging && currentDragging.id !== item.id) return
         console.log('item on mouse press')
-        if(item.isHovering()){
-            if(isPickable(item)) {
-                item.pick()
-                currentDragging = item
-            }     
+        if(item.isHovering() && isPickable(item)){
+            item.pick()
+            currentDragging = item
+            
             // If item is drag from equipment slot
             const equipment = isEquipment(item.item)
 
