@@ -18,6 +18,7 @@ const {
     drawRect,
     // drawLine,
     // drawSprite,
+    easings,
     fixed,
     getData,
     get,
@@ -31,15 +32,17 @@ const {
     readd,
     setData,
     sprite,
+    stay,
     scale,
-    // tween,
+    tween,
+    text,
     vec2,
     // wait
 } = k
 
 let currentDragging: GameObj | null
 let cardPageStart = 0
-let cardPageEnd = 0
+let cardPageEnd = 9
 
 const effectTimer: KEventController[] = []
 
@@ -61,8 +64,8 @@ const placeCards = (
     defaultX: number, 
     deckHeight: number, 
     gap: number, 
-    start = 0, 
-    end = 10
+    start: number, 
+    end: number
 ) => {
     const { door, inventory } = getGameStoreValue()
 
@@ -75,15 +78,15 @@ const placeCards = (
     // Pagination
     // const pages = Math.floor(door.card / maxCardsPerPage)
     const limit = 10
-    const page = limit * Math.floor((end + 1) / 10)
+    const page = limit * Math.floor((end + 1) / limit)
 
-    for(let card=start; card < end; card++){
+    for(let card=start; card <= end; card++){
         const index = limit > (card + 1)? card : card - (limit * page)
         if(oldCards[index] && oldCards[index].data.id !== cards[index]?.item.id){
             // Replace sprite
         }
 
-        if(!oldCards[index]){
+        if(!oldCards[index] && cards[index]){
             // Create sprite
             const mx = defaultX + ((tileWidth * 1.5) * (index + 1)) + (gap * (index + 1))
             const my = deckHeight - (k.height() * (1/10)) + gap
@@ -95,7 +98,8 @@ const placeCards = (
                 fixed(),
                 {
                     spawn: { x: mx, y: my },
-                    data: cards[card]?.item
+                    data: cards[card]?.item,
+                    chosen: false
                 },
                 // tags
                 'card'
@@ -106,7 +110,7 @@ const placeCards = (
             mapCard.onMousePress(() => {
                 if(wrapper.hidden) return
                 if('dragging' in mapCard && mapCard.dragging === true) return
-                if(currentDragging && currentDragging.id === mapCard.id)
+                if(currentDragging && currentDragging.id === mapCard.id) return
                 if(mapCard.isHovering() && isPickable(mapCard)){
                     currentDragging = mapCard
                     mapCard.pick()
@@ -131,8 +135,6 @@ const placeCards = (
                 
                 mapCard.onDragEnd(() => {
                     // Check position
-                    let chosen = false
-
                     for(let i=0; i < door.card; i++){
                         const left = ((tileWidth * 3) * (i + 1)) + (gap * (i + 1))
                         const right = left + (tileWidth * 3)
@@ -147,12 +149,65 @@ const placeCards = (
                         ){
                             mapCard.pos = vec2(left, top)
                             mapCard.scale = vec2(1)
-                            chosen = true
+                            mapCard.unuse('drag')
+                            mapCard.chosen = true
+                            mapCard.untag('card')
+                            mapCard.tag('chosen')
+
+                            // If cards selected
+                            const chosen = wrapper.get('chosen')
+                            if(chosen.length === door.card){
+                                // Merge and move to center
+                                const center = { 
+                                    x: (k.width() / 2) - ((tileWidth * 3) / 2),
+                                    y: (k.height() / 2) - (tileWidth * 2.5)
+                                }
+                                
+                                chosen.forEach(c => {
+                                    tween(
+                                        c.pos,
+                                        vec2(center.x, center.y),
+                                        0.5,
+                                        (p) => c.pos = p,
+                                        easings.easeInBounce
+                                    )
+                                })
+
+                                const go = wrapper.get('proceed')
+
+                                if(go.length){
+                                    go[0].hidden = false
+                                }else{
+                                    // Display GO button
+                                    const go = wrapper.add([
+                                        text('GO', {
+                                            size: tileWidth / 2
+                                        }),
+                                        area(),
+                                        pos(center.x, center.y),
+                                        stay(),
+                                        // tags
+                                        'proceed'
+                                    ])
+
+                                    go.onClick(() => {
+                                        // Transition
+
+                                        // Destroy GameObjs
+
+                                        // Go to the next level
+                                        // go('game')
+                                    })                                    
+                                }
+
+
+                            }
+
                             break
                         }
                     }
                     
-                    if(!chosen){
+                    if(!mapCard.chosen){
                         // Put the card back
                         mapCard.pos = vec2(mapCard.spawn.x, mapCard.spawn.y)
                     }
@@ -240,9 +295,7 @@ export const setEffectTimer = (effect: effect) => {
 
             gameStore.set(effectAtom, storedEffect)    
             
-            Object.entries(effect).forEach(([key, value]) => {
-                const isInt = Number.isInteger(value)
-
+            Object.entries(effect).forEach(([key]) => {
                 if(player.secondary[key]){
                     player.secondary[key] -= toCut[key]
                 }
@@ -263,9 +316,7 @@ export const setEffectTimer = (effect: effect) => {
 }
 
 export const setCardUI = (open: boolean) => {
-    const { door, inventory } = getGameStoreValue()
-
-    const cards = inventory.space.filter((s) => s && s.item.id.includes('card'))
+    const { door } = getGameStoreValue()
     
     const cardsMenu = get('ui')[0].get('cards')
 
@@ -341,7 +392,7 @@ export const setCardUI = (open: boolean) => {
                 color: rgb(0, 0, 0),
                 anchor: "center",
                 outline: { width: 4, color: rgb(50, 50, 50) }
-            })      
+            })   
         })
 
         const defaultX = (k.width() / 2) - ((k.width() * 0.75) / 2)
@@ -357,6 +408,8 @@ export const setCardUI = (open: boolean) => {
                 defaultX,
                 deckHeight,
                 gap,
+                cardPageStart,
+                cardPageEnd
             )
         }else{
             placeCards(
@@ -365,6 +418,8 @@ export const setCardUI = (open: boolean) => {
                 defaultX,
                 deckHeight,
                 gap,
+                cardPageStart,
+                cardPageEnd                
             )
             
             // Place arrows 
@@ -413,7 +468,39 @@ export const setCardUI = (open: boolean) => {
             ])
             
             left.onClick(() => {
+                if(cardPageStart > 0){
+                    cardPageStart -= 1
+                    cardPageEnd -= 1
 
+                    placeCards(
+                        wrapper,
+                        tileWidth,
+                        defaultX,
+                        deckHeight,
+                        gap,
+                        cardPageStart,
+                        cardPageEnd                
+                    )                    
+                }
+            })
+
+            right.onClick(() => {
+                const cards = getGameStoreValue().inventory.space.filter((s) => s && s.item.id.includes('card'))
+
+                if((cardPageEnd + 1) < cards.length){
+                    cardPageStart += 1
+                    cardPageEnd += 1
+
+                    placeCards(
+                        wrapper,
+                        tileWidth,
+                        defaultX,
+                        deckHeight,
+                        gap,
+                        cardPageStart,
+                        cardPageEnd                
+                    )                     
+                }
             })
         }       
     }
