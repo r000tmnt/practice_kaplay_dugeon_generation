@@ -229,7 +229,7 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
 
     ring.onDraw(() => {
         const { unit, attribute } = reference
-        const start = Math.floor(unit.max[attribute] / 2.5) * (unit.lv - 1)
+        const start = unit.lv > 1? Math.floor(unit.max[attribute] / 2.5) : 0
         const ringLength = unit.max[attribute] - start 
         // const steps = 40
         const thickness = 10
