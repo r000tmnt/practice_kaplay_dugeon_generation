@@ -23,6 +23,7 @@ const {
     getLayers,
     loadSprite,
     loadSpriteAtlas,
+    loadShaderURL,
     opacity,
     pos,
     Rect,
@@ -40,6 +41,7 @@ export default function initGame(){
     if(!layers) setLayers(['bg', 'game', "fg"], "game")    
 
     scene('game', async(map = null) => {
+
         // Clear localStorage
         localStorage.clear()        
         // loadSprite('testMap', '', {
@@ -80,18 +82,20 @@ export default function initGame(){
             sliceX: 2,
         })        
 
+        loadShaderURL("fadeTransition", null, 'shaders/fade_transition.frag')
+
         setData('ready', false)
-        setMap()
+        setMap(map?? 'testMap')
     })
 
     go('game')    
 }
 
-const setMap = async(name = 'testMap') => {
+const setMap = async(name: string) => {
     const {level, danger} = store.get(gameState)
     const { tileWidth } = store.get(setting)
 
-    map = add([pos(0, 0), opacity(1), "map", { tileWidth }])
+    map = add([pos(0, 0), opacity(1), "map", { tileWidth, name }])
 
     // setCamPos(map.pos.x + ((tileWidth * 16) / 2), map.pos.y + ((tileWidth * 9) / 2))
 
