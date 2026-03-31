@@ -20,10 +20,12 @@ const {
     // drawSprite,
     easings,
     fixed,
+    go,
     getData,
     get,
     // loop,
     layer,
+    outline,
     pos,
     polygon,
     rect,
@@ -35,7 +37,8 @@ const {
     stay,
     scale,
     tween,
-    text,
+    // text,
+    usePostEffect,
     vec2,
     // wait
 } = k
@@ -136,8 +139,8 @@ const placeCards = (
                 mapCard.onDragEnd(() => {
                     // Check position
                     for(let i=0; i < door.card; i++){
-                        const left = ((tileWidth * 3) * (i + 1)) + (gap * (i + 1))
-                        const right = left + (tileWidth * 3)
+                        const left = (mapCard.width * (i + 1)) + (gap * (i + 1))
+                        const right = left + mapCard.width
                         const top = (k.height() / 2) - (tileWidth * 2.5)
                         const down = top + (tileWidth * 5)
 
@@ -159,48 +162,82 @@ const placeCards = (
                             if(chosen.length === door.card){
                                 // Merge and move to center
                                 const center = { 
-                                    x: (k.width() / 2) - ((tileWidth * 3) / 2),
+                                    x: (k.width() / 2) - (mapCard.width / 2),
                                     y: (k.height() / 2) - (tileWidth * 2.5)
                                 }
                                 
-                                chosen.forEach(c => {
+                                chosen.forEach((c, i) => {
                                     tween(
                                         c.pos,
                                         vec2(center.x, center.y),
                                         0.5,
                                         (p) => c.pos = p,
                                         easings.easeInBounce
-                                    )
+                                    ).onEnd(() => {
+                                        if(i === chosen.length - 1){
+                                            const goBtn = wrapper.get('proceed')
+
+                                            if(goBtn.length){
+                                                goBtn[0].hidden = false
+                                            }else{
+                                                // Display GO button
+                                                const goBtn = wrapper.add([
+                                                    rect(mapCard.width, mapCard.height, {
+                                                        fill: true,
+                                                        radius: 8
+                                                    }),
+                                                    color(10, 10, 10),
+                                                    area(),
+                                                    pos(center.x, center.y),
+                                                    stay(),
+                                                    fixed(),
+                                                    outline(4, rgb(50, 50, 50)),
+                                                    // tags
+                                                    'proceed'
+                                                ])
+
+                                                goBtn.onDraw(() => {
+                                                    drawText({
+                                                        text: 'GO',
+                                                        pos: vec2(mapCard.width / 2, mapCard.height / 2),
+                                                        size: tileWidth,
+                                                        align: 'center',
+                                                        width: mapCard.width,
+                                                        anchor: 'center',
+                                                    })
+                                                })
+
+                                                goBtn.onClick(() => {
+                                                    // Transition
+                                                    // Reference: https://play.kaplayjs.com/?example=postEffect
+                                                    tween(
+                                                        0,
+                                                        1,
+                                                        0.3,
+                                                        (v) => { 
+                                                            usePostEffect("fadeTransition", () => ({ "u_progress": v }))
+                                                        },
+                                                        easings.easeInOutQuad
+                                                    ).onEnd(() => {
+                                                        // TODO - Destroy game objects when the screen black out
+                                                        console.log("screen filled")
+                                                        goBtn.hidden = true
+                                                        // map.children.forEach(child => child.destroy())
+                                                        get('map')[0].destroy()
+
+                                                        get('player')[0].destroy()
+                                                        get('enemy').forEach(e => e.destroy())
+                                                        // get('pot').forEach(p => p.destroy())
+                                                        // get('chest').forEach(p => p.destroy())
+
+                                                        // TODO - Go to the next level
+                                                        go('game', 'next')
+                                                    })
+                                                })                                    
+                                            }
+                                        }
+                                    })
                                 })
-
-                                const go = wrapper.get('proceed')
-
-                                if(go.length){
-                                    go[0].hidden = false
-                                }else{
-                                    // Display GO button
-                                    const go = wrapper.add([
-                                        text('GO', {
-                                            size: tileWidth / 2
-                                        }),
-                                        area(),
-                                        pos(center.x, center.y),
-                                        stay(),
-                                        // tags
-                                        'proceed'
-                                    ])
-
-                                    go.onClick(() => {
-                                        // Transition
-
-                                        // Destroy GameObjs
-
-                                        // Go to the next level
-                                        // go('game')
-                                    })                                    
-                                }
-
-
                             }
 
                             break
@@ -369,14 +406,18 @@ export const setCardUI = (open: boolean) => {
                 pos: vec2(tileWidth, tileWidth)
             })
 
-            for(let i=0; i < door.card; i++){
-                drawRect({
-                    width: tileWidth * 3,
-                    height: tileWidth * 5,
-                    pos: vec2(((tileWidth * 3) * (i + 1)) + (gap * (i + 1)) , (k.height() / 2) - (tileWidth * 2.5)),
-                    outline: { width: 4, color: k.rgb(door.type[i]) },
-                    fill: false
-                })
+            const selected = wrapper.get('chosen')
+
+            if(selected.length !== door.card){
+                for(let i=0; i < door.card; i++){
+                    drawRect({
+                        width: tileWidth * 3,
+                        height: tileWidth * 5,
+                        pos: vec2(((tileWidth * 3) * (i + 1)) + (gap * (i + 1)) , (k.height() / 2) - (tileWidth * 2.5)),
+                        outline: { width: 4, color: k.rgb(door.type[i]) },
+                        fill: false
+                    })
+                }                
             }
 
             // Need sprites for cards
