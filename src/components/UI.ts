@@ -1,7 +1,8 @@
+import { gameState } from './../store/game';
 import type { GameObj, KEventController } from "kaplay";
 import k from "../lib/kaplay";
 import { getOptionValue } from "../store/setting";
-import { getGameStoreValue, gameStore, effectAtom } from "../store/game";
+import { getGameStoreValue, gameStore, effectAtom, inventoryUI } from "../store/game";
 // import { door, cardLimit } from "../model/door";
 
 import { rectangleGauge, ringGauge } from "./gauge";
@@ -221,14 +222,63 @@ const placeCards = (
                                                     ).onEnd(() => {
                                                         // TODO - Destroy game objects when the screen black out
                                                         console.log("screen filled")
+                                                        const player = get('player')[0]
+                                                        // Clear store tileMap
+                                                        gameStore.set(gameState, (prev) => ({
+                                                            ...prev,
+                                                            level: [],
+                                                            props: [],
+                                                            enemies: [],
+                                                            danger: prev.danger + 1,
+                                                            playerData: {
+                                                                ...prev.playerData,
+                                                                lv: player.lv,
+                                                                pt: player.pt,
+                                                                exp: player.exp,
+                                                                attribute: { ...player.attribute },
+                                                                secondary: { ...player.secondary },
+                                                                resist: { ...player.resist },
+                                                                max: { ...player.max },
+                                                                equip: { ...player.equip }
+                                                            }
+
+                                                            })
+                                                        )                                                        
                                                         goBtn.hidden = true
                                                         // map.children.forEach(child => child.destroy())
-                                                        get('map')[0].destroy()
+                                                        const map = get('map')[0]
+                                                        map.clearEvents()
+                                                        map.removeAll()
+                                                        map.destroy()
 
-                                                        get('player')[0].destroy()
-                                                        get('enemy').forEach(e => e.destroy())
+                                                        player.removeAll()
+                                                        player.clearEvents()
+                                                        player.destroy()
+                                                        
+                                                        get('enemy').forEach(e => {
+                                                            e.removeAll()
+                                                            e.clearEvents()
+                                                            e.destroy()
+                                                        })
                                                         // get('pot').forEach(p => p.destroy())
                                                         // get('chest').forEach(p => p.destroy())
+
+                                                        // TODO - Clear selected cards in inventory
+                                                        const { space } = getGameStoreValue().inventory
+                                                        let count = chosen.length
+                                                        
+                                                        chosen.forEach(c => {
+                                                            const index = space.findIndex(s => s && s.item.id === c.data.id)
+                                                            if(index !== -1 && count > 0){
+                                                                space.splice(index, 1)
+                                                                count--
+                                                            }
+                                                        })
+
+                                                        gameStore.set(inventoryUI, prev => ({
+                                                            ...prev,
+                                                            space: [...space]
+                                                        }))
 
                                                         // TODO - Go to the next level
                                                         go('game', 'next')
