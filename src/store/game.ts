@@ -4,6 +4,7 @@ import type { item, note } from "../model/item";
 import type { effect } from '../model/effect'
 import type { door } from '../model/door'
 import { focusAtom } from 'jotai-optics'
+import type { Stat } from "../model/stat";
 
 export const gameState = atom({
     level: [] as number[][],
@@ -23,7 +24,9 @@ export const gameState = atom({
         limit: 12 * 6
     },
     effect: [] as effect[],
+    mapEffect: [] as effect[],
     quickSlot: [] as (item | null)[],
+    playerData: {} as Stat,
     danger: 1,
     cleared: 0
 })
