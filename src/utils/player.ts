@@ -23,6 +23,7 @@ const {
     area,
     anchor,
     body,
+    easings,
     getData,
     // getSprite,
     get,
@@ -44,6 +45,7 @@ const {
     sprite,
     text,
     tween,
+    usePostEffect,
     vec2,
     wait
 } = k
@@ -252,7 +254,6 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
     equipItem(player, 'rightHand', handData[0]) 
 
     console.log('player', player)
-    setCameraPosition(player, mapWidth, mapHeight)
 
     player.onCollide((obj: GameObj) => {
         // If player is moving alone side the path
@@ -271,14 +272,14 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         enemy.isStatic = enemy.state === 'attack'
 
         if(enemyAnim?.name === 'walk'){
-            player.secondary.move_speed = 75
+            enemy.secondary.move_speed = player.secondary.move_speed
         }
     })
 
     player.onCollideEnd('enemy', (enemy: GameObj) => {
         enemy.isStatic = false
         player.isStatic = false
-        player.secondary.move_speed = 100
+        enemy.secondary.move_speed = 75
     })    
 
     player.onHurt(() => {
@@ -551,5 +552,24 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
     })
 
     setUIElements(player)
+
+    // If transit from another map, reveal the map
+    if(map.name === 'next'){
+        tween(
+            1,
+            0,
+            0.3,
+            (v) => { 
+                usePostEffect("fadeTransition", () => ({ "u_progress": v }))
+            },
+            easings.easeInOutQuad
+        ).onEnd(() => {
+            // Enable control
+            setCameraPosition(player, mapWidth, mapHeight)
+        })    
+    }else{
+        // Enable control
+        setCameraPosition(player, mapWidth, mapHeight)
+    }
     // #endregion  
 }
