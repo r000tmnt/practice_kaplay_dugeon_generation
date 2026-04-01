@@ -22,8 +22,6 @@ const {
     go,
     getLayers,
     loadSprite,
-    loadSpriteAtlas,
-    loadShaderURL,
     opacity,
     pos,
     Rect,
@@ -41,48 +39,8 @@ export default function initGame(){
     if(!layers) setLayers(['bg', 'game', "fg"], "game")    
 
     scene('game', async(map = null) => {
-
         // Clear localStorage
         localStorage.clear()        
-        // loadSprite('testMap', '', {
-        //     sliceX: 2,
-        //     sliceY: 2
-        // })
-
-        // loadSpriteAtlas('player/demo_player_spritesheet.png', 'player/demo_player_spritesheet.json')
-        const playerSprite = loadSpriteAtlas('player/demo_player_68x68_alter.png', 'player/demo_player_spritesheet.json')
-        loadSpriteAtlas('enemy/demo_enemy_spritesheet.png', 'enemy/demo_enemy_spritesheet.json')
-
-        console.log('playerSprite', playerSprite)
-
-        loadSprite('card', 'map/card.png')
-
-        loadSprite('pot', 'map/demo_pot_16x16.png', {
-            sliceX: 2,
-            sliceY: 2,
-            anims: {
-                break: { from: 1, to: 2, loop: false }
-            }
-        })        
-
-        loadSprite('item', 'map/demo_item.png', {
-            sliceX: 5,
-            sliceY: 2,
-            anims: {
-                open: { from: 3, to: 4, loop: false }
-            }
-        })
-
-        loadSprite('equipment', 'map/equipment.png', {
-            sliceX: 3,
-            sliceY: 3
-        })        
-
-        loadSprite('shrine', 'map/shrine.png', {
-            sliceX: 2,
-        })        
-
-        loadShaderURL("fadeTransition", null, 'shaders/fade_transition.frag')
 
         setData('ready', false)
         setMap(map?? 'testMap')
@@ -107,7 +65,7 @@ const setMap = async(name: string) => {
         // Draw map
         drawMap(level, entrance, exit, name, tileWidth)
 
-        initPlayer(level, entrance as { x: number, y: number }, tileWidth)        
+        // initPlayer(level, entrance as { x: number, y: number }, tileWidth)        
     }else{
         // Generate the map
         const dungeon = await generateBSPDungeon('demo_player' + danger + Date.now());
@@ -118,6 +76,7 @@ const setMap = async(name: string) => {
 
             console.log(entrance, exit)
             console.log(door)
+            // console.log('grid:', grid)
 
             if(entrance) grid[entrance.y][entrance.x] = 2
 
@@ -138,8 +97,7 @@ const setMap = async(name: string) => {
                     .join("\n")
             );
 
-            const {level} = getGameStoreValue()
-            drawMap(level, entrance as { x: number, y: number }, exit as { x: number, y: number }, name, tileWidth)            
+            drawMap(grid, entrance as { x: number, y: number }, exit as { x: number, y: number }, name, tileWidth)            
         }
     }
 }
@@ -416,16 +374,26 @@ const setChunks = async() => {
 
 const initPlayer = (grid: number[][], entrance: { x: number, y: number }, tileWidth: number) => {
     // Set Player starting position by examining entrance
+    const { playerData } = getGameStoreValue()
+    let x = 0, y =0
+
     if(entrance && grid[entrance.y][entrance.x - 1] !== 1) {
-        createPlayerSprite(map, entrance.x - 1, entrance.y, grid[0].length * tileWidth, grid.length * tileWidth)    
+        x = entrance.x - 1
+        y = entrance.y
+         
     }else
     if(entrance && grid[entrance.y][entrance.x + 1] !== 1) {
-        createPlayerSprite(map, entrance.x + 1, entrance.y, grid[0].length * tileWidth, grid.length * tileWidth)    
+        x = entrance.x + 1
+        y = entrance.y
     }else
     if(entrance && grid[entrance.y - 1][entrance.x] !== 1) {
-        createPlayerSprite(map, entrance.x, entrance.y - 1, grid[0].length * tileWidth, grid.length * tileWidth)    
+        x = entrance.x
+        y = entrance.y - 1
     }else
     if(entrance && grid[entrance.y + 1][entrance.x] !== 1) {
-        createPlayerSprite(map, entrance.x, entrance.y + 1, grid[0].length * tileWidth, grid.length * tileWidth)    
+        x = entrance.x
+        y = entrance.y + 1    
     }
+
+    createPlayerSprite(map, x, y, grid[0].length * tileWidth, grid.length * tileWidth, Object.keys(playerData).length? playerData : null)
 }
