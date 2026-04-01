@@ -1,3 +1,5 @@
+import type { item } from "./item"
+
 type attribute = 
 'hp' |
 'mp' |
@@ -55,6 +57,8 @@ export type Effect = Partial<Record<effect, number>>
 export type Require = Partial<Record<require, number>> 
 
 export interface MaxStats {
+  hp: number;
+  mp: number;
   fire: number;
   water: number;
   wind: number;
@@ -66,5 +70,47 @@ export interface MaxStats {
   numb: number;
   bleeding: number;
   exp: number;
-  level: number;
+  lv: number;
+}
+
+export interface Stat {
+  attribute: {
+    hp: number,
+    mp: number,
+    physique: number,
+    mentality: number,
+    agility: number
+  },
+  secondary: {
+      attack_speed: number,
+      move_speed: number,
+      cast_speed: number,
+      armor: number
+  },
+  resist: {
+      fire: number,
+      water: number,
+      wind: number,
+      earth: number,
+      electric: number,
+      spirit: number,
+      brute: number,
+      confusion: number,
+      numb: number,
+      bleeding: number
+  },
+  max: MaxStats,
+  equip: {
+    head: item | object,
+    body: item | object,
+    feet: item | object,
+    accessory1: item | object,
+    rightHand: item | object,
+    leftHand: item | object,
+    accessory2: item | object,
+    ring: item
+  },
+  lv: number,
+  pt: number,
+  exp: number
 }
