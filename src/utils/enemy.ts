@@ -128,17 +128,24 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
         }
     })
 
-    // Alter enemy attributes based on danger level
+    // Alter enemy attributes based on danger level 
     for(let i=0; i < danger; i++){
         console.log('times', i)
-        if(data)
+        if(data){
+            data.lv += 1
             Object.entries(data.attribute).forEach(([key, value]) => {
                 data.attribute[key as keyof { hp: number, mp: number, physique: number, mentality: number, agility: number }] = value + GROWTH[Math.floor(Math.random() * GROWTH.length)]
                 console.log(key, data.attribute[key as keyof { hp: number, mp: number, physique: number, mentality: number, agility: number }])
 
                 if(key === 'hp' || key === 'mp') data.max[key] = data.attribute[key as keyof { hp: number, mp: number, physique: number, mentality: number, agility: number }]
-            })
+            })            
+        }
     }
+
+    // if(danger % 4 === 0){
+    //     // BOSS TIME
+
+    // }
 
     // Check if spawned
     // const map = get('map')[0]
