@@ -1,6 +1,7 @@
 import { lazy, useEffect } from 'react'
 import './App.css'
 import initGame from './scene/game'
+import { loadAssets } from './scene/load'
 
 // store
 import { useAtom } from 'jotai'
@@ -12,7 +13,9 @@ import { setting } from './store/setting'
 // import playerData from './data/player.json'
 
 // Game init
-initGame()
+loadAssets().then(() => {
+  initGame()
+})
 
 function App() {
   const [param, setParam] = useAtom(setting)
