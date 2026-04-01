@@ -224,20 +224,30 @@ const getManhattanDistance = (a: room, b: room) => {
     return Math.abs(a.center.x - b.center.x) + Math.abs(a.center.y - b.center.y);
 } 
 
-const isDoorReachable = (tilemap: number[][], x: number, y: number) => {
-    console.log('top: ', tilemap[y - 1]?.[x] === 0)
-    console.log('down: ', tilemap[y + 1]?.[x] === 0)
-    console.log('left: ', tilemap[y]?.[x - 1] === 0)
-    console.log('right: ', tilemap[y]?.[x + 1] === 0)
-  return (
-    tilemap[y - 1]?.[x] === 0 ||
-    tilemap[y + 1]?.[x] === 0 ||
-    tilemap[y]?.[x - 1] === 0 ||
-    tilemap[y]?.[x + 1] === 0
-  );
+const isDoorReachable = (tileMap: number[][], room: roomNode) => {
+    // Check around the edges of the wall for any floor tiles
+    let pass = false
+
+    for(let x=room.x + 1; x <= (room.x + room.w) - 1; x++){
+        // top
+        if(tileMap[room.y - 1] && tileMap[room.y - 1][x] === 0) pass = true
+
+        // down
+        if(tileMap[room.y + room.h + 1] && tileMap[room.y + room.h + 1][x] === 0) pass = true
+    }
+
+    for(let y=room.y + 1; y <= (room.y + room.h) - 1; y++){
+        // left
+        if(tileMap[y] && tileMap[y][room.x - 1] === 0) pass = true
+
+        // right
+        if(tileMap[y] && tileMap[y][room.x + room.w + 1] === 0) pass = true
+    }
+
+    return pass
 }
 
-const findNearestFloor = async(tilemap: number[][], startX: number, startY: number) => {
+const findNearestFloor = async(tileMap: number[][], startX: number, startY: number) => {
   const visited = new Set();
   const queue = [{ x: startX, y: startY }];
 
@@ -248,7 +258,7 @@ const findNearestFloor = async(tilemap: number[][], startX: number, startY: numb
     if (!pos) break;
     const { x, y } = pos;
 
-    if (tilemap[y]?.[x] === 0) {
+    if (tileMap[y]?.[x] === 0) {
       return { x, y };
     }
 
@@ -256,7 +266,7 @@ const findNearestFloor = async(tilemap: number[][], startX: number, startY: numb
       const nx = x + dx;
       const ny = y + dy;
 
-      if (!visited.has(key(nx, ny)) && tilemap[ny]?.[nx] !== undefined) {
+      if (!visited.has(key(nx, ny)) && tileMap[ny]?.[nx] !== undefined) {
         visited.add(key(nx, ny));
         queue.push({ x: nx, y: ny });
       }
@@ -266,33 +276,34 @@ const findNearestFloor = async(tilemap: number[][], startX: number, startY: numb
   return null;
 }
 
-const carveTunnel = async(tilemap: number[][], from: { x: number, y: number }, to: { x: number, y: number }) => {
+const carveTunnel = async(tileMap: number[][], from: { x: number, y: number }, to: { x: number, y: number }) => {
   let x = from.x;
   let y = from.y;
 
   while (x !== to.x) {
-    tilemap[y][x] = 0;
+    tileMap[y][x] = 0;
     x += Math.sign(to.x - x);
   }
 
   while (y !== to.y) {
-    tilemap[y][x] = 0;
+    tileMap[y][x] = 0;
     y += Math.sign(to.y - y);
   }
 
-  tilemap[y][x] = 0;
+  tileMap[y][x] = 0;
 }
 
-const checkDoorPosition = async(tilemap: number[][], door: { x: number, y: number }) => {
-    const reachable = isDoorReachable(tilemap, door.x, door.y)
+const checkDoorPosition = async(tileMap: number[][], door: { x: number, y: number }, roomId: number) => {
+    const room = ROOMNODES.find(r => r.id === roomId)
+    const reachable = isDoorReachable(tileMap, room!)
     console.log('reachable: ', reachable)
     if(!reachable){
-        const destination = await findNearestFloor(tilemap, door.x, door.y)
-        if(destination) await carveTunnel(tilemap, door, destination)
+        const destination = await findNearestFloor(tileMap, door.x, door.y)
+        if(destination) await carveTunnel(tileMap, door, destination)
     }
 }
 
-const getValidDoorTiles = (room: roomNode, tilemap: number[][], rng: rng) => {
+const getValidDoorTiles = (room: roomNode, tileMap: number[][], rng: rng) => {
     const candidates: {x: number, y: number}[] = [];
 
     // Directions for adjacency: up, down, left, right
@@ -304,25 +315,16 @@ const getValidDoorTiles = (room: roomNode, tilemap: number[][], rng: rng) => {
     ];  
     
     function isWalkable(x: number, y: number) {
-        if (y < 0 || y >= tilemap.length) return false;
-        if (x < 0 || x >= tilemap[0].length) return false;
-        return tilemap[y][x] === 0;  // Marks floor / corridor
+        if (y < 0 || y >= tileMap.length) return false;
+        if (x < 0 || x >= tileMap[0].length) return false;
+        return tileMap[y][x] === 0;  // Marks floor / corridor
     }    
 
         // Helper to add candidate and check adjacency
     function checkAndAdd(x: number, y: number) {
         // Only consider if it's a wall tile
-        if (tilemap[y][x] !== 1) return; // Your wall value (adjust as needed)
-
-        // If is a corner
-        // // Top left
-        // if(tilemap[y - 1][x] === 0 && tilemap[y][x - 1] === 0) x += 1
-        // // Top right
-        // if(tilemap[y - 1][x] === 0 && tilemap[y][x + 1] === 0) x -= 1
-        // // Down left
-        // if(tilemap[y + 1][x] === 0 && tilemap[y][x - 1] === 0) x += 1
-        // // Down right
-        // if(tilemap[y + 1][x] === 0 && tilemap[y][x + 1] === 0) x -= 1
+        if (!tileMap[y]) return;
+        if (tileMap[y][x] !== 1) return; // Your wall value (adjust as needed)
 
         const dir: boolean[] = []
 
@@ -341,13 +343,15 @@ const getValidDoorTiles = (room: roomNode, tilemap: number[][], rng: rng) => {
 
     for (let x = room.x + 1; x < (room.x + room.w) - 1; x++) {
         checkAndAdd(x, room.y); // TOP
-        checkAndAdd(x, (room.y + room.h) - 1); // BOTTOM
+        checkAndAdd(x, room.y + room.h); // BOTTOM
     }
 
     for (let y = room.y + 1; y < (room.y + room.h) - 1; y++) {
         checkAndAdd(room.x, y); // LEFT
-        checkAndAdd((room.x + room.w) - 1, y); // RIGHT
+        checkAndAdd(room.x + room.w, y); // RIGHT
     }
+
+    console.log('getValidDoorTiles candidates: ', candidates)
 
     if (candidates.length === 0) return null; // No valid door
 
@@ -447,27 +451,27 @@ const findConnectedRooms = (
             right: false
         }
 
-        for(let x=node.x; x < node.w; x++){
+        for(let x=node.x; x <= (node.x + node.w); x++){
             // top
-            if(grid[node.y - 1][x] === 0) {
+            if(grid[node.y - 1] && grid[node.y - 1][x] === 0) {
                 connected.top = true
             }
 
             // down
-            if(grid[node.y + node.h][x] === 0) {
+            if(grid[node.y + node.h] && grid[node.y + node.h][x] === 0) {
                 connected.down = true
             }            
         }
         
         
-        for(let y=node.y; y < node.h; y++){
+        for(let y=node.y; y <= (node.y + node.h); y++){
             // left
-            if(grid[y][node.x - 1] === 0) {
+            if(grid[y] && grid[y][node.x - 1] === 0) {
                 connected.left = true
             }
 
             // right
-            if(grid[y][node.x + 1] === 0) {
+            if(grid[y] && grid[y][node.x + 1] === 0) {
                 connected.right = true
             }
         }
@@ -483,14 +487,14 @@ const findConnectedRooms = (
                  console.log(`Connecting room ${node.id} to nearest reachable room ${connId}`)
                 if(connId) {
                     const leaf = leaves.find(l => l.room?.id === connId)
-                    setCorridor(leaf!, node, ROOMNODES[connId], grid, rng)
+                    if(leaf) setCorridor(leaf, node, ROOMNODES[connId], grid, rng)
                 }
             }
             else{
                 node.connections.forEach(connId => {
                     console.log(`Connecting room ${node.id} to connected room ${connId}`)
                     const leaf = leaves.find(l => l.room?.id === connId)
-                    setCorridor(leaf!, node, ROOMNODES[connId], grid, rng)
+                    if(leaf) setCorridor(leaf, node, ROOMNODES[connId], grid, rng)
                 })
             }
         }
@@ -610,13 +614,16 @@ const scaleEnemies = (base: { min: number, max: number }, depth: number, rng: rn
     return randBetween(rng.enemy(), base.max, base.min + depth)
 }
 
-const buildSpawnGrid = (room: roomNode, tilemap: number[][]) => {
+const buildSpawnGrid = (room: roomNode, tileMap: number[][]) => {
     const free = [];
+
+    console.log('Building spawn grid for room: ', room)
+    console.log('tileMap: ', tileMap)
 
     for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
         for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
             const propExist = PROP.find(prop => prop.x === room.x && prop.y === room.y)
-            if (tilemap[y][x] === 0 && !propExist) {
+            if (tileMap[y] && tileMap[y][x] === 0 && !propExist) {
                 free.push({ x, y });
             }
         }
@@ -634,25 +641,36 @@ const shuffle = (array: any[], rng: rng) => {
     return shuffled
 }
 
-const placeEnemies = (room: roomNode, count: number, tilemap: number[][], rng: rng) => {
-    let candidates = buildSpawnGrid(room, tilemap);
+const placeEnemies = (room: roomNode, count: number, tileMap: number[][], rng: rng) => {
+    let candidates = buildSpawnGrid(room, tileMap);
     candidates = shuffle(candidates, rng)
 
-    for (let i = 0; i < count && candidates.length; i++) {
-        // Add props
-        ENEMY.push({
-            type: 'enemy',
-            x: candidates[i].x,
-            y: candidates[i].y,
-            roomId: room.id,
-            defeat: false,
-            active: false,
-        })
+    // console.log('candidates: ', candidates)
 
-        // candidates.pop()
+    if(candidates.length === 0) return
+
+    for (let i = 0; i < count; i++) {
+        const index = Math.floor(rng.enemy() * candidates.length)
+
+        console.log('index: ', index)
+    //     // Add props
+        const result = candidates[index]?? candidates[0] // Fallback to first candidate if index is out of bounds
+
+        if(result){
+            console.log(`Placing enemy in room ${room.id} at (${result.x}, ${result.y})`)
+
+            ENEMY.push({
+                type: 'enemy',
+                x: result.x,
+                y: result.y,
+                roomId: room.id,
+                defeat: false,
+                active: false,
+            })
+
+            candidates.splice(candidates[index]? index : 0, 1) // Remove the chosen position            
+        }
     }
-
-    // return candidates;
 }
 
 // Get points around the edges of the wall
@@ -676,7 +694,7 @@ const marchingSquares = (grid: number[][]) => {
       if (!caseEdges) continue;
 
       for (const [[x1, y1], [x2, y2]] of caseEdges) {
-        // Conver to the x and y on worldPos
+        // Convert to the x and y on worldPos
         edges.push([
           { x: (x + x1) * tileWidth, y: (y + y1) * tileWidth },
           { x: (x + x2) * tileWidth, y: (y + y2) * tileWidth },
@@ -868,7 +886,7 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
 
     console.log(root)
 
-    // 1. Build a rough tilemap
+    // 1. Build a rough tileMap
     const grid = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(1)); // 1 = wall       
 
     // 2. Split until no more splitting possible
@@ -1113,7 +1131,7 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
 
     // Build a room “spawn grid”
     ROOMNODES.forEach((room, index) => {
-        placeEnemies(room, scaledEnemyRules[index]?? 0, grid, rng)
+        if(scaledEnemyRules[index]) placeEnemies(room, scaledEnemyRules[index], grid, rng)
     })
     //#endregion  
 
@@ -1154,8 +1172,30 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
     }
 
     // Decide where to place doors
-    if(entrance) await checkDoorPosition(grid, entrance)
-    if(exit) await checkDoorPosition(grid, exit)    
+    if(entrance) await checkDoorPosition(grid, entrance, entranceId)
+    else{
+        // Handle rare case when entrance door can't be placed
+        const tempRooms = ROOMNODES.filter(room => room.id !== exitId)
+        const randomRoomId = Math.floor(rng.map() * tempRooms.length);
+        const entranceRoom = tempRooms[randomRoomId];
+        console.log(`Can't place entrance door at room ${entranceId}, trying room ${entranceRoom.id} instead`)
+        if(entranceRoom) {
+            entrance = getValidDoorTiles(entranceRoom, grid, rng)
+            if(entrance) await checkDoorPosition(grid, entrance, entranceId)
+        }
+    }
+    if(exit) await checkDoorPosition(grid, exit, exitId)   
+    else{
+        // Handle rare case when exit door can't be placed
+        const tempRooms = ROOMNODES.filter(room => room.id !== exitId && room.id !== entranceId)
+        const randomRoomId = Math.floor(rng.map() * tempRooms.length);
+        const exitRoom = tempRooms[randomRoomId];
+        console.log(`Can't place exit door at room ${exitId}, trying room ${exitRoom.id} instead`)
+        if(exitRoom) {
+            exit = getValidDoorTiles(exitRoom, grid, rng)
+            if(exit) await checkDoorPosition(grid, exit, exitId)
+        }  
+    }
 
     if(entrance && exit){
         gameStore.set(gameState, prev => ({
@@ -1170,6 +1210,11 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
             polygon
         }))        
     }
+
+    // Clean up temp data
+    ROOMNODES.slice(0)
+    ENEMY.slice(0)
+    PROP.slice(0)    
 
     // You can return these or store them globally
     return { seed, grid, entrance, exit, door, polygon };
@@ -1291,7 +1336,7 @@ const getFloorTiles = (grid: number[][], room: room) => {
 
     for(let y= room.y; y < room.y + room.h; y++){
         for(let x=0; x < room.x + room.w; x++){
-            if(grid[y][x] === 0) tiles.push({ x, y })
+            if(grid[y] && grid[y][x] === 0) tiles.push({ x, y })
         }
     }
 
