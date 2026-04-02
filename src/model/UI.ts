@@ -36,7 +36,7 @@ interface rectGaugeOption {
     parent?: GameObj,
     border?: border,  
     action?: action,     
-    option?: Record<string, number>
+    option?: Record<string, number | string | boolean>
 }
 
 interface ringGaugeOption {
@@ -46,7 +46,7 @@ interface ringGaugeOption {
     reference: uiOwner,
     parent?: GameObj,
     clickable?: boolean,
-    option?: Record<string, number>
+    option?: Record<string, number | string | boolean>
 }
 
 interface range {
