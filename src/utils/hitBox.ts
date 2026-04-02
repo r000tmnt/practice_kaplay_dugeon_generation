@@ -1,7 +1,7 @@
 import type { GameObj, SpriteCurAnim } from "kaplay";
 import k  from '../lib/kaplay'
 import { gameState, gameStore, getGameStoreValue, effectAtom } from '../store/game';
-import { setting, getOptionValue } from '../store/setting';
+import { getOptionValue } from '../store/setting';
 import { prepareItemsToDrop } from './item'
 import { getPlayers } from "./player";
 import { calculateDamage } from './battle'
@@ -129,23 +129,23 @@ export const createHitBox = (unit: GameObj, direction: string, anim: SpriteCurAn
 
     // console.log('hitBox created', hitBox)
 
-    if(type === 'collide') setCollision(hitBox, anim)
+    if(type === 'collide') setCollision(hitBox)
     // if(type === 'overlap') setOverlap(hitBox, anim)
 
     return hitBox
 }
 
 /**
- * Set hitbox onCollde event
- * @param hitBox - {GameObj} The hitbox itself
+ * Set hitBox onCollide event
+ * @param hitBox - {GameObj} The hitBox itself
  * @param anim - {string} Name of the current animation
  */
-const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
-    const { props } = getGameStoreValue()
+const setCollision = (hitBox: GameObj) => {
     const { tileWidth } = getOptionValue()
 
     hitBox.onCollide('pot', (obj: GameObj) => {
-        console.log(obj)
+        // console.log(obj)
+        const { props } = getGameStoreValue()
 
         if(!obj.broken){
             obj.broken = true
@@ -167,7 +167,8 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
     })  
 
     hitBox.onCollide('chest', (obj: GameObj) => {
-        console.log(obj)
+        // console.log(obj)
+        const { props } = getGameStoreValue()
         
         if(!obj.open){
             obj.open = true
@@ -186,7 +187,8 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
     })    
     
     hitBox.onCollide('shrine', (obj: GameObj) => {
-        console.log(obj)
+        // console.log(obj)
+        const { props } = getGameStoreValue()
         
         if(!obj.active){
             obj.active = true
@@ -233,7 +235,7 @@ const setCollision = (hitBox: GameObj, anim: SpriteCurAnim) => {
         if(hitBox.parent) onHitEvent(hitBox, hitBox.parent, obj)
     })    
 
-    hitBox.onCollide('exit', (obj: GameObj) => {
+    hitBox.onCollide('exit', () => {
         if(hitBox.anim === 'attack'){
             // Display UI to set map card 
             console.log('exit!')
