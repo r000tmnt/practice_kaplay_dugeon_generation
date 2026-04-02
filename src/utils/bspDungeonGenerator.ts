@@ -141,6 +141,30 @@ const randBetween = (rng: number, a: number, b: number) => {
     return Math.floor(rng * (b - a + 1)) + a;
 }
 
+const fixCorridor = (grid: number[][], room: roomNode, corridor: corridor) => {
+    const { x1, x2, y1, y2 } = corridor;
+
+    if(y1 > room.y && y2 <= (room.y + room.h - 1)){
+        return
+    }else{
+        if(y2 < room.y){
+            carveVertical(grid, x1, y1, room.y)
+        }else{
+            carveVertical(grid, x1, y2, room.y + room.h - 1)
+        }
+    }
+
+    if(x1 > room.x && x2 <= (room.x + room.w - 1)){
+        return
+    }else{
+        if(x2 < room.x){
+            carveHorizontal(grid, y1, x1, room.x)
+        }else{
+            carveHorizontal(grid, y1, x1, room.x + room.w - 1)
+        }
+    }  
+}
+
 const setCorridor = (
     leaf: Leaf, 
     roomA: roomNode, 
@@ -178,6 +202,10 @@ const setCorridor = (
             carveHorizontal(grid, y1, x1, x2)
         }
     });
+
+    // Check if the rooms are reachable after carving corridors, if not, carve tunnels to connect them
+    fixCorridor(grid, roomA, leaf.corridors[0])
+    fixCorridor(grid, roomB, leaf.corridors[leaf.corridors.length - 1])
 }
 
 const createCorridors = (
@@ -753,6 +781,21 @@ const buildPolygons = (edges: { x:number, y: number }[][]) => {
 
   return polygons;
 }
+
+const reRollDoor = async (doorRoomId: number, grid: number[][], rng: rng ) => {
+    // Handle rare case when door can't be placed
+    const tempRooms = ROOMNODES.filter(room => room.id !== doorRoomId)
+    const randomRoomId = Math.floor(rng.map() * tempRooms.length);
+    const newRoom = tempRooms[randomRoomId];
+    console.log(`Can't place door at room ${doorRoomId}, trying room ${newRoom.id} instead`)
+    const newDoor = getValidDoorTiles(newRoom, grid, rng)
+    if(newDoor){
+        await checkDoorPosition(grid, newDoor, doorRoomId)
+        return newDoor
+    }else{
+        return await reRollDoor(newRoom.id, grid, rng)
+    }
+}
 //#endregion
 
 //#region Leaf node
@@ -1174,27 +1217,11 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
     // Decide where to place doors
     if(entrance) await checkDoorPosition(grid, entrance, entranceId)
     else{
-        // Handle rare case when entrance door can't be placed
-        const tempRooms = ROOMNODES.filter(room => room.id !== exitId)
-        const randomRoomId = Math.floor(rng.map() * tempRooms.length);
-        const entranceRoom = tempRooms[randomRoomId];
-        console.log(`Can't place entrance door at room ${entranceId}, trying room ${entranceRoom.id} instead`)
-        if(entranceRoom) {
-            entrance = getValidDoorTiles(entranceRoom, grid, rng)
-            if(entrance) await checkDoorPosition(grid, entrance, entranceId)
-        }
+       entrance = await reRollDoor(entranceId, grid, rng)
     }
     if(exit) await checkDoorPosition(grid, exit, exitId)   
     else{
-        // Handle rare case when exit door can't be placed
-        const tempRooms = ROOMNODES.filter(room => room.id !== exitId && room.id !== entranceId)
-        const randomRoomId = Math.floor(rng.map() * tempRooms.length);
-        const exitRoom = tempRooms[randomRoomId];
-        console.log(`Can't place exit door at room ${exitId}, trying room ${exitRoom.id} instead`)
-        if(exitRoom) {
-            exit = getValidDoorTiles(exitRoom, grid, rng)
-            if(exit) await checkDoorPosition(grid, exit, exitId)
-        }  
+       exit = await reRollDoor(exitId, grid, rng) 
     }
 
     if(entrance && exit){
@@ -1205,16 +1232,16 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
             exit,
             door,
             rng,
-            enemies: ENEMY,
-            roomNodes: ROOMNODES,
+            enemies: ENEMY.slice(0),
+            roomNodes: ROOMNODES.slice(0),
             polygon
         }))        
     }
 
     // Clean up temp data
-    ROOMNODES.slice(0)
-    ENEMY.slice(0)
-    PROP.slice(0)    
+    ROOMNODES.splice(0)
+    ENEMY.splice(0)
+    PROP.splice(0)    
 
     // You can return these or store them globally
     return { seed, grid, entrance, exit, door, polygon };
@@ -1238,7 +1265,7 @@ const setProps = async(grid: number[][], rooms: room[], rng: rng) => {
 
     gameStore.set(gameState, prev => ({
         ...prev,
-        props: PROP
+        props: PROP.slice(0)
     }))
 }
 
