@@ -9,6 +9,7 @@ import { rectangleGauge, ringGauge } from "./gauge";
 import { createToolBar } from "./toolBar";
 import type { effect } from "../model/effect";
 import { drag, isPickable } from '../utils/UI'
+import type { door } from '../model/door'
 
 const {
     add,
@@ -24,7 +25,7 @@ const {
     go,
     getData,
     get,
-    // loop,
+    loop,
     layer,
     outline,
     pos,
@@ -41,7 +42,7 @@ const {
     // text,
     usePostEffect,
     vec2,
-    // wait
+    wait
 } = k
 
 let currentDragging: GameObj | null
@@ -60,6 +61,146 @@ const displayTextOnBar = (bar:GameObj, barHeight: number, tileWidth: number ) =>
         width: area.shape.width,
         size: tileWidth / 2
     })         
+}
+
+const ifCardsSelected = (wrapper: GameObj, mapCard: GameObj, tileWidth: number, door: door) => {
+    // If cards selected
+    const chosen = wrapper.get('chosen')
+    if(chosen.length === door.card){
+        // Merge and move to center
+        const center = { 
+            x: (k.width() / 2) - (mapCard.width / 2),
+            y: (k.height() / 2) - (tileWidth * 2.5)
+        }
+        
+        chosen.forEach((c) => {
+            tween(
+                c.pos,
+                vec2(center.x, center.y),
+                0.5,
+                (p) => c.pos = p,
+                easings.easeInBounce
+            )
+        })
+
+        // Wait for the animation to end
+        wait(0.5, () => {
+            // Display GO button
+            const goBtn = wrapper.add([
+                rect(mapCard.width, mapCard.height, {
+                    fill: true,
+                    radius: 8
+                }),
+                color(10, 10, 10),
+                area(),
+                pos(center.x, center.y),
+                fixed(),
+                outline(4, rgb(50, 50, 50)),
+                // tags
+                'proceed'
+            ])
+
+            goBtn.onDraw(() => {
+                drawText({
+                    text: 'GO',
+                    pos: vec2(mapCard.width / 2, mapCard.height / 2),
+                    size: tileWidth,
+                    align: 'center',
+                    width: mapCard.width,
+                    anchor: 'center',
+                })
+            })
+
+            goBtn.onClick(() => {
+                goBtn.clearEvents()
+                // Clear store tileMap
+                const player = get('player')[0]
+                gameStore.set(gameState, (prev) => ({
+                    ...prev,
+                    level: [],
+                    props: [],
+                    enemies: [],
+                    danger: prev.danger + 1,
+                    playerData: {
+                        lv: player.lv,
+                        pt: player.pt,
+                        exp: player.exp,
+                        attribute: { ...player.attribute },
+                        secondary: { ...player.secondary },
+                        resist: { ...player.resist },
+                        max: { ...player.max },
+                        equip: { ...player.equip }
+                    }
+
+                    })
+                )           
+
+                // Transition
+                // Reference: https://play.kaplayjs.com/?example=postEffect
+                tween(
+                    0,
+                    1,
+                    0.3,
+                    (v) => { 
+                        usePostEffect("fadeTransition", () => ({ "u_progress": v }))
+                    },
+                    easings.easeInOutQuad
+                ).onEnd(() => {
+                    console.log("screen filled")
+                    const loopController = loop(0.1, () => {
+                        const { level, props, enemies } = getGameStoreValue()
+
+                        if(level.length === 0 && props.length === 0 && enemies.length === 0){
+                            loopController.cancel()
+
+                            // TODO - Destroy game objects when the screen black out
+                            goBtn.destroy()
+                            wrapper.hidden = true
+                            // map.children.forEach(child => child.destroy())
+                            const map = get('map')[0]
+                            map.clearEvents()
+                            map.removeAll()
+                            map.destroy()
+
+                            // player.removeAll()
+                            // player.clearEvents()
+                            // player.destroy()
+                            
+                            get('enemy').forEach(e => {
+                                e.removeAll()
+                                e.clearEvents()
+                                e.destroy()
+                            })
+                            wrapper.get('card').forEach(c => c.destroy())
+                            // get('pot').forEach(p => p.destroy())
+                            // get('chest').forEach(p => p.destroy())
+
+                            // TODO - Clear selected cards in inventory
+                            const { space } = getGameStoreValue().inventory
+                            let count = chosen.length
+                            
+                            chosen.forEach(c => {
+                                const index = space.findIndex(s => s && s.item.id === c.data.id)
+                                if(index !== -1 && count > 0){
+                                    space.splice(index, 1)
+                                    count--
+                                }
+                                c.destroy()
+                            })
+
+                            gameStore.set(inventoryUI, prev => ({
+                                ...prev,
+                                space: [...space]
+                            }))
+
+                            // TODO - Go to the next level
+                            go('game', 'next')
+                        }
+                    })
+                })
+            })             
+        })
+    }
 }
 
 const placeCards = (
@@ -157,139 +298,7 @@ const placeCards = (
                             mapCard.chosen = true
                             mapCard.untag('card')
                             mapCard.tag('chosen')
-
-                            // If cards selected
-                            const chosen = wrapper.get('chosen')
-                            if(chosen.length === door.card){
-                                // Merge and move to center
-                                const center = { 
-                                    x: (k.width() / 2) - (mapCard.width / 2),
-                                    y: (k.height() / 2) - (tileWidth * 2.5)
-                                }
-                                
-                                chosen.forEach((c, i) => {
-                                    tween(
-                                        c.pos,
-                                        vec2(center.x, center.y),
-                                        0.5,
-                                        (p) => c.pos = p,
-                                        easings.easeInBounce
-                                    ).onEnd(() => {
-                                        if(i === chosen.length - 1){
-                                            const goBtn = wrapper.get('proceed')
-
-                                            if(goBtn.length){
-                                                goBtn[0].hidden = false
-                                            }else{
-                                                // Display GO button
-                                                const goBtn = wrapper.add([
-                                                    rect(mapCard.width, mapCard.height, {
-                                                        fill: true,
-                                                        radius: 8
-                                                    }),
-                                                    color(10, 10, 10),
-                                                    area(),
-                                                    pos(center.x, center.y),
-                                                    stay(),
-                                                    fixed(),
-                                                    outline(4, rgb(50, 50, 50)),
-                                                    // tags
-                                                    'proceed'
-                                                ])
-
-                                                goBtn.onDraw(() => {
-                                                    drawText({
-                                                        text: 'GO',
-                                                        pos: vec2(mapCard.width / 2, mapCard.height / 2),
-                                                        size: tileWidth,
-                                                        align: 'center',
-                                                        width: mapCard.width,
-                                                        anchor: 'center',
-                                                    })
-                                                })
-
-                                                goBtn.onClick(() => {
-                                                    // Transition
-                                                    // Reference: https://play.kaplayjs.com/?example=postEffect
-                                                    tween(
-                                                        0,
-                                                        1,
-                                                        0.3,
-                                                        (v) => { 
-                                                            usePostEffect("fadeTransition", () => ({ "u_progress": v }))
-                                                        },
-                                                        easings.easeInOutQuad
-                                                    ).onEnd(() => {
-                                                        // TODO - Destroy game objects when the screen black out
-                                                        console.log("screen filled")
-                                                        const player = get('player')[0]
-                                                        // Clear store tileMap
-                                                        gameStore.set(gameState, (prev) => ({
-                                                            ...prev,
-                                                            level: [],
-                                                            props: [],
-                                                            enemies: [],
-                                                            danger: prev.danger + 1,
-                                                            playerData: {
-                                                                ...prev.playerData,
-                                                                lv: player.lv,
-                                                                pt: player.pt,
-                                                                exp: player.exp,
-                                                                attribute: { ...player.attribute },
-                                                                secondary: { ...player.secondary },
-                                                                resist: { ...player.resist },
-                                                                max: { ...player.max },
-                                                                equip: { ...player.equip }
-                                                            }
-
-                                                            })
-                                                        )                                                        
-                                                        goBtn.hidden = true
-                                                        // map.children.forEach(child => child.destroy())
-                                                        const map = get('map')[0]
-                                                        map.clearEvents()
-                                                        map.removeAll()
-                                                        map.destroy()
-
-                                                        player.removeAll()
-                                                        player.clearEvents()
-                                                        player.destroy()
-                                                        
-                                                        get('enemy').forEach(e => {
-                                                            e.removeAll()
-                                                            e.clearEvents()
-                                                            e.destroy()
-                                                        })
-                                                        // get('pot').forEach(p => p.destroy())
-                                                        // get('chest').forEach(p => p.destroy())
-
-                                                        // TODO - Clear selected cards in inventory
-                                                        const { space } = getGameStoreValue().inventory
-                                                        let count = chosen.length
-                                                        
-                                                        chosen.forEach(c => {
-                                                            const index = space.findIndex(s => s && s.item.id === c.data.id)
-                                                            if(index !== -1 && count > 0){
-                                                                space.splice(index, 1)
-                                                                count--
-                                                            }
-                                                        })
-
-                                                        gameStore.set(inventoryUI, prev => ({
-                                                            ...prev,
-                                                            space: [...space]
-                                                        }))
-
-                                                        // TODO - Go to the next level
-                                                        go('game', 'next')
-                                                    })
-                                                })                                    
-                                            }
-                                        }
-                                    })
-                                })
-                            }
-
+                            ifCardsSelected(wrapper, mapCard, tileWidth, door)
                             break
                         }
                     }
@@ -374,6 +383,7 @@ export const setEffectTimer = (effect: effect) => {
 
         if(percentage === 1){ 
             effectTimer[index].cancel()  
+            effectTimer.splice(index, 1)
         
             // Remove effect
             const storedEffect = getGameStoreValue().effect
@@ -403,13 +413,12 @@ export const setEffectTimer = (effect: effect) => {
 }
 
 export const setCardUI = (open: boolean) => {
-    const { door } = getGameStoreValue()
-    
     const cardsMenu = get('ui')[0].get('cards')
 
     const gap = 10
 
     const deckHeight = k.height() * (8/10)
+    const defaultX = (k.width() / 2) - ((k.width() * 0.75) / 2)
 
     if(open){
         // Pause every thing
@@ -423,13 +432,24 @@ export const setCardUI = (open: boolean) => {
 
     setData('card_selecting', open)
 
+    const { tileWidth } = getOptionValue()
+
     // Display or create menu
     if(cardsMenu.length){
         cardsMenu[0].hidden = !open
+
+        if(!cardsMenu[0].hidden)
+            placeCards(
+                cardsMenu[0],
+                tileWidth,
+                defaultX,
+                deckHeight,
+                gap,
+                cardPageStart,
+                cardPageEnd                
+            )         
     }else{
         const ui = get('ui')[0]
-
-        const { tileWidth } = getOptionValue()
 
         const wrapper = ui.add([
             rect(k.width(), k.height(), { fill: false }),
@@ -440,6 +460,8 @@ export const setCardUI = (open: boolean) => {
         ])
 
         wrapper.onDraw(() => {
+            const { door } = getGameStoreValue()
+
             drawRect({
                 width: k.width(),
                 height: k.height(),
@@ -486,33 +508,20 @@ export const setCardUI = (open: boolean) => {
             })   
         })
 
-        const defaultX = (k.width() / 2) - ((k.width() * 0.75) / 2)
-
         // If card objects created
         const cardsObj = wrapper.get('card')
 
-        if(cardsObj.length){
-            // Replace or hide cards
-            placeCards(
-                wrapper,
-                tileWidth,
-                defaultX,
-                deckHeight,
-                gap,
-                cardPageStart,
-                cardPageEnd
-            )
-        }else{
-            placeCards(
-                wrapper,
-                tileWidth,
-                defaultX,
-                deckHeight,
-                gap,
-                cardPageStart,
-                cardPageEnd                
-            )
-            
+        placeCards(
+            wrapper,
+            tileWidth,
+            defaultX,
+            deckHeight,
+            gap,
+            cardPageStart,
+            cardPageEnd                
+        )        
+
+        if(!cardsObj.length){
             // Place arrows 
             // Left
             const left = wrapper.add([
@@ -604,8 +613,8 @@ export const setUIElements = (player: GameObj) => {
         area({ shape: new Rect(vec2(0), k.width(), k.height()) }),
         pos(0, 0),
         fixed(),
-        layer('fg'),
-        // stay(),
+        layer('ui'),
+        stay(['game']),
         'ui'
     ])
 
