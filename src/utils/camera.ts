@@ -221,8 +221,6 @@ const updateChunks = (camera: {top: number, down: number, left: number, right: n
     // console.log('loop finish')
     // console.log('pots', get('map')[0].get('pot'))
     deactivateChunk(cT, cD, cL, cR)      
-    // Enable control
-    setData('ready', true)    
 }
 // #endregion
 
