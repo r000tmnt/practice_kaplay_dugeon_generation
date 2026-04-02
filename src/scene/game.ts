@@ -36,7 +36,7 @@ let map : GameObj = {} as GameObj
 export default function initGame(){
     // Define layers
     const layers = getLayers()
-    if(!layers) setLayers(['bg', 'game', "fg"], "game")    
+    if(!layers) setLayers(['bg', 'game', "fg", "ui"], "game")    
 
     scene('game', async(map = null) => {
         // Clear localStorage
