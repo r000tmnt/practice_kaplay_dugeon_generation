@@ -42,6 +42,7 @@ const {
     // rotate,
     setData,
     state,
+    stay,
     sprite,
     text,
     tween,
@@ -174,6 +175,7 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         pathfinder({
             graph: nav
         }),
+        stay(),
         state("active", ["active", "pause"]),
         pos((x * map.tileWidth) + (sizeWithPadding / 2), (y * map.tileWidth) + (sizeWithPadding / 2)),
         {
@@ -551,10 +553,10 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         player.paused = true
     })
 
-    setUIElements(player)
-
     // If transit from another map, reveal the map
     if(map.name === 'next'){
+        setCameraPosition(player, mapWidth, mapHeight)
+
         tween(
             1,
             0,
@@ -565,11 +567,14 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
             easings.easeInOutQuad
         ).onEnd(() => {
             // Enable control
-            setCameraPosition(player, mapWidth, mapHeight)
+            setData('ready', true)    
         })    
     }else{
-        // Enable control
         setCameraPosition(player, mapWidth, mapHeight)
+        // Enable control
+        setData('ready', true)    
+
+        setUIElements(player)
     }
     // #endregion  
 }
