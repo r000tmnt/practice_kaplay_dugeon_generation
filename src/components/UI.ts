@@ -10,6 +10,7 @@ import { createToolBar } from "./toolBar";
 import type { effect } from "../model/effect";
 import { drag, isPickable } from '../utils/UI'
 import type { door } from '../model/door'
+import { setInventoryUI } from './inventory';
 
 const {
     add,
@@ -156,11 +157,14 @@ const ifCardsSelected = (wrapper: GameObj, mapCard: GameObj, tileWidth: number, 
                             // TODO - Destroy game objects when the screen black out
                             goBtn.destroy()
                             wrapper.hidden = true
-                            // map.children.forEach(child => child.destroy())
+                            
                             const map = get('map')[0]
+                            map.children.forEach(child => {
+                                if(!child.is('wall')) child.destroy()
+                            })
                             map.clearEvents()
-                            map.removeAll()
-                            map.destroy()
+                            // map.removeAll()
+                            // map.destroy()
 
                             // player.removeAll()
                             // player.clearEvents()
@@ -182,7 +186,7 @@ const ifCardsSelected = (wrapper: GameObj, mapCard: GameObj, tileWidth: number, 
                             chosen.forEach(c => {
                                 const index = space.findIndex(s => s && s.item.id === c.data.id)
                                 if(index !== -1 && count > 0){
-                                    space.splice(index, 1)
+                                    space[index] = null
                                     count--
                                 }
                                 c.destroy()
@@ -194,7 +198,7 @@ const ifCardsSelected = (wrapper: GameObj, mapCard: GameObj, tileWidth: number, 
                             }))
 
                             // TODO - Go to the next level
-                            go('game', 'next')
+                            go('game', 'next' + Date.now())
                         }
                     })
                 })
@@ -382,7 +386,7 @@ export const setEffectTimer = (effect: effect) => {
         })              
 
         if(percentage === 1){ 
-            effectTimer[index].cancel()  
+            effectTimer[index]?.cancel()  
             effectTimer.splice(index, 1)
         
             // Remove effect
@@ -608,6 +612,7 @@ export const setCardUI = (open: boolean) => {
 
 export const setUIElements = (player: GameObj) => {
     const { tileWidth } = getOptionValue()
+    const { keys } = getOptionValue()
 
     const ui = add([
         area({ shape: new Rect(vec2(0), k.width(), k.height()) }),
@@ -625,6 +630,142 @@ export const setUIElements = (player: GameObj) => {
         const isHovering = getData('hovering')
         console.log('ui wrapper clicked', isHovering)        
         if(!isHovering) setData('listOpen', false)
+    })
+
+    // inventory, option, skill, map
+    ui.onKeyRelease([
+        keys.inventory,
+        keys.option,
+        keys.skill,
+        keys.map
+    ], (key) => {
+        if(!getData('ready')) return
+
+        const player = get('player')[0]
+
+        if(key === keys.inventory){
+            if(player.state === 'pause') return
+            const { inventory } = getGameStoreValue()
+            inventory.hide = !inventory.hide
+
+            setInventoryUI(ui, player, inventory.hide).then(() => {
+                gameStore.set(inventoryUI, inventory)              
+            })   
+        }
+        // console.log('release key', key)
+        if(key === keys.option){
+            const cardSelecting = getData('card_selecting')
+
+            if(cardSelecting === true) setCardUI(false)
+            else{
+            // Open game settings
+            }
+        }
+
+        if(key === keys.skill){
+            if(player.state === 'pause') return
+            // Open skill menu
+        }
+
+        if(key === keys.map){
+            if(player.state === 'pause') return
+            // Toggle mini map
+        }        
+    })
+
+    // Quick slots
+    ui.onKeyRelease([
+        keys.quick_slot_1,
+        keys.quick_slot_2,
+        keys.quick_slot_3,
+        keys.quick_slot_4,
+        keys.quick_slot_5,
+        keys.quick_slot_6,
+        keys.quick_slot_7,
+        keys.quick_slot_8,
+        keys.quick_slot_9,
+        keys.quick_slot_10,
+    ], (key) => {
+        // toggle quick slot 
+        const player = get('player')[0]
+        
+        if(!getData('ready') || player.state === 'pause') return
+        
+        const { quickSlot } = getGameStoreValue()
+
+        let index = -1
+
+        switch(true){
+            case key === keys.quick_slot_1:
+                index = 0
+            break;
+            case key === keys.quick_slot_2:
+                index = 1
+            break;
+            case key === keys.quick_slot_3:
+                index = 2
+            break;
+            case key === keys.quick_slot_4:
+                index = 3
+            break;
+            case key === keys.quick_slot_5:
+                index = 4
+            break;
+            case key === keys.quick_slot_6:
+                index = 5
+            break;
+            case key === keys.quick_slot_7:
+                index = 6
+            break;
+            case key === keys.quick_slot_8:
+                index = 7
+            break;
+            case key === keys.quick_slot_9:
+                index = 8
+            break;
+            case key === keys.quick_slot_10:
+                index = 9
+            break;                                                                                                            
+        }
+
+        if(quickSlot[index]){
+            // use item or case skill
+            const item = quickSlot[index];
+            if(item?.quantity !== undefined){
+                item.quantity -= 1
+
+                const { attribute, resist, secondary } = item
+
+                if(attribute){
+                    for(const [key, value] of Object.entries(attribute)){
+                        switch(key){
+                            case 'hp':{
+                                const realValue = value > (player.max.hp - player.hp)? player.max.hp - player.hp : value 
+                                player.hp += realValue
+                                player.attribute.hp = player.hp                                
+                            }
+                            break;
+                            case 'mp':
+                                player.attribute.mp += value > (player.max.mp - player.attribute.mp)? player.max.mp - player.attribute.mp : value 
+                            break;                            
+                            case 'physique':
+                            case 'mentality':
+                            case 'agility':
+                                player.attribute[key] += value
+                            break;
+                        }
+                    }                   
+                }
+
+                if(resist){
+                    //
+                }
+
+                if(secondary){
+                    //
+                }
+            }
+        }
     })
 
     // #region Enemy Health bar
