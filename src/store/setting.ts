@@ -37,7 +37,7 @@ export const setting = atom({
         'inventory': 'i',
         'main_attack': 'mouse_left', 
         'option': 'escape',
-        'skill': 's',
+        'skill': 'k',
         'map': 'tab',
         'quick_slot_1': '1',
         'quick_slot_2': '2',
