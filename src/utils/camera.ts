@@ -228,7 +228,6 @@ const activateChunk = (x: number, y:number) => {
     const { chunks } = getGameStoreValue()
     const { tileWidth, chunkSize } = getOptionValue()
     const enemies = get('enemy')
-    const items = get('map')[0].get('item')
     const copyChunks = JSON.parse(JSON.stringify(chunks))
     const chunk = copyChunks[`${x},${y}`]
 
@@ -272,19 +271,7 @@ const activateChunk = (x: number, y:number) => {
                     enemy.enterState('idle')
                 }                
             }
-        })
-
-        items.forEach(item => {
-            const chunk = {
-                x: Math.floor((item.pos.x / tileWidth) / chunkSize ),
-                y: Math.floor((item.pos.y / tileWidth) / chunkSize )
-            }   
-            
-            if(Number(x) === chunk.x && Number(y) === chunk.y){
-                // Activate item
-                item.hidden = false
-            }                
-        })        
+        })    
 
         return true        
     }
