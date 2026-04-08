@@ -27,6 +27,7 @@ const {
     health,
     layer,
     // opacity,
+    offscreen,
     patrol,
     pathfinder,
     pos,
@@ -169,6 +170,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                 area({ shape: new Rect(vec2(0), tileWidth, tileWidth), collisionIgnore: ["item"] }),
                 body(),
                 layer('game'),
+                // offscreen({ hide: true }),
                 pos(spawn.x, spawn.y),
                 state('idle', ['idle', 'attack', 'move', 'chase', 'pause']),
                 // Sentry makes it easy to check for visibility of the player
@@ -184,9 +186,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                 ),                
                 // Patrol can make the enemy follow a computed path
                 patrol({ speed: data.secondary.move_speed }),                
-                pathfinder({
-                    graph: nav,
-                }),
+                pathfinder({ graph: nav }),
                 {
                     //predefined data
                     roomId: room.id,
@@ -279,16 +279,19 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             })
 
             enemy.onStateEnter('move', (obj) => {
+                if(enemy.defeat) return
                 // console.log('move to', obj)
                 getPathAndFollow(enemy, obj.pos)
             })
 
             enemy.onStateEnter('chase', (obj) => {
+                if(enemy.defeat) return
                 // console.log('chase to', obj)
                 getPathAndFollow(enemy, obj.pos)
             })            
 
             enemy.onStateUpdate('chase', () => {
+                if(enemy.defeat) return
                 const curAnim = enemy.getCurAnim()
 
                 if(curAnim?.name === 'hurt') return
@@ -356,32 +359,64 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                 })                 
             })
 
+            enemy.onUnuse((id: string) => {
+                console.log('enemy un use component', id)
+                console.log(enemy)
+
+                // TODO: Count down to respawn
+                wait(30, () => {
+                    // const { enemies } = getGameStoreValue()
+                    // const eIndex = enemies.findIndex(prop => prop.x === enemy.spawn.x && prop.y === enemy.spawn.y)
+                    // enemies[eIndex].defeat = false
+                    // enemies[eIndex].active = true
+                    // gameStore.set(enemyAtom, enemies)  
+                    // Fill up hp & mp
+                    enemy.hp = enemy.max.hp
+                    enemy.attribute.hp = enemy.max.hp
+                    enemy.attribute.mp = enemy.max.mp                            
+                    enemy.frame = 0
+                    enemy.defeat = false
+                    enemy.hidden = false
+                    
+                    enemy.use(body())
+                    // enemy.use(patrol({ speed: data.secondary.move_speed }))
+                    // enemy.use(pathfinder({ graph: nav }))                            
+                    enemy.enterState('idle')
+                })                
+            })
+
             enemy.onDeath(() => {
                 console.log('enter onDeath')
                 localStorage.removeItem('targeting')
                 enemy.defeat = true
-                enemy.unuse('patrol')
-                enemy.unuse('pathfinder')
+                // enemy.unuse('patrol')
+                // enemy.unuse('pathfinder')
                 enemy.clearHitBox('attack')
+                enemy.unuse('body')
+                // console.log('enemy un-body', enemy)
+                // if(enemy.isStatic !== undefined) delete (enemy as any).isStatic
                 enemy.play('lose', {
                     onEnd: () => {
                         console.log('enemy lose animation ended')
 
+                        // const { enemies } = getGameStoreValue()
+
                         // Update props
-                        const eIndex = enemies.findIndex(prop => prop.type === 'enemy' && prop.x === enemy.spawn.x && prop.y === enemy.spawn.y)
+                        // const eIndex = enemies.findIndex(prop => prop.x === enemy.spawn.x && prop.y === enemy.spawn.y)
 
-                        enemies[eIndex].defeat = true
-                        enemies[eIndex].active = false
-                        enemies[eIndex].x = enemy.pos.x - (tileWidth / 2)
-                        enemies[eIndex].y = enemy.pos.y - (tileWidth / 2)
-                        enemies[eIndex].flipX = enemy.flipX
+                        // enemies[eIndex].defeat = true
+                        // enemies[eIndex].active = false
+                        // enemies[eIndex].x = enemy.pos.x - (tileWidth / 2)
+                        // enemies[eIndex].y = enemy.pos.y - (tileWidth / 2)
+                        // enemies[eIndex].flipX = enemy.flipX
 
-                        gameStore.set(enemyAtom, enemies)   
+                        // gameStore.set(enemyAtom, enemies)   
 
-                        enemy.destroy()
+                        enemy.hidden = true
+                        // enemy.destroy()
 
                         // Player gain exp
-                        getPlayers()[0].gainExp(enemy.exp)
+                        getPlayers()[0].gainExp(enemy)
 
                         // Drop item
                         const rng = new RNG(Date.now())
@@ -411,8 +446,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
                         prepareItemsToDrop(enemy, base)
                     }
                 })
-                enemy.unuse('body')
-                console.log('enemy dead')              
+                // console.log('enemy dead')
             })
 
             enemy.onCollideUpdate('player', (player: GameObj) => {
@@ -471,6 +505,7 @@ export const spawnEnemiesForRoom = async(room: roomNode, data: typeof enemyData 
             })
 
             enemy.onHoverUpdate(() => {
+                if(enemy.defeat) return
                 setData('targeting', JSON.stringify({
                     lv: enemy.lv,
                     name: enemy.name,
