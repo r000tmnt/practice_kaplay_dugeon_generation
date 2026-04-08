@@ -7,6 +7,7 @@ import { getTextWidth } from './UI'
 
 const { 
     area,
+    add,
     anchor,
     body,
     drawRect,
@@ -14,6 +15,7 @@ const {
     get,
     layer,
     sprite,
+    offscreen,
     pos,
     Rect,
     rgb,
@@ -31,6 +33,7 @@ export const spawnObject = (prop: prop, tileWidth: number, shape?: Rect) => {
                     pos(prop.x * tileWidth, prop.y * tileWidth),
                     area({ collisionIgnore: ["item"] }),
                     body({ isStatic: true }),
+                    offscreen({ hide: true }),
                     {
                         broken: prop.broken,
                         // item: {
@@ -43,7 +46,7 @@ export const spawnObject = (prop: prop, tileWidth: number, shape?: Rect) => {
                     },
                     // Tags
                     "pot"
-                ])    
+                ])
             }
             break   
         case 'chest':
@@ -51,6 +54,9 @@ export const spawnObject = (prop: prop, tileWidth: number, shape?: Rect) => {
                 obj = map[0].add([
                     sprite('item', { frame: 4 }),
                     pos(prop.x * tileWidth, prop.y * tileWidth),
+                    area({ collisionIgnore: ["item"] }),
+                    body({ isStatic: true }),                    
+                    offscreen({ hide: true }),
                     {
                         open: prop.open,
                     },
@@ -63,6 +69,7 @@ export const spawnObject = (prop: prop, tileWidth: number, shape?: Rect) => {
                     pos(prop.x * tileWidth, prop.y * tileWidth),
                     area({ collisionIgnore: ["item"] }),
                     body({ isStatic: true }),
+                    offscreen({ hide: true }),
                     {
                         open: prop.open,
                     },
@@ -83,9 +90,10 @@ export const spawnObject = (prop: prop, tileWidth: number, shape?: Rect) => {
                     vec2(0),
                     tileWidth,
                      tileWidth
-                ), collisionIgnore: ["item"] }),
+                ) }),
                 anchor('center'),
                 body({ isStatic: true }),
+                offscreen({ hide: true }),
                 {
                     active: prop.active,
                     shrine: JSON.parse(JSON.stringify(shrineDetail))
@@ -96,10 +104,11 @@ export const spawnObject = (prop: prop, tileWidth: number, shape?: Rect) => {
         }
         break;            
         case 'wall': case 'entrance': case 'exit':
-            obj = map[0].add([
+            obj = add([
                 pos(prop.x, prop.y),
-                area({ shape, collisionIgnore: ["item"] }),
+                area({ shape }),
                 body({ isStatic: true }),
+                // offscreen({ hide: true }),
                 // opacity(0.5), // debug
                 // color(0, 0, 255),
                 prop.type,                        
