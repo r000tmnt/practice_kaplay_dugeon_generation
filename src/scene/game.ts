@@ -8,6 +8,7 @@ import { spawnObject } from '../utils/staticObject';
 import { createStore } from 'jotai'
 import { gameState, gameStore, getGameStoreValue } from '../store/game';
 import { setting } from '../store/setting';
+import { setCameraPosition } from '../utils/camera';
 // import type { room } from '../model/map';
 const store = createStore()
 
@@ -18,13 +19,18 @@ store.sub(gameState, () => {
 
 const { 
     add,
+    // area,
+    // body,
     drawSprite,
     go,
+    get,
     getLayers,
     loadSprite,
     opacity,
     pos,
+    // polygon,
     Rect,
+    stay,
     setLayers,
     setData,
     scene,
@@ -32,6 +38,7 @@ const {
 } = k
 
 let map : GameObj = {} as GameObj
+// let mapAsset : Asset = {} as Asset
 
 export default function initGame(){
     // Define layers
@@ -53,7 +60,7 @@ const setMap = async(name: string) => {
     const {level, danger} = store.get(gameState)
     const { tileWidth } = store.get(setting)
 
-    map = add([pos(0, 0), opacity(1), "map", { tileWidth, name }])
+    if(!get('map').length) map = add([pos(0, 0), opacity(1), stay(['game']), "map", { tileWidth, name }])
 
     // setCamPos(map.pos.x + ((tileWidth * 16) / 2), map.pos.y + ((tileWidth * 9) / 2))
 
@@ -106,13 +113,13 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, exit: { 
     // const { width, height } = store.get(setting)
 
     // Create an invisible canvas
-    const tempCanvas = document.createElement('canvas')
+    let tempCanvas : HTMLCanvasElement | null = document.createElement('canvas')
     tempCanvas.width = level[0].length * map.tileWidth
     tempCanvas.height = level.length * tileWidth
     const ctx = tempCanvas.getContext('2d')
 
     // Load sprite sheet
-    const spriteSheet = new Image()
+    let spriteSheet : HTMLImageElement | null = new Image()
     spriteSheet.src = 'map/demo_tiles_test_48.png'
 
     spriteSheet.onload = async() => {
@@ -121,7 +128,7 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, exit: { 
             const row = level[i]
             for(let block=0; block < row.length; block++){
                 ctx?.drawImage(
-                    spriteSheet, 
+                    spriteSheet as HTMLImageElement, 
                     (row[block] % 2) === 0? 0 : tileWidth, 
                     row[block] > 1? (row[block] / 2) * tileWidth : 0, 
                     tileWidth, 
@@ -130,15 +137,18 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, exit: { 
                     i * tileWidth, 
                     tileWidth, 
                     tileWidth
-                )
+                )   
             }
         }
 
         // Convert the canvas to an image
-        const tempImg = tempCanvas.toDataURL()
-        console.log(tempImg)
+        const tempImg = tempCanvas?.toDataURL()
+        // console.log(tempImg)
         // Draw the image with kaplay
-        loadSprite(name, tempImg)
+        if(tempImg){
+            const mapAsset = loadSprite(name, tempImg)
+            console.log('mapAsset', mapAsset)
+        }
         // map.add([
         //     sprite(name),
         //     layer('bg'),
@@ -146,7 +156,9 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, exit: { 
         // ])
 
         map.onDraw(() => {
-            const { props, enemies } = getGameStoreValue()
+            const { props } = getGameStoreValue()
+
+            const enemies = get('enemy')
 
             drawSprite({
                 sprite: name,
@@ -164,32 +176,43 @@ const drawMap = (level: number[][], entrance: { x: number, y: number }, exit: { 
             })
 
             enemies.forEach(enemy => {
-                if(enemy.defeat){
+                if(enemy.defeat && enemy.getCurAnim()?.name !== 'lose'){
                     drawSprite({
                         sprite: 'enemy',
-                        pos: vec2(enemy.x, enemy.y),
+                        pos: vec2(enemy.pos.x, enemy.pos.y),
                         frame: 13,
-                        flipX: enemy.flipX
+                        flipX: enemy.flipX,
+                        anchor: 'center'
                     })
                 }
-            })                 
+            })             
         })
 
-        tempCanvas.remove()
-        spriteSheet.remove()
+        tempCanvas = null
+        spriteSheet = null
 
         // set collision for entrance and exit
-        spawnObject(
-            { x: entrance.x * tileWidth, y: entrance.y * tileWidth, type: 'entrance', roomId: -1 }, 
-            tileWidth,
-            new Rect(vec2(0), tileWidth, tileWidth),
-        )
+        if(get('entrance').length){
+            const door = get('entrance')[0]
+            door.pos = vec2(entrance.x * tileWidth, entrance.y * tileWidth)
+        }else{
+            spawnObject(
+                { x: entrance.x * tileWidth, y: entrance.y * tileWidth, type: 'entrance', roomId: -1 }, 
+                tileWidth,
+                new Rect(vec2(0), tileWidth, tileWidth),
+            )            
+        }
 
-        spawnObject(
-            { x: exit.x * tileWidth, y: exit.y * tileWidth, type: 'exit', roomId: -1 }, 
-            tileWidth,
-            new Rect(vec2(0), tileWidth, tileWidth),
-        )
+        if(get('exit').length){
+            const door = get('exit')[0]
+            door.pos = vec2(exit.x * tileWidth, exit.y * tileWidth)
+        }else{
+            spawnObject(
+                { x: exit.x * tileWidth, y: exit.y * tileWidth, type: 'exit', roomId: -1 }, 
+                tileWidth,
+                new Rect(vec2(0), tileWidth, tileWidth),
+            )            
+        }
 
         // Set rects for collision around the rooms
         // Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Left_shift#using_left_shift
@@ -230,13 +253,20 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
                 // Bottom
                 if(grid[y + 1] && grid[y + 1][x] === 1) bottomEdges.push({x, y: y + 1})
                 // Left
-                if(grid[y][x - 1] && grid[y][x - 1] === 1) leftEdges.push({x: x - 1, y})
-            }
+                if(grid[y][x - 1] && grid[y][x - 1] === 1) leftEdges.push({x: x - 1, y})              
+            }             
     }
   }
 
   // Remove the same tile if any
   const allEdges = [ topEdges, bottomEdges, rightEdges, leftEdges ]
+
+  const walls = get('wall')
+  let count = 0
+
+  walls.forEach((wall) => {
+    wall.onDestroy(() => console.log('Remove wall'))
+  })
 
   // merge edges
   for(let i=0; i < allEdges.length; i++){
@@ -257,22 +287,29 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
                     // Get the starting x
                     const startX = x - (j - anchor)
                     // Update anchor
-                    anchor = j + 1     
-                    
-                    // Create rect
-                    spawnObject(
-                        { 
-                            x: startX * tileWidth, 
-                            y: (i === 1)? y * tileWidth : (y * tileWidth) + (tileWidth - 1), 
-                            type: 'wall', 
-                            roomId: -1 
-                        }, 
-                        tileWidth, 
-                        new Rect(
-                            vec2(0),
-                            (x - startX + 1) * tileWidth, 1
-                        )
-                    )  
+                    anchor = j + 1
+
+                    if(count < (walls.length - 1)){
+                        walls[count].pos = vec2(startX * tileWidth, (i === 1)? y * tileWidth : (y * tileWidth) + (tileWidth - 4))
+                        walls[count].area.shape.width = (x - startX + 1) * tileWidth
+                        walls[count].area.shape.height = 4                 
+                        count += 1
+                    }else{
+                        // Create rect
+                        spawnObject(
+                            { 
+                                x: startX * tileWidth, 
+                                y: (i === 1)? y * tileWidth : (y * tileWidth) + (tileWidth - 4), 
+                                type: 'wall', 
+                                roomId: -1 
+                            }, 
+                            tileWidth, 
+                            new Rect(
+                                vec2(0),
+                                (x - startX + 1) * tileWidth, 4
+                            )
+                        )                          
+                    }
                 }
             }            
         }
@@ -296,27 +333,38 @@ const getWallEdges = async(grid: number[][], tileWidth: number) => {
                     const startY = anchor > 0? edgeList[anchor].y : edgeList[0].y
                     // Update anchor
                     anchor = j + 1
-                    
-                    // Create rect
-                    spawnObject(
-                        { 
-                            x: (i === 2)? x * tileWidth : (x * tileWidth) + (tileWidth - 1), 
-                            y: startY * tileWidth, 
-                            type: 'wall', 
-                            roomId: -1 
-                        }, 
-                        tileWidth, 
-                        new Rect(
-                            vec2(0),
-                            1, ((y - startY) + 1) * tileWidth
-                        )
-                    )    
+
+                    if(count < (walls.length - 1)){
+                        walls[count].pos = vec2((i === 2)? x * tileWidth : (x * tileWidth) + (tileWidth - 4), startY * tileWidth)
+                        walls[count].area.shape.width = 4
+                        walls[count].area.shape.height = ((y - startY) + 1) * tileWidth
+                        count += 1
+                    }else{
+                        // Create rect
+                        spawnObject(
+                            { 
+                                x: (i === 2)? x * tileWidth : (x * tileWidth) + (tileWidth - 4), 
+                                y: startY * tileWidth, 
+                                type: 'wall', 
+                                roomId: -1 
+                            }, 
+                            tileWidth, 
+                            new Rect(
+                                vec2(0),
+                                4, ((y - startY) + 1) * tileWidth
+                            )
+                        )                        
+                    }
                 }
             }               
         }                  
         break;                     
     }
   }
+
+    for(let i=count; i < walls.length; i++){
+        walls[count].destroy()
+    }
 }
 
 const setChunks = async() => {
@@ -377,23 +425,44 @@ const initPlayer = (grid: number[][], entrance: { x: number, y: number }, tileWi
     const { playerData } = getGameStoreValue()
     let x = 0, y =0
 
-    if(entrance && grid[entrance.y][entrance.x - 1] !== 1) {
+    if(grid[entrance.y][entrance.x - 1] !== 1) {
         x = entrance.x - 1
         y = entrance.y
          
     }else
-    if(entrance && grid[entrance.y][entrance.x + 1] !== 1) {
+    if(grid[entrance.y][entrance.x + 1] !== 1) {
         x = entrance.x + 1
         y = entrance.y
     }else
-    if(entrance && grid[entrance.y - 1][entrance.x] !== 1) {
+    if(grid[entrance.y - 1][entrance.x] !== 1) {
         x = entrance.x
         y = entrance.y - 1
     }else
-    if(entrance && grid[entrance.y + 1][entrance.x] !== 1) {
+    if(grid[entrance.y + 1][entrance.x] !== 1) {
         x = entrance.x
         y = entrance.y + 1    
     }
 
-    createPlayerSprite(map, x, y, grid[0].length * tileWidth, grid.length * tileWidth, Object.keys(playerData).length? playerData : null)
+    if(Object.keys(playerData).length){
+        const player = get('player')[0]
+        player.pos = vec2(x * tileWidth + (tileWidth / 2), y * tileWidth + (tileWidth / 2))
+
+        setCameraPosition(player, grid[0].length * tileWidth, grid.length * tileWidth)
+
+        k.tween(
+            1,
+            0,
+            0.3,
+            (v) => { 
+                k.usePostEffect("fadeTransition", () => ({ "u_progress": v }))
+            },
+            k.easings.easeInOutQuad
+        ).onEnd(() => {
+            // Enable control
+            setData('ready', true)    
+            player.enterState('active')
+        })           
+    }else{
+        createPlayerSprite(map, x, y, grid[0].length * tileWidth, grid.length * tileWidth, null)
+    }
 }
