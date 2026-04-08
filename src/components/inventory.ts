@@ -171,7 +171,7 @@ export const displayItemsInGrid = (inventory:GameObj, tileWidth: number) => {
                 }
             }
 
-            if(!space[block] && spawnedItems[block]){
+            if(!space[block] && spawnedItems[block]?.index === block){
                 // Remove spawned item
                 spawnedItems[block].destroy()
             }
@@ -240,12 +240,20 @@ const placeItemInGrid = (
     }
 
     if(data.item.stackable){
-        item.add([
-            text(data.item.quantity && data.item.quantity > 1? String(data.item.quantity) : ""),
-            anchor('botright'),
-            pos(0, 0),
-            "text"
-        ])        
+        // item.add([
+        //     text(data.item.quantity && data.item.quantity > 1? String(data.item.quantity) : ""),
+        //     anchor('botright'),
+        //     pos(0, 0),
+        //     "text"
+        // ])  
+        item.onDraw(() => {
+            drawText({
+                text: data.item.quantity && data.item.quantity > 1? String(data.item.quantity) : "",
+                size: tileWidth / 3,
+                pos: vec2(tileWidth / 2, tileWidth / 2),
+                anchor: 'botright'
+            })
+        })      
     }
 
     console.log('item placed', item)
