@@ -4,14 +4,13 @@ import type { roomNode } from '../model/map'
 import handData from '../data/hand.json'
 import { setCameraPosition } from './camera';
 import { createHitBox } from './hitBox'
-import { gameStore, getGameStoreValue, inventoryUI } from '../store/game';
+import { getGameStoreValue } from '../store/game';
 import { RoomState } from '../model/map'
 import type { item } from '../model/item';
 // import { getOptionValue } from '../store/setting';
 import { spawnEnemiesForRoom } from './enemy';
 import playerData from '../data/player.json'
-import { setCardUI, setUIElements } from '../components/UI';
-import { setInventoryUI } from '../components/inventory'
+import { setUIElements } from '../components/UI';
 import { getOptionValue } from '../store/setting';
 import { 
     setDirection, 
@@ -175,17 +174,25 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         pathfinder({
             graph: nav
         }),
-        stay(),
+        stay(['game']),
         state("active", ["active", "pause"]),
         pos((x * map.tileWidth) + (sizeWithPadding / 2), (y * map.tileWidth) + (sizeWithPadding / 2)),
         {
             facing: 'left',
             path: [],
             ...data,
-            gainExp: (exp: number) => {
+            gainExp: (enemy: GameObj) => {
                 const { effect } = getGameStoreValue()
 
                 const boost = effect.find(e => e.exp)
+
+                let exp = enemy.exp
+
+                const lvDiff = enemy.lv - player.lv
+
+                if(lvDiff > 0){
+                    exp += Math.floor(exp * (lvDiff/100))
+                }
 
                 exp = (boost)? Math.floor(exp * boost.exp) : exp
 
@@ -269,6 +276,8 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
     })
 
     player.onCollideUpdate('enemy', (enemy: GameObj) => {
+        if(enemy.defeat) return
+
         const enemyAnim = enemy.getCurAnim()
         
         enemy.isStatic = enemy.state === 'attack'
@@ -279,6 +288,8 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
     })
 
     player.onCollideEnd('enemy', (enemy: GameObj) => {
+        if(enemy.defeat) return
+        
         enemy.isStatic = false
         player.isStatic = false
         enemy.secondary.move_speed = 75
@@ -401,138 +412,6 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         }        
     })  
 
-    // inventory, option, skill, map
-    onKeyRelease([
-        keys.inventory,
-        keys.option,
-        keys.skill,
-        keys.map
-    ], (key) => {
-        if(!getData('ready')) return
-
-        if(key === keys.inventory){
-            if(player.state === 'pause') return
-            const { inventory } = getGameStoreValue()
-            inventory.hide = !inventory.hide
-
-            setInventoryUI(get('ui')[0], player, inventory.hide).then(() => {
-                gameStore.set(inventoryUI, inventory)              
-            })   
-        }
-        // console.log('release key', key)
-        if(key === keys.option){
-            const cardSelecting = getData('card_selecting')
-
-            if(cardSelecting === true) setCardUI(false)
-            else{
-            // Open game settings
-            }
-        }
-
-        if(key === keys.skill){
-            if(player.state === 'pause') return
-            // Open skill menu
-        }
-
-        if(key === keys.map){
-            if(player.state === 'pause') return
-            // Toggle mini map
-        }        
-    })
-
-    // Quick slots
-    onKeyRelease([
-        keys.quick_slot_1,
-        keys.quick_slot_2,
-        keys.quick_slot_3,
-        keys.quick_slot_4,
-        keys.quick_slot_5,
-        keys.quick_slot_6,
-        keys.quick_slot_7,
-        keys.quick_slot_8,
-        keys.quick_slot_9,
-        keys.quick_slot_10,
-    ], (key) => {
-        // toggle quick slot 
-        if(!getData('ready') || player.state === 'pause') return
-        
-        const { quickSlot } = getGameStoreValue()
-
-        let index = -1
-
-        switch(true){
-            case key === keys.quick_slot_1:
-                index = 0
-            break;
-            case key === keys.quick_slot_2:
-                index = 1
-            break;
-            case key === keys.quick_slot_3:
-                index = 2
-            break;
-            case key === keys.quick_slot_4:
-                index = 3
-            break;
-            case key === keys.quick_slot_5:
-                index = 4
-            break;
-            case key === keys.quick_slot_6:
-                index = 5
-            break;
-            case key === keys.quick_slot_7:
-                index = 6
-            break;
-            case key === keys.quick_slot_8:
-                index = 7
-            break;
-            case key === keys.quick_slot_9:
-                index = 8
-            break;
-            case key === keys.quick_slot_10:
-                index = 9
-            break;                                                                                                            
-        }
-
-        if(quickSlot[index]){
-            // use item or case skill
-            const item = quickSlot[index];
-            if(item?.quantity !== undefined){
-                item.quantity -= 1
-
-                const { attribute, resist, secondary } = item
-
-                if(attribute){
-                    for(const [key, value] of Object.entries(attribute)){
-                        switch(key){
-                            case 'hp':{
-                                const realValue = value > (player.max.hp - player.hp)? player.max.hp - player.hp : value 
-                                player.hp += realValue
-                                player.attribute.hp = player.hp                                
-                            }
-                            break;
-                            case 'mp':
-                                player.attribute.mp += value > (player.max.mp - player.attribute.mp)? player.max.mp - player.attribute.mp : value 
-                            break;                            
-                            case 'physique':
-                            case 'mentality':
-                            case 'agility':
-                                player.attribute[key] += value
-                            break;
-                        }
-                    }                   
-                }
-
-                if(resist){
-                    //
-                }
-
-                if(secondary){
-                    //
-                }
-            }
-        }
-    })
-
     player.onPatrolFinished(()=> {
         if(player.hp === 0 || player.state === 'pause') return
         if(player.path?.length) {
@@ -553,28 +432,11 @@ export const createPlayerSprite = async(map: GameObj, x: number, y: number, mapW
         player.paused = true
     })
 
-    // If transit from another map, reveal the map
-    if(map.name === 'next'){
-        setCameraPosition(player, mapWidth, mapHeight)
+    setCameraPosition(player, mapWidth, mapHeight)
+    // Enable control
+    setData('ready', true)    
 
-        tween(
-            1,
-            0,
-            0.3,
-            (v) => { 
-                usePostEffect("fadeTransition", () => ({ "u_progress": v }))
-            },
-            easings.easeInOutQuad
-        ).onEnd(() => {
-            // Enable control
-            setData('ready', true)    
-        })    
-    }else{
-        setCameraPosition(player, mapWidth, mapHeight)
-        // Enable control
-        setData('ready', true)    
+    setUIElements(player)
 
-        setUIElements(player)
-    }
     // #endregion  
 }
