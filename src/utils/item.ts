@@ -24,11 +24,12 @@ const {
     // evaluateBezier,
     // normalizedCurve,
     // loop,
+    offscreen,
     onHover,
     onHoverEnd,
     pos,
     // rect,
-    RNG,
+    // RNG,
     sprite,
     setData,
     // text,
@@ -251,6 +252,7 @@ export const dropItem = (obj: GameObj, items: { name: string, item: item, sprite
                     sprite(item.sprite, { frame: item.frame }),
                     area(),
                     pos(obj.pos.x, obj.pos.y), // starting position
+                    offscreen({ hide: true }),
                     {
                         item: item.item
                     },
