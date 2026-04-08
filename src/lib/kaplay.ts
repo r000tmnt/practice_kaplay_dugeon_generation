@@ -13,7 +13,8 @@ const k = kaplay({
     letterbox: true,
     background: '#000000',
     broadPhaseCollisionAlgorithm: 'grid',
-    narrowPhaseCollisionAlgorithm: 'box'
+    narrowPhaseCollisionAlgorithm: 'box',
+    global: false
   })
 
 if (
