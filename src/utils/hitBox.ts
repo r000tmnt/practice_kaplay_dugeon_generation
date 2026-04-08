@@ -153,11 +153,14 @@ const setCollision = (hitBox: GameObj) => {
             obj.play('break')
             // Update props
             const pot = props.findIndex(prop => prop.type === 'pot' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
-            props[pot].broken = true
-            gameStore.set(gameState, prve => ({
-                ...prve,
-                props: props
-            }))
+            if(pot >= 0){
+                props[pot].broken = true
+                gameStore.set(gameState, prve => ({
+                    ...prve,
+                    props: props
+                }))                
+            }
+
             // Drop items  
             prepareItemsToDrop(obj, potData.base)
 
@@ -175,11 +178,13 @@ const setCollision = (hitBox: GameObj) => {
             obj.play('open') 
             // Update props
             const chest = props.findIndex(prop => prop.type === 'chest' && prop.x === (obj.pos.x / tileWidth) && prop.y === (obj.pos.y / tileWidth))
-            props[chest].open = true
-            gameStore.set(gameState, prve => ({
-                ...prve,
-                props: props
-            }))
+            if(chest >= 0) {
+                props[chest].open = true
+                gameStore.set(gameState, prev => ({
+                    ...prev,
+                    props: props
+                }))
+            }
             // Drop items         
             prepareItemsToDrop(obj, chestData.base)
             // And more            
@@ -195,11 +200,14 @@ const setCollision = (hitBox: GameObj) => {
             obj.frame = 1
             // Update props
             const shrine = props.findIndex(prop => prop.type === 'shrine' && prop.x === ((obj.pos.x - (tileWidth /2)) / tileWidth) && prop.y === ((obj.pos.y - (tileWidth / 2)) / tileWidth))
-            props[shrine].active = true
-            gameStore.set(gameState, prev => ({
-                ...prev,
-                props: props
-            }))
+            
+            if(shrine >= 0){
+                props[shrine].active = true
+                gameStore.set(gameState, prev => ({
+                    ...prev,
+                    props: props
+                }))                
+            }
 
             // And more       
             if(obj.shrine.effect){
