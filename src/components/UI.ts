@@ -68,6 +68,8 @@ const ifCardsSelected = (wrapper: GameObj, mapCard: GameObj, tileWidth: number, 
     // If cards selected
     const chosen = wrapper.get('chosen')
     if(chosen.length === door.card){
+        const mapEffects : effect[] = []
+
         // Merge and move to center
         const center = { 
             x: (k.width() / 2) - (mapCard.width / 2),
@@ -75,6 +77,10 @@ const ifCardsSelected = (wrapper: GameObj, mapCard: GameObj, tileWidth: number, 
         }
         
         chosen.forEach((c) => {
+            mapEffects.push({
+                ...c.data.effect
+            })
+
             tween(
                 c.pos,
                 vec2(center.x, center.y),
@@ -121,6 +127,7 @@ const ifCardsSelected = (wrapper: GameObj, mapCard: GameObj, tileWidth: number, 
                     level: [],
                     props: [],
                     enemies: [],
+                    mapEffect: mapEffects,
                     danger: prev.danger + 1,
                     playerData: {
                         lv: player.lv,
@@ -148,6 +155,8 @@ const ifCardsSelected = (wrapper: GameObj, mapCard: GameObj, tileWidth: number, 
                     easings.easeInOutQuad
                 ).onEnd(() => {
                     console.log("screen filled")
+                    const map = get('map')[0]
+
                     const loopController = loop(0.1, () => {
                         const { level, props, enemies } = getGameStoreValue()
 
@@ -158,17 +167,21 @@ const ifCardsSelected = (wrapper: GameObj, mapCard: GameObj, tileWidth: number, 
                             goBtn.destroy()
                             wrapper.hidden = true
                             
-                            const map = get('map')[0]
                             map.children.forEach(child => {
                                 if(!child.is('wall')) child.destroy()
                             })
                             map.clearEvents()
-                            // map.removeAll()
-                            // map.destroy()
+                        }
+                    })
 
-                            // player.removeAll()
-                            // player.clearEvents()
-                            // player.destroy()
+                    const waitForMapClear = loop(0.1, () => {
+                        const items = map.get('item')
+                        const pots = map.get('pot')
+                        const chests = map.get('chest')
+                        const shrines = map.get('shrine')
+
+                        if(!items.length && !pots.length && !chests.length && !shrines.length){
+                            waitForMapClear.cancel()       
                             
                             get('enemy').forEach(e => {
                                 e.removeAll()
@@ -198,9 +211,9 @@ const ifCardsSelected = (wrapper: GameObj, mapCard: GameObj, tileWidth: number, 
                             }))
 
                             // TODO - Go to the next level
-                            go('game', 'next' + Date.now())
+                            go('game', 'next' + Date.now())                                                                 
                         }
-                    })
+                    })                    
                 })
             })             
         })
@@ -296,11 +309,14 @@ const placeCards = (
                             x >= left && x <= right &&
                             y >= top && y <= down
                         ){
+                            // Check card type
+                            if(mapCard.data?.cardType !== door.type[i]) break
+
                             mapCard.pos = vec2(left, top)
                             mapCard.scale = vec2(1)
                             mapCard.unuse('drag')
                             mapCard.chosen = true
-                            mapCard.untag('card')
+                            // mapCard.untag('card')
                             mapCard.tag('chosen')
                             ifCardsSelected(wrapper, mapCard, tileWidth, door)
                             break
