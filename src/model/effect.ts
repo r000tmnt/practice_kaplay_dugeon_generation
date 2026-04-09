@@ -19,7 +19,15 @@ type attribute =
 'bleeding' |
 'dmg' |
 'exp' |
-'item_find_rate'
+'item_find_rate' |
+'size' |
+'enemy' |
+'attack' |
+'defense' |
+'crit_rate' |
+'max_hp' |
+'max_mp' |
+'all'
 
 type effectParam = Record<attribute, number>
 
