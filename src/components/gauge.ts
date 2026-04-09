@@ -299,18 +299,20 @@ export const ringGauge = (ringGaugeOption: ringGaugeOption) => {
             }
         })    
         
-        drawEllipse({
-            pos: vec2(0, 0),
-            color: color.inner,
-            // gradient: [
-            //     color.inner,
-            //     k.rgb(200, 200, 0)
-            // ],
-            radiusX: radius,
-            radiusY: radius,
-            start: -90,
-            end: (360 * currentProgress) + -90
-        })
+        if(progress){
+            drawEllipse({
+                pos: vec2(0, 0),
+                color: color.inner,
+                // gradient: [
+                //     color.inner,
+                //     k.rgb(200, 200, 0)
+                // ],
+                radiusX: radius,
+                radiusY: radius,
+                start: -90,
+                end: (360 * currentProgress) + -90
+            })            
+        }
 
         // drawPolygon({ 
         //     pts: [...outer, ...inner],
