@@ -10,7 +10,7 @@
         "effect": {
             "size": -10,
             "enemy": 2,
-            "room": 1
+            "time": 1
         },
         "limit": 10
     },
@@ -24,7 +24,7 @@
         "stackable": true,
         "effect": {
             "item_find_rate": 0.15,
-            "room": 1
+            "time": 1
         },
         "limit": 10
     },
@@ -38,7 +38,7 @@
         "stackable": true,
         "effect": {
             "move_speed": 1.2,
-            "room": 1
+            "time": 1
         },
         "limit": 10
     },
@@ -52,7 +52,7 @@
         "stackable": true,
         "effect": {
             "defense": 5,
-            "room": 1
+            "time": 1
         },
         "limit": 10
     },
@@ -67,7 +67,7 @@
         "effect": {
             "attack": 5,
             "defense": -3,
-            "room": 1
+            "time": 1
         },
         "limit": 10
     },
@@ -82,7 +82,7 @@
         "effect": {
             "crit_rate": 0.1,
             "item_find_rate": 0.1,
-            "room": 1
+            "time": 1
         },
         "limit": 10
     },
@@ -96,7 +96,7 @@
         "stackable": true,
         "effect": {
             "max_mp": 0.2,
-            "room": 1
+            "time": 1
         },
         "limit": 10
     },
@@ -110,7 +110,7 @@
         "stackable": true,
         "effect": {
             "max_hp": 0.25,
-            "room": 1
+            "time": 1
         },
         "limit": 10
     },
@@ -125,19 +125,21 @@
         "effect": {
             "size": 10,
             "enemy": 1,
-            "room": 1
+            "time": 1
         },
         "limit": 10
     },
     {
         "id": "card_010",
         "name": "Look at the mirror",
-        "desc": "Repeat the card used in the room.",
+        "desc": "Repeat the card used in the time.",
         "type": 19,
         "cardType": "green",
         "rarity": "Rare",
         "stackable": true,
-        "effect": null,
+        "effect": {
+            "all": true
+        },
         "limit": 5
     }        
 ]
