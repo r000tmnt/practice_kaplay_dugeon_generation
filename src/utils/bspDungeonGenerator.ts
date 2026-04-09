@@ -45,7 +45,7 @@ import type { cardType } from "../model/door";
 
 // Store
 import { getOptionValue } from '../store/setting';
-import { gameState, gameStore } from "../store/game";
+import { gameState, gameStore, getGameStoreValue } from "../store/game";
 
 const CORRIDOR_WIDTH = 2;   // tiles
 const EDGE_TABLE : Record<number, number[][][]> = {
@@ -904,6 +904,11 @@ class Leaf{
 
 //#region DUNGEON GENERATION
 export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
+    const { mapEffect } = getGameStoreValue()
+
+    const roomEffect = mapEffect.filter(m => m.size !== undefined)
+    const enemyEffect = mapEffect.filter(m => m.enemy !== undefined)
+
     let seed = 0
 
     if(predefinedSeed){
@@ -915,14 +920,30 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
 
     const rng = createSeededRNG(seed)
     
-    const MAP_WIDTH  = randBetween(rng.map(), 30, 60)
-    const MAP_HEIGHT = randBetween(rng.map(), 30, 60)
+    let MAP_WIDTH  = randBetween(rng.map(), 30, 60)
+    let MAP_HEIGHT = randBetween(rng.map(), 30, 60)
 
-    const MIN_LEAF_SIZE = randBetween(rng.map(), 12, 18)
-    const MAX_LEAF_SIZE = randBetween(rng.map(), 22, 32)
+    let MIN_LEAF_SIZE = randBetween(rng.map(), 12, 18)
+    let MAX_LEAF_SIZE = randBetween(rng.map(), 22, 32)
 
-    const MIN_ROOM_SIZE = randBetween(rng.map(), 6, 10)
-    const MAX_ROOM_SIZE = randBetween(rng.map(), 12, 16)
+    let MIN_ROOM_SIZE = randBetween(rng.map(), 6, 10)
+    let MAX_ROOM_SIZE = randBetween(rng.map(), 12, 16)
+
+    roomEffect.forEach(e => {
+        const halfSize = Math.floor(e.size / 2)
+        const thirdSize = Math.floor(e.size / 3)
+        MAP_WIDTH += e.size
+        MAP_HEIGHT += e.size
+        MIN_LEAF_SIZE += halfSize
+        MAX_LEAF_SIZE += e.size
+        MIN_ROOM_SIZE += thirdSize
+        MAX_ROOM_SIZE += e.size
+    })
+
+    if(MIN_LEAF_SIZE < 0) MIN_LEAF_SIZE = 12
+    if(MAX_LEAF_SIZE < 0) MAX_LEAF_SIZE = 22
+    if(MIN_ROOM_SIZE < 0) MIN_ROOM_SIZE = 6
+    if(MAX_ROOM_SIZE < 0) MAX_ROOM_SIZE = 12
 
     const root = new Leaf(0, 0, MAP_WIDTH, MAP_HEIGHT);
     const leaves = [root];
@@ -1154,6 +1175,14 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
     // Decide spawn count
     const enemySpawnRule: ({ min: number, max: number }|null)[] = []
     graph.forEach(node => enemySpawnRule.push(getEnemySpawnRule(node)))
+    enemyEffect.forEach(e => {
+        const rule = enemySpawnRule[Math.floor(rng.enemy() * enemySpawnRule.length)]
+
+        if(rule){
+            rule.min += e.enemy    
+            rule.max += e.enemy
+        }
+    })
     // ROOMNODES.forEach(room => {
     //     const enemySpawnRule = getEnemySpawnRule(room.id, entranceId, exitId, criticalPath)
 
@@ -1232,6 +1261,7 @@ export const generateBSPDungeon = async(predefinedSeed?: string | number) => {
             exit,
             door,
             rng,
+            props: PROP.slice(0),
             enemies: ENEMY.slice(0),
             roomNodes: ROOMNODES.slice(0),
             polygon
@@ -1262,11 +1292,6 @@ const setProps = async(grid: number[][], rooms: room[], rng: rng) => {
     })
 
     placeDecoration(grid, propRules.decoration, rng)
-
-    gameStore.set(gameState, prev => ({
-        ...prev,
-        props: PROP.slice(0)
-    }))
 }
 
 const placePot = (
@@ -1335,26 +1360,28 @@ const pushProp = (
     for(let i=0; i < count; i++){
         console.log(`set ${type} prop`)
         const random = tiles[Math.floor(rng.props() * tiles.length)]
-        const prop = {
-                type,
-                x: random.x,
-                y: random.y,
-                roomId,
-            } 
+        if(random){
+            const prop = {
+                    type,
+                    x: random.x,
+                    y: random.y,
+                    roomId,
+                } 
 
-        switch(type){
-            case 'pot':
-                Object.defineProperty(prop, 'broken', { value: false, writable: true })
-            break;
-            case 'chest':
-                Object.defineProperty(prop, 'open', { value: false, writable: true })
-            break;
-            case 'shrine':
-                Object.defineProperty(prop, 'active', { value: false, writable: true })
-            break;
+            switch(type){
+                case 'pot':
+                    Object.defineProperty(prop, 'broken', { value: false, writable: true })
+                break;
+                case 'chest':
+                    Object.defineProperty(prop, 'open', { value: false, writable: true })
+                break;
+                case 'shrine':
+                    Object.defineProperty(prop, 'active', { value: false, writable: true })
+                break;
+            }
+
+            PROP.push(prop)            
         }
-
-        PROP.push(prop)
     }  
 }
 
